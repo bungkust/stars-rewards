@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* Fix date picker calendar icon color for dark/light mode consistency */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.5) sepia(1) saturate(5) hue-rotate(175deg); /* Makes it dark/primary colorish or just visible */
+  cursor: pointer;
+}
+
+/* If using dark theme primarily and inputs are white, we need a dark icon */
+[data-theme='softBlueTheme'] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0); /* Ensures icon is black/dark on white background */
+}

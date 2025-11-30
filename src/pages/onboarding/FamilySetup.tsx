@@ -1,0 +1,128 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAppStore } from '../../store/useAppStore';
+import { PrimaryButton } from '../../components/design-system/PrimaryButton';
+
+const FamilySetup = () => {
+  const navigate = useNavigate();
+  const { setFamilyName, setOnboardingStep, updateAdminPin, setAdminName } = useAppStore();
+  const [name, setName] = useState('');
+  const [pin, setPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
+  const [error, setError] = useState('');
+
+  const handlePinChange = (val: string) => {
+    if (/^\d*$/.test(val) && val.length <= 4) {
+      setPin(val);
+    }
+  };
+
+  const handleConfirmChange = (val: string) => {
+    if (/^\d*$/.test(val) && val.length <= 4) {
+      setConfirmPin(val);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!name.trim()) {
+      setError('Please enter a family name.');
+      return;
+    }
+    if (pin.length !== 4) {
+      setError('PIN must be 4 digits.');
+      return;
+    }
+    if (pin !== confirmPin) {
+      setError('PINs do not match.');
+      return;
+    }
+
+    // Update Profile with Name and PIN
+    const { error: updateError } = await updateAdminPin(name.trim(), pin);
+    
+    if (updateError) {
+      setError('Failed to save profile. Please try again.');
+      return;
+    }
+
+    setFamilyName(name.trim());
+    // Usually we setAdminName too if that's what the store uses
+    setAdminName(name.trim()); 
+
+    setOnboardingStep('add-child');
+    navigate('/onboarding/add-child');
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-base-100 p-6">
+      <div className="w-full max-w-md text-center">
+        <h1 className="text-3xl font-bold text-primary mb-2">Setup Family Profile</h1>
+        <p className="text-gray-500 mb-8">Create your family identity and security PIN.</p>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+          <div className="form-control w-full">
+            <label className="label">
+              <span className="label-text font-bold">Family Name</span>
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="input input-bordered w-full rounded-xl text-center text-xl"
+              placeholder="e.g. The Smiths"
+              autoFocus
+              required
+            />
+          </div>
+
+          {/* PIN Section moved here */}
+          <div className="flex gap-4">
+            <div className="form-control w-1/2">
+              <label className="label">
+                <span className="label-text font-bold">Create Admin PIN</span>
+              </label>
+              <input
+                type="password"
+                inputMode="numeric"
+                value={pin}
+                onChange={(e) => handlePinChange(e.target.value)}
+                className="input input-bordered text-center text-xl tracking-widest w-full rounded-xl"
+                placeholder="####"
+                required
+              />
+            </div>
+            <div className="form-control w-1/2">
+              <label className="label">
+                <span className="label-text font-bold">Confirm PIN</span>
+              </label>
+              <input
+                type="password"
+                inputMode="numeric"
+                value={confirmPin}
+                onChange={(e) => handleConfirmChange(e.target.value)}
+                className="input input-bordered text-center text-xl tracking-widest w-full rounded-xl"
+                placeholder="####"
+                required
+              />
+            </div>
+          </div>
+
+          {error && <p className="text-error text-sm">{error}</p>}
+
+          <PrimaryButton 
+            type="submit" 
+            className="rounded-xl mt-4 shadow-md text-lg font-bold"
+            disabled={!name.trim() || pin.length < 4 || confirmPin.length < 4}
+          >
+            Save & Continue
+          </PrimaryButton>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default FamilySetup;

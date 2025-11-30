@@ -1,0 +1,160 @@
+import { useState } from 'react';
+import { FaGift, FaCheckCircle, FaLock } from 'react-icons/fa';
+import { useAppStore } from '../../store/useAppStore';
+import RewardConfirmationModal from '../../components/modals/RewardConfirmationModal';
+import RewardRedemptionSuccessModal from '../../components/modals/RewardRedemptionSuccessModal';
+
+const ChildRewards = () => {
+  const { rewards, activeChildId, children, redeemReward, isLoading, transactions, childLogs, tasks } = useAppStore();
+  const child = children.find(c => c.id === activeChildId);
+  
+  const [selectedReward, setSelectedReward] = useState<{id: string, name: string, cost: number} | null>(null);
+  const [successRewardName, setSuccessRewardName] = useState<string | null>(null);
+
+  // Helper to check if a one-time reward has been redeemed
+  const hasRedeemed = (rewardId: string) => {
+    if (!activeChildId) return false;
+    return transactions.some(t => 
+      t.child_id === activeChildId && 
+      t.type === 'REWARD_REDEEMED' && 
+      t.reference_id === rewardId
+    );
+  };
+
+  // Helper to check progress of accumulative rewards
+  const getAccumulativeProgress = (reward: typeof rewards[0]) => {
+    if (reward.type !== 'ACCUMULATIVE' || !reward.required_task_id) return null;
+
+    const completedCount = childLogs.filter(log => 
+      log.child_id === activeChildId && 
+      log.task_id === reward.required_task_id && 
+      log.status === 'VERIFIED'
+    ).length;
+
+    return {
+      current: completedCount,
+      required: reward.required_task_count || 1,
+      isUnlocked: completedCount >= (reward.required_task_count || 1),
+      taskName: tasks.find(t => t.id === reward.required_task_id)?.name || 'Unknown Task'
+    };
+  };
+
+  const handleBuyClick = (rewardId: string, cost: number, rewardName: string) => {
+    if (!activeChildId || !child) return;
+    if (child.current_balance < cost) {
+      alert('Not enough stars!');
+      return;
+    }
+    setSelectedReward({ id: rewardId, name: rewardName, cost });
+  };
+
+  const handleConfirmRedeem = async () => {
+    if (!selectedReward || !activeChildId) return;
+
+    const { error } = await redeemReward(activeChildId, selectedReward.cost, selectedReward.id);
+    if (!error) {
+      setSuccessRewardName(selectedReward.name);
+      setSelectedReward(null);
+    } else {
+      alert('Failed to redeem. Please try again.');
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-800">Rewards Shop</h2>
+        {child && (
+          <div className="badge badge-lg badge-primary font-bold text-white">
+            {child.current_balance} Stars
+          </div>
+        )}
+      </div>
+      
+      <RewardConfirmationModal
+        isOpen={!!selectedReward}
+        rewardName={selectedReward?.name || ''}
+        cost={selectedReward?.cost || 0}
+        onClose={() => setSelectedReward(null)}
+        onConfirm={handleConfirmRedeem}
+        isLoading={isLoading}
+      />
+
+      <RewardRedemptionSuccessModal 
+        isOpen={!!successRewardName}
+        rewardName={successRewardName || ''}
+        onClose={() => setSuccessRewardName(null)}
+      />
+      
+      {rewards.length === 0 ? (
+        <div className="text-center p-12 bg-base-100 rounded-xl border-2 border-dashed border-gray-300">
+          <p className="text-gray-400">No rewards available yet.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4">
+          {rewards.map((reward) => {
+            const isOneTime = reward.type === 'ONE_TIME';
+            const isRedeemed = isOneTime && hasRedeemed(reward.id);
+            const canAfford = (child?.current_balance || 0) >= reward.cost_value;
+            
+            const progress = getAccumulativeProgress(reward);
+            const isLocked = progress && !progress.isUnlocked;
+
+            return (
+            <div key={reward.id} className={`card bg-white shadow-sm rounded-xl p-4 flex flex-col items-center text-center gap-2 ${isRedeemed ? 'opacity-60' : ''}`}>
+              <div className={`p-4 rounded-full mb-2 relative ${isRedeemed ? 'bg-gray-100 text-gray-400' : isLocked ? 'bg-gray-100 text-gray-400' : 'bg-purple-50 text-purple-500'}`}>
+                <FaGift className="w-8 h-8" />
+                {isLocked && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/10 rounded-full">
+                    <FaLock className="text-gray-600" />
+                  </div>
+                )}
+              </div>
+              <h3 className="font-bold text-gray-700 text-sm line-clamp-2 min-h-[2.5rem] flex items-center justify-center">
+                {reward.name}
+              </h3>
+              
+              {isRedeemed ? (
+                <button className="btn btn-sm btn-disabled w-full rounded-full bg-gray-100 text-gray-400 border-none">
+                  <FaCheckCircle className="mr-1" /> Redeemed
+                </button>
+              ) : isLocked ? (
+                <div className="w-full flex flex-col gap-1">
+                  <button className="btn btn-sm btn-disabled w-full rounded-full bg-gray-200 text-gray-500 border-none text-xs">
+                    <FaLock className="mr-1 text-[10px]" /> Locked
+                  </button>
+                  <div className="text-[10px] text-gray-500 leading-tight px-1">
+                     Do "{progress?.taskName}" {progress?.required! - progress?.current!} more times
+                  </div>
+                  <progress 
+                    className="progress progress-primary w-full h-1.5 mt-1" 
+                    value={progress?.current} 
+                    max={progress?.required}
+                  ></progress>
+                </div>
+              ) : (
+                <button 
+                  className="btn btn-sm btn-primary w-full rounded-full"
+                  onClick={() => handleBuyClick(reward.id, reward.cost_value, reward.name)}
+                  disabled={isLoading || !canAfford}
+                >
+                  Buy for {reward.cost_value} <FaGift className="ml-1" />
+                </button>
+              )}
+              
+              {isOneTime && !isRedeemed && (
+                <span className="text-[10px] text-warning font-bold uppercase tracking-wide">One-time only</span>
+              )}
+              
+              {progress && progress.isUnlocked && (
+                <span className="text-[10px] text-success font-bold uppercase tracking-wide">Unlocked!</span>
+              )}
+            </div>
+          )})}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ChildRewards;
