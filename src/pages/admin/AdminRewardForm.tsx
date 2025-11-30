@@ -164,6 +164,9 @@ const AdminRewardForm = () => {
                 min={1}
                 required={type === 'ACCUMULATIVE'}
               />
+              <label className="label">
+                 <span className="label-text-alt text-gray-500">How many times must the mission be completed?</span>
+              </label>
             </div>
           </div>
         )}

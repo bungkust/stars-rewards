@@ -43,13 +43,13 @@ const FirstTask = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-base-100 p-6">
       <div className="w-full max-w-md">
-        <h1 className="text-3xl font-bold text-primary text-center mb-2">Create First Task</h1>
-        <p className="text-gray-500 text-center mb-8">Set a simple task for {child?.name || 'your child'} to get started.</p>
+        <h1 className="text-3xl font-bold text-primary text-center mb-2">Create First Mission</h1>
+        <p className="text-gray-500 text-center mb-8">Set a simple mission for {child?.name || 'your child'} to get started.</p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           <div className="form-control w-full">
             <label className="label">
-              <span className="label-text font-bold">Task Title</span>
+              <span className="label-text font-bold">Mission Title</span>
             </label>
             <input 
               type="text" 
