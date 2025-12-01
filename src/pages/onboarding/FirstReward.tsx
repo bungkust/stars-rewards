@@ -84,7 +84,7 @@ const FirstReward = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-base-100 p-6">
+    <div className="min-h-screen flex flex-col items-center justify-center app-gradient p-6">
       <div className="w-full max-w-md">
         <h1 className="text-3xl font-bold text-primary text-center mb-2">Create First Reward</h1>
         <p className="text-gray-500 text-center mb-8">Give them something to work towards!</p>

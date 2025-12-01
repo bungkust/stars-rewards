@@ -7,7 +7,7 @@ const Welcome = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-50 p-6">
+    <div className="min-h-screen flex flex-col items-center justify-center app-gradient p-6">
       <div className="w-full max-w-md text-center space-y-8">
         
         {/* Logo / Branding */}

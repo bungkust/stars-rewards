@@ -9,6 +9,9 @@
   .pt-safe {
     padding-top: env(safe-area-inset-top);
   }
+  .app-gradient {
+    @apply bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50;
+  }
 }
 
 /* Fix date picker calendar icon color for dark/light mode consistency */

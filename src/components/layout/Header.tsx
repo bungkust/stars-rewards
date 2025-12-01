@@ -1,4 +1,4 @@
-import { IoSettingsOutline, IoLogOutOutline } from 'react-icons/io5';
+import { IoSettingsOutline, IoArrowBackOutline } from 'react-icons/io5';
 import { useAppStore } from '../../store/useAppStore';
 
 interface HeaderProps {
@@ -8,7 +8,7 @@ interface HeaderProps {
 const Header = ({ onSettingsClick }: HeaderProps) => {
   const { isAdminMode, toggleAdminMode } = useAppStore();
 
-  const handleLogout = () => {
+  const handleExitAdmin = () => {
     toggleAdminMode(false);
   };
 
@@ -22,11 +22,11 @@ const Header = ({ onSettingsClick }: HeaderProps) => {
       <div className="flex-none">
         {isAdminMode ? (
           <button 
-            className="btn btn-square btn-ghost text-error hover:bg-white/50"
-            onClick={handleLogout}
-            title="Exit Parent Mode"
+            className="btn btn-square btn-ghost text-gray-600 hover:bg-white/50"
+            onClick={handleExitAdmin}
+            title="Exit Parent Mode (Return to Child)"
           >
-            <IoLogOutOutline className="w-6 h-6" />
+            <IoArrowBackOutline className="w-6 h-6" />
           </button>
         ) : (
           <button 

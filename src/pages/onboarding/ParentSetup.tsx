@@ -37,7 +37,7 @@ const ParentSetup = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-base-100 p-6">
+    <div className="min-h-screen flex flex-col items-center justify-center app-gradient p-6">
       <div className="w-full max-w-md text-center">
         <h1 className="text-3xl font-bold text-primary mb-2">Create Account</h1>
         <p className="text-gray-500 mb-8">Secure your family's Stars Rewards.</p>

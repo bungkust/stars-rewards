@@ -27,7 +27,7 @@ const AddParent = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-base-100 p-6">
+    <div className="min-h-screen flex flex-col items-center justify-center app-gradient p-6">
       <div className="w-full max-w-md text-center">
         <H1Header className="mb-2">Add Parent Profile</H1Header>
         <p className="text-gray-500 mb-8">What should we call you?</p>
