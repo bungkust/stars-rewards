@@ -16,7 +16,7 @@ const getIconComponent = (iconId: string | undefined) => {
 };
 
 const ChildRewards = () => {
-  const { rewards, activeChildId, children, redeemReward, isLoading, transactions, childLogs, tasks } = useAppStore();
+  const { rewards, activeChildId, children, redeemReward, isLoading, transactions, childLogs, tasks, redeemedHistory } = useAppStore();
   const child = children.find(c => c.id === activeChildId);
   
   const [selectedReward, setSelectedReward] = useState<{id: string, name: string, cost: number} | null>(null);
@@ -25,6 +25,13 @@ const ChildRewards = () => {
   // Helper to check if a one-time reward has been redeemed
   const hasRedeemed = (rewardId: string) => {
     if (!activeChildId) return false;
+    
+    // Check against the full redemption history first (more reliable)
+    if (redeemedHistory?.some(h => h.child_id === activeChildId && h.reward_id === rewardId)) {
+      return true;
+    }
+    
+    // Fallback to transactions if history not yet populated (though it should be)
     return transactions.some(t => 
       t.child_id === activeChildId && 
       t.type === 'REWARD_REDEEMED' && 

@@ -23,6 +23,7 @@ interface AppState {
   pendingVerifications: VerificationRequest[]; // Tasks waiting for approval
   rewards: Reward[];
   transactions: CoinTransaction[];
+  redeemedHistory: { child_id: string; reward_id: string }[]; // Full history of redemptions for logic checks
   
   onboardingStep: OnboardingStep;
   
@@ -79,6 +80,7 @@ export const useAppStore = create<AppState>()(
       pendingVerifications: [],
       rewards: [],
       transactions: [],
+      redeemedHistory: [],
       onboardingStep: 'family-setup', 
       
       session: null,
@@ -116,13 +118,14 @@ export const useAppStore = create<AppState>()(
         try {
           const userId = session.user.id;
           // Fetch ALL data including REWARDS and TRANSACTIONS
-          const [children, tasks, verifications, rewards, transactions, logs] = await Promise.all([
+          const [children, tasks, verifications, rewards, transactions, logs, redeemedHistory] = await Promise.all([
             dataService.fetchChildren(userId),
             dataService.fetchActiveTasks(userId),
             dataService.fetchPendingVerifications(userId),
             dataService.fetchRewards(userId),
             dataService.fetchTransactions(userId),
-            dataService.fetchChildLogs(userId) 
+            dataService.fetchChildLogs(userId),
+            dataService.fetchRedeemedRewards(userId)
           ]);
 
           set({ 
@@ -131,7 +134,8 @@ export const useAppStore = create<AppState>()(
             pendingVerifications: verifications,
             rewards,
             transactions,
-            childLogs: logs
+            childLogs: logs,
+            redeemedHistory
           });
         } catch (error) {
           console.error('Error refreshing data:', error);
@@ -531,7 +535,10 @@ export const useAppStore = create<AppState>()(
             children: state.children.map(c => 
               c.id === childId ? { ...c, current_balance: (c.current_balance || 0) - cost } : c
             ),
-            // Optionally track transaction in state if needed
+            // Update local redemption history immediately
+            redeemedHistory: rewardId 
+              ? [...state.redeemedHistory, { child_id: childId, reward_id: rewardId }]
+              : state.redeemedHistory
           }));
 
           return { error: null };
@@ -596,6 +603,7 @@ export const useAppStore = create<AppState>()(
         tasks: state.tasks,
         rewards: state.rewards,
         childLogs: state.childLogs,
+        redeemedHistory: state.redeemedHistory,
       }),
     }
   )

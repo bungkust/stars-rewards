@@ -206,6 +206,31 @@ export const dataService = {
   },
 
   /**
+   * Retrieves all reward redemption history for the family.
+   * Used to check "One Time" reward status without pagination limits.
+   */
+  fetchRedeemedRewards: async (parentId: string): Promise<{ child_id: string; reward_id: string }[]> => {
+    const { data, error } = await supabase
+      .from('coin_transactions')
+      .select('child_id, reference_id')
+      .eq('parent_id', parentId)
+      .eq('type', 'REWARD_REDEEMED');
+
+    if (error) {
+      console.error('Error fetching redemptions:', error);
+      return [];
+    }
+
+    // Filter out any invalid records where reference_id might be null
+    return (data || [])
+      .filter((t: any) => t.reference_id && t.child_id)
+      .map((t: any) => ({ 
+        child_id: t.child_id, 
+        reward_id: t.reference_id 
+      }));
+  },
+
+  /**
    * Marks a task as completed by the child (creates a log entry with PENDING status).
    */
   completeTask: async (parentId: string, childId: string, taskId: string): Promise<ChildTaskLog | null> => {
