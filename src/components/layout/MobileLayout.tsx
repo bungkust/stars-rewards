@@ -14,7 +14,7 @@ const MobileLayout = ({ children }: MobileLayoutProps) => {
     <div className="min-h-screen flex flex-col app-gradient font-sans text-neutral">
       <Header onSettingsClick={() => setIsPinModalOpen(true)} />
       
-      <main className="flex-1 w-full pt-16 pb-24 px-4 overflow-y-auto scroll-smooth">
+      <main className="flex-1 w-full pt-24 pb-24 px-4 overflow-y-auto scroll-smooth">
         {children}
       </main>
 

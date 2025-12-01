@@ -4,6 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Capacitor } from '@capacitor/core';
 import { useAppStore } from './store/useAppStore';
+import { supabase } from './utils/supabase';
 import MobileLayout from './components/layout/MobileLayout';
 import ChildSelectorModal from './components/modals/ChildSelectorModal';
 import ChildDashboard from './pages/child/ChildDashboard';
@@ -29,6 +30,13 @@ import { PageTransition } from './components/design-system/Animations';
 // Wrapper to handle route transitions
 const AnimatedRoutes = ({ isAdminMode, activeChildId }: { isAdminMode: boolean, activeChildId: string | null }) => {
   const location = useLocation();
+  const { refreshData, session } = useAppStore();
+
+  useEffect(() => {
+    if (session) {
+      refreshData();
+    }
+  }, [location.pathname, session, refreshData]);
 
   return (
     <AnimatePresence mode="wait">
@@ -96,6 +104,45 @@ function App() {
       refreshData();
     }
   }, [isAuthenticated, refreshData]);
+
+  // Realtime Subscription
+  useEffect(() => {
+    if (!isAuthenticated || !session?.user) return;
+
+    const userId = session.user.id;
+
+    // Subscribe to all relevant tables for the current user (parent)
+    const channels = [
+      supabase
+        .channel('public:tasks')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks', filter: `parent_id=eq.${userId}` }, () => refreshData())
+        .subscribe(),
+      
+      supabase
+        .channel('public:rewards')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'rewards', filter: `parent_id=eq.${userId}` }, () => refreshData())
+        .subscribe(),
+
+      supabase
+        .channel('public:children')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'children', filter: `parent_id=eq.${userId}` }, () => refreshData())
+        .subscribe(),
+
+      supabase
+        .channel('public:child_tasks_log')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'child_tasks_log', filter: `parent_id=eq.${userId}` }, () => refreshData())
+        .subscribe(),
+
+      supabase
+        .channel('public:coin_transactions')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'coin_transactions', filter: `parent_id=eq.${userId}` }, () => refreshData())
+        .subscribe()
+    ];
+
+    return () => {
+      channels.forEach(channel => supabase.removeChannel(channel));
+    };
+  }, [isAuthenticated, session?.user?.id, refreshData]);
 
   const handleChildSelect = (childId: string) => {
     setActiveChild(childId);
