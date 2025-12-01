@@ -1,31 +1,24 @@
 import { useState } from 'react';
-import { FaCheckDouble, FaClock, FaCheck, FaTimes, FaEdit, FaSignOutAlt } from 'react-icons/fa';
+import { FaCheckDouble, FaClock, FaCheck, FaTimes, FaEdit } from 'react-icons/fa';
 import { useAppStore } from '../../store/useAppStore';
 import { AppCard } from '../../components/design-system/AppCard';
 import { H1Header } from '../../components/design-system/H1Header';
 import RejectionReasonModal from '../../components/modals/RejectionReasonModal';
 import VerificationSuccessModal from '../../components/modals/VerificationSuccessModal';
 import StarAdjustmentModal from '../../components/modals/StarAdjustmentModal';
-import { AlertModal } from '../../components/design-system';
 
 const AdminDashboard = () => {
-  const { pendingVerifications, verifyTask, rejectTask, manualAdjustment, children, isLoading, logout } = useAppStore();
+  const { pendingVerifications, verifyTask, rejectTask, manualAdjustment, children, isLoading } = useAppStore();
   
   const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [adjustmentModalOpen, setAdjustmentModalOpen] = useState(false);
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   
   const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
   const [selectedChild, setSelectedChild] = useState<{id: string, name: string, balance: number} | null>(null);
   const [successType, setSuccessType] = useState<'approve' | 'reject'>('approve');
 
   const verifications = pendingVerifications || [];
-
-  const handleLogout = async () => {
-    await logout();
-    // Navigate happens automatically in App.tsx based on auth state
-  };
 
   const handleApprove = async (logId: string, childId: string, rewardValue: number) => {
     const { error } = await verifyTask(logId, childId, rewardValue);
@@ -80,14 +73,7 @@ const AdminDashboard = () => {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex justify-between items-center">
-        <H1Header>Parent Dashboard</H1Header>
-        <button 
-          className="btn btn-ghost btn-circle text-gray-500"
-          onClick={() => setShowLogoutConfirm(true)}
-          title="Log Out"
-        >
-          <FaSignOutAlt className="w-6 h-6" />
-        </button>
+        <H1Header>Homepage</H1Header>
       </div>
 
       {/* Children Overview Section */}
@@ -149,16 +135,6 @@ const AdminDashboard = () => {
         />
       )}
       
-      <AlertModal
-        isOpen={showLogoutConfirm}
-        title="Log Out"
-        message="Are you sure you want to sign out?"
-        confirmText="Log Out"
-        type="danger"
-        onClose={() => setShowLogoutConfirm(false)}
-        onConfirm={handleLogout}
-      />
-
       <section>
         <h2 className="text-lg font-bold text-gray-700 mb-3">Verification Center</h2>
         {verifications.length === 0 ? (

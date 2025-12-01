@@ -14,6 +14,7 @@ interface AppState {
   adminPin: string | null;
   adminName?: string; 
   familyName?: string; 
+  notificationsEnabled: boolean;
   
   childLogs: ChildTaskLog[]; // Store logs for the active child
   
@@ -66,6 +67,7 @@ interface AppState {
   redeemReward: (childId: string, cost: number, rewardId: string) => Promise<{ error: any }>;
   manualAdjustment: (childId: string, amount: number, reason?: string) => Promise<{ error: any }>;
   logout: () => Promise<void>;
+  setNotificationsEnabled: (value: boolean) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -74,6 +76,7 @@ export const useAppStore = create<AppState>()(
       activeChildId: null,
       isAdminMode: false,
       adminPin: null, 
+      notificationsEnabled: true,
       children: [],
       tasks: [],
       childLogs: [],
@@ -109,6 +112,7 @@ export const useAppStore = create<AppState>()(
       setAdminPin: (pin) => set({ adminPin: pin }),
       setAdminName: (name) => set({ adminName: name }),
       setFamilyName: (name) => set({ familyName: name }),
+      setNotificationsEnabled: (value) => set({ notificationsEnabled: value }),
 
       refreshData: async () => {
         const { session } = get();

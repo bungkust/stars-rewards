@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaPlus, FaGift, FaMinusCircle, FaPencilAlt, FaTrash, FaGamepad, FaIceCream, FaTicketAlt } from 'react-icons/fa';
+import { FaPlus, FaGift, FaPencilAlt, FaTrash, FaGamepad, FaIceCream, FaTicketAlt } from 'react-icons/fa';
 import { WarningCTAButton } from '../../components/design-system/WarningCTAButton';
 import { AppCard } from '../../components/design-system/AppCard';
 import { H1Header } from '../../components/design-system/H1Header';
@@ -56,20 +56,6 @@ const AdminRewards = () => {
       <div className="flex justify-between items-center">
         <H1Header>Manage Rewards</H1Header>
       </div>
-
-      {/* Manual Redemption Card */}
-      <AppCard className="bg-gradient-to-r from-primary/10 to-base-100 border border-primary/20">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-bold text-primary">Manual Redemption</h3>
-            <p className="text-xs text-gray-500">Deduct stars manually</p>
-          </div>
-          <button className="btn btn-sm btn-outline btn-primary gap-2">
-            <FaMinusCircle />
-            Redeem
-          </button>
-        </div>
-      </AppCard>
 
       <div className="grid gap-4">
         {rewards.length === 0 ? (

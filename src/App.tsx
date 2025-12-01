@@ -7,6 +7,7 @@ import { useAppStore } from './store/useAppStore';
 import { supabase } from './utils/supabase';
 import MobileLayout from './components/layout/MobileLayout';
 import ChildSelectorModal from './components/modals/ChildSelectorModal';
+import Settings from './pages/settings/Settings';
 import ChildDashboard from './pages/child/ChildDashboard';
 import ChildTasks from './pages/child/ChildTasks';
 import ChildRewards from './pages/child/ChildRewards';
@@ -52,6 +53,7 @@ const AnimatedRoutes = ({ isAdminMode, activeChildId }: { isAdminMode: boolean, 
             <Route path="/admin/rewards/new" element={<PageTransition><AdminRewardForm /></PageTransition>} />
             <Route path="/admin/rewards/:id/edit" element={<PageTransition><AdminRewardForm /></PageTransition>} />
             <Route path="/admin/stats" element={<PageTransition><AdminStats /></PageTransition>} />
+            <Route path="/settings" element={<PageTransition><Settings /></PageTransition>} />
             
             {/* Redirect root to admin dashboard if in admin mode */}
             <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
@@ -64,6 +66,7 @@ const AnimatedRoutes = ({ isAdminMode, activeChildId }: { isAdminMode: boolean, 
             <Route path="/tasks" element={<PageTransition><ChildTasks /></PageTransition>} />
             <Route path="/rewards" element={<PageTransition><ChildRewards /></PageTransition>} />
             <Route path="/stats" element={<PageTransition><ChildStats /></PageTransition>} />
+            <Route path="/settings" element={<PageTransition><Settings /></PageTransition>} />
             
             {/* Protect admin routes from non-admin users */}
             <Route path="/admin/*" element={<Navigate to="/" replace />} />

@@ -10,7 +10,7 @@ const BottomNav = () => {
 
   const navItems = isAdminMode 
     ? [
-        { id: 'admin-home', icon: FaHome, label: 'Panel', path: '/admin/dashboard' },
+        { id: 'admin-home', icon: FaHome, label: 'Home', path: '/admin/dashboard' },
         { id: 'admin-tasks', icon: FaTasks, label: 'Missions', path: '/admin/tasks' },
         { id: 'admin-rewards', icon: IoGiftOutline, label: 'Rewards', path: '/admin/rewards' },
         { id: 'admin-stats', icon: FaChartLine, label: 'Stats', path: '/admin/stats' },
@@ -26,10 +26,11 @@ const BottomNav = () => {
     <div className="btm-nav bg-white border-t border-base-200 shadow-lg z-50 pb-safe">
       {navItems.map((item) => {
         const isActive = location.pathname === item.path;
+        const activeColor = isAdminMode ? 'text-emerald-600' : 'text-primary';
         return (
           <button
             key={item.id}
-            className={`${isActive ? 'active text-primary' : 'text-gray-400'} transition-colors duration-200`}
+            className={`${isActive ? `active ${activeColor}` : 'text-gray-400'} transition-colors duration-200`}
             onClick={() => navigate(item.path)}
           >
             <item.icon className="h-6 w-6" />

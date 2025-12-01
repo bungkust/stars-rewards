@@ -43,6 +43,18 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            def appName = "StarsRewards"
+            def platform = "Android"
+            def buildType = variant.buildType.name
+            def version = variant.versionName
+            def dateTime = new Date().format("yyyyMMdd-HHmm")
+
+            outputFileName = "${appName}-${platform}-${buildType}-${version}-${dateTime}.apk"
+        }
+    }
 }
 
 repositories {
