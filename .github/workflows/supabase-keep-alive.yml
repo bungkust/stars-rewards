@@ -1,0 +1,48 @@
+name: Prevent Supabase Pause
+
+on:
+  schedule:
+    # Run every day at 8:00 AM UTC
+    # Supabase pauses projects after 7 days of inactivity.
+    # Daily runs ensure the project remains active.
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "Error: SUPABASE_URL secret is not set"
+            exit 1
+          fi
+          if [ -z "$SUPABASE_KEY" ]; then
+            echo "Error: SUPABASE_ANON_KEY secret is not set"
+            exit 1
+          fi
+
+          echo "Pinging Supabase project at $SUPABASE_URL..."
+          
+          # Perform a simple GET request to the REST API root
+          # This generates API traffic which prevents the project from pausing
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY" \
+            "$SUPABASE_URL/rest/v1/")
+            
+          echo "Response Status: $HTTP_CODE"
+          
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 500 ]; then
+            echo "Success: Supabase project pinged successfully."
+          else
+            echo "Warning: Received status $HTTP_CODE. Project might be paused or unreachable."
+            # We don't exit with error to avoid failing the workflow on temporary issues,
+            # but you can uncomment the next line if you want email notifications on failure.
+            # exit 1
+          fi
+
