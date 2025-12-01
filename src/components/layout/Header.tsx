@@ -13,7 +13,7 @@ const Header = ({ onSettingsClick }: HeaderProps) => {
   };
 
   return (
-    <div className="navbar fixed top-0 left-0 right-0 z-50 px-4 h-16 bg-gradient-to-b from-blue-100 to-white/90 backdrop-blur-sm shadow-sm">
+    <div className="navbar fixed top-0 left-0 right-0 z-50 px-4 h-16 bg-gradient-to-b from-blue-100 to-white/90 backdrop-blur-sm shadow-sm pt-safe">
       <div className="flex-1">
         <a className="btn btn-ghost text-xl text-primary font-bold hover:bg-transparent">
           {isAdminMode ? 'Parent Dashboard' : 'Stars Rewards'}

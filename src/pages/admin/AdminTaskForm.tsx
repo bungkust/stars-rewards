@@ -48,7 +48,7 @@ const AdminTaskForm = () => {
     const taskData = {
       name: title,
       reward_value: Number(reward),
-      type: repetition === 'Once' ? 'ONE_TIME' : 'RECURRING' as const,
+      type: (repetition === 'Once' ? 'ONE_TIME' : 'RECURRING') as "ONE_TIME" | "RECURRING",
       recurrence_rule: repetition,
       is_active: isActive
     };

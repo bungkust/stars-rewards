@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { Capacitor } from '@capacitor/core';
 import { useAppStore } from './store/useAppStore';
 import MobileLayout from './components/layout/MobileLayout';
 import ChildSelectorModal from './components/modals/ChildSelectorModal';
@@ -78,6 +80,13 @@ function App() {
       setIsChildSelectorOpen(true);
     } else {
       setIsChildSelectorOpen(false);
+    }
+
+    // Configure StatusBar
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
+      StatusBar.setBackgroundColor({ color: '#F0F9FF' }).catch(() => {}); // Light blue to match app theme
+      StatusBar.setStyle({ style: Style.Light }).catch(() => {}); // Dark icons for light background
     }
   }, [activeChildId, isAdminMode, needsOnboarding, isAuthenticated]);
 

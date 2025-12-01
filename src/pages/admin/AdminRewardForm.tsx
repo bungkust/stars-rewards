@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
-import { FaArrowLeft, FaGamepad, FaIceCream, FaTicketAlt, FaGift, FaTrash, FaChevronDown, FaCheck } from 'react-icons/fa';
+import { FaArrowLeft, FaGamepad, FaIceCream, FaTicketAlt, FaGift, FaChevronDown, FaCheck } from 'react-icons/fa';
 import { AlertModal } from '../../components/design-system';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
 
@@ -15,7 +15,7 @@ const ICONS = [
 const AdminRewardForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { addReward, updateReward, deleteReward, tasks, rewards } = useAppStore();
+  const { addReward, updateReward, tasks, rewards } = useAppStore();
   
   const [name, setName] = useState('');
   const [cost, setCost] = useState(10);

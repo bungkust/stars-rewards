@@ -21,6 +21,7 @@
     "@capacitor/cli": "^7.4.4",
     "@capacitor/core": "^7.4.4",
     "@capacitor/local-notifications": "^7.0.3",
+    "@capacitor/status-bar": "^7.0.3",
     "@headlessui/react": "^2.2.9",
     "@supabase/supabase-js": "^2.86.0",
     "daisyui": "^4.12.23",

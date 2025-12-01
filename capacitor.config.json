@@ -1,0 +1,10 @@
+{
+  "appId": "com.myfamily.starsrewards",
+  "appName": "Stars Rewards",
+  "webDir": "dist",
+  "plugins": {
+    "StatusBar": {
+      "overlaysWebView": false
+    }
+  }
+}
