@@ -23,14 +23,15 @@ const BottomNav = () => {
       ];
 
   return (
-    <div className="btm-nav bg-white border-t border-base-200 shadow-lg z-50 pb-safe">
+    <div className="btm-nav bg-white border-t border-base-200 shadow-lg z-50 pb-safe py-2">
       {navItems.map((item) => {
         const isActive = location.pathname === item.path;
         const activeColor = isAdminMode ? 'text-emerald-600' : 'text-primary';
+        const stateClasses = isActive ? `${activeColor} font-semibold` : 'text-gray-400';
         return (
           <button
             key={item.id}
-            className={`${isActive ? `active ${activeColor}` : 'text-gray-400'} transition-colors duration-200`}
+            className={`transition-colors duration-200 flex flex-col items-center gap-1 ${stateClasses}`}
             onClick={() => navigate(item.path)}
           >
             <item.icon className="h-6 w-6" />

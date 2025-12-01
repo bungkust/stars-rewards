@@ -166,7 +166,7 @@ const ChildStats = () => {
 
         <div className="mt-6">
           {hasTransactions ? (
-            <div className="h-56">
+            <div className="h-56 w-full min-w-0">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 10, right: 16, left: -10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.15} />
