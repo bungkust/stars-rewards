@@ -1,5 +1,5 @@
 import { supabase } from '../utils/supabase';
-import type { Child, Task, Reward, VerificationRequest, CoinTransaction } from '../types';
+import type { Child, Task, Reward, VerificationRequest, CoinTransaction, ChildTaskLog } from '../types';
 
 export const dataService = {
   /**
@@ -26,8 +26,8 @@ export const dataService = {
     const { data, error } = await supabase
       .from('tasks')
       .select('*')
-      .eq('parent_id', parentId);
-      // .eq('is_active', true); // Uncomment if is_active exists
+      .eq('parent_id', parentId)
+      .eq('is_active', true); // Filter by is_active
 
     if (error) {
       console.error('Error fetching tasks:', error);
@@ -35,6 +35,58 @@ export const dataService = {
     }
 
     return data as Task[];
+  },
+
+  /**
+   * Updates an existing task template.
+   */
+  updateTask: async (taskId: string, updates: Partial<Task>): Promise<Task | null> => {
+    const { data, error } = await supabase
+      .from('tasks')
+      .update(updates)
+      .eq('id', taskId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating task:', error);
+      return null;
+    }
+    return data as Task;
+  },
+
+  /**
+   * Updates an existing reward.
+   */
+  updateReward: async (rewardId: string, updates: Partial<Reward>): Promise<Reward | null> => {
+    const { data, error } = await supabase
+      .from('rewards')
+      .update(updates)
+      .eq('id', rewardId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating reward:', error);
+      return null;
+    }
+    return data as Reward;
+  },
+
+  /**
+   * Deletes a reward.
+   */
+  deleteReward: async (rewardId: string): Promise<boolean> => {
+    const { error } = await supabase
+      .from('rewards')
+      .delete()
+      .eq('id', rewardId);
+    
+    if (error) {
+      console.error('Error deleting reward:', error);
+      return false;
+    }
+    return true;
   },
 
   /**

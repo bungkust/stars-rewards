@@ -23,6 +23,7 @@ export interface Task {
   type: 'ONE_TIME' | 'RECURRING';
   recurrence_rule?: string; // 'Daily', 'Weekly', or iCal string
   is_active?: boolean; // Assumed flag for active templates
+  created_at?: string;
 }
 
 export interface Reward {

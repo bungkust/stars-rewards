@@ -32,7 +32,8 @@ const FirstReward = () => {
     const { error: dbError } = await addReward({
       name: name.trim(),
       cost_value: Number(cost),
-      category: selectedIcon
+      category: selectedIcon,
+      type: 'ONE_TIME'
     });
 
     if (dbError) {

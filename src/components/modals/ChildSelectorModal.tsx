@@ -53,14 +53,14 @@ const ChildSelectorModal = ({ isOpen, onSelect }: ChildSelectorModalProps) => {
                     >
                       <div className="avatar mb-4">
                         <div className="w-24 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 group-hover:scale-110 transition-transform">
-                          <img src={child.avatar} alt={child.name} />
+                          <img src={child.avatar_url} alt={child.name} />
                         </div>
                       </div>
                       <span className="text-xl font-bold text-gray-700 group-hover:text-primary">
                         {child.name}
                       </span>
                       <span className="text-sm text-gray-500 mt-1">
-                        {child.balance} Stars
+                        {child.current_balance} Stars
                       </span>
                     </button>
                   ))}

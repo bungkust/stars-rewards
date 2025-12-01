@@ -1,8 +1,19 @@
 import { useState } from 'react';
-import { FaGift, FaCheckCircle, FaLock } from 'react-icons/fa';
+import { FaGift, FaCheckCircle, FaLock, FaGamepad, FaIceCream, FaTicketAlt } from 'react-icons/fa';
 import { useAppStore } from '../../store/useAppStore';
 import RewardConfirmationModal from '../../components/modals/RewardConfirmationModal';
 import RewardRedemptionSuccessModal from '../../components/modals/RewardRedemptionSuccessModal';
+
+// Helper function to get icon component
+const getIconComponent = (iconId: string | undefined) => {
+  switch (iconId) {
+    case 'game': return FaGamepad;
+    case 'treat': return FaIceCream;
+    case 'event': return FaTicketAlt;
+    case 'gift': 
+    default: return FaGift;
+  }
+};
 
 const ChildRewards = () => {
   const { rewards, activeChildId, children, redeemReward, isLoading, transactions, childLogs, tasks } = useAppStore();
@@ -99,11 +110,13 @@ const ChildRewards = () => {
             
             const progress = getAccumulativeProgress(reward);
             const isLocked = progress && !progress.isUnlocked;
+            
+            const IconComponent = getIconComponent(reward.category);
 
             return (
             <div key={reward.id} className={`card bg-white shadow-sm rounded-xl p-4 flex flex-col items-center text-center gap-2 ${isRedeemed ? 'opacity-60' : ''}`}>
-              <div className={`p-4 rounded-full mb-2 relative ${isRedeemed ? 'bg-gray-100 text-gray-400' : isLocked ? 'bg-gray-100 text-gray-400' : 'bg-purple-50 text-purple-500'}`}>
-                <FaGift className="w-8 h-8" />
+              <div className={`p-4 rounded-full mb-2 relative ${isRedeemed ? 'bg-gray-100 text-gray-400' : isLocked ? 'bg-gray-100 text-gray-400' : 'bg-blue-50 text-blue-500'}`}>
+                <IconComponent className="w-8 h-8" />
                 {isLocked && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/10 rounded-full">
                     <FaLock className="text-gray-600" />

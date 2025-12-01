@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "copy-apk": "mkdir -p /Users/ruangguru/Documents/Bungkuss/android-build && cp android/app/build/outputs/apk/debug/app-debug.apk /Users/ruangguru/Documents/Bungkuss/android-build/stars-rewards-debug.apk",
+    "build-android": "cd android && ./gradlew assembleDebug && cd .. && npm run copy-apk"
+  }
+}

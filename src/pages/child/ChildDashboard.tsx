@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { FaStar, FaCheckCircle, FaCamera, FaTimesCircle, FaHourglassHalf } from 'react-icons/fa';
 import AvatarSelectionModal from '../../components/modals/AvatarSelectionModal';
@@ -8,7 +8,35 @@ import TaskRejectionDetailsModal from '../../components/modals/TaskRejectionDeta
 const ChildDashboard = () => {
   const { activeChildId, children, getTasksByChildId, updateChildAvatar, completeTask, isLoading, childLogs } = useAppStore();
   const child = children.find(c => c.id === activeChildId);
-  const tasks = activeChildId ? getTasksByChildId(activeChildId) : [];
+  const allTasks = activeChildId ? getTasksByChildId(activeChildId) : [];
+
+  // Filter for "Today" and Sort by Newest
+  const tasks = allTasks.filter(task => {
+    if (!task.is_active) return false;
+    
+    // Always show Daily tasks
+    if (task.recurrence_rule === 'Daily') return true;
+
+    // Check recurrence date logic
+    if (!task.created_at) return true; // Fallback if missing date, show it
+    const created = new Date(task.created_at);
+    const today = new Date();
+
+    if (task.recurrence_rule === 'Weekly') {
+      return created.getDay() === today.getDay();
+    }
+    
+    if (task.recurrence_rule === 'Monthly') {
+      return created.getDate() === today.getDate();
+    }
+    
+    // 'Once' or default: Show only if created today
+    return created.toDateString() === today.toDateString();
+  }).sort((a, b) => {
+    const dateA = new Date(a.created_at || 0).getTime();
+    const dateB = new Date(b.created_at || 0).getTime();
+    return dateB - dateA; // Descending
+  });
   
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);

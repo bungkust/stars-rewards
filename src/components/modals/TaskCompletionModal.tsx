@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaStar, FaCheckCircle } from 'react-icons/fa';
+import { FaStar } from 'react-icons/fa';
 import { PrimaryButton } from '../design-system/PrimaryButton';
 
 interface TaskCompletionModalProps {

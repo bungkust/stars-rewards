@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../utils/supabase';
-import type { Profile, Child, Task, Reward, VerificationRequest, CoinTransaction } from '../types';
+import type { Profile, Child, Task, Reward, VerificationRequest, CoinTransaction, ChildTaskLog } from '../types';
 import { dataService } from '../services/dataService';
 
 export type OnboardingStep = 'family-setup' | 'parent-setup' | 'add-child' | 'first-task' | 'first-reward' | 'completed';
@@ -44,7 +44,10 @@ interface AppState {
   getTasksByChildId: (childId: string) => Task[];
   addChild: (child: Omit<Child, 'id' | 'parent_id' | 'balance' | 'current_balance'>) => Promise<{ error: any }>;
   addTask: (task: Omit<Task, 'id' | 'parent_id' | 'created_at'>) => Promise<{ error: any }>;
+  updateTask: (taskId: string, updates: Partial<Task>) => Promise<{ error: any }>;
   addReward: (reward: Omit<Reward, 'id' | 'parent_id'>) => Promise<{ error: any }>;
+  updateReward: (rewardId: string, updates: Partial<Reward>) => Promise<{ error: any }>;
+  deleteReward: (rewardId: string) => Promise<{ error: any }>;
   
   setOnboardingStep: (step: OnboardingStep) => void;
   
@@ -137,7 +140,7 @@ export const useAppStore = create<AppState>()(
         }
       },
       
-      getTasksByChildId: (childId) => {
+      getTasksByChildId: (_childId) => {
         return get().tasks; 
       },
 
@@ -211,7 +214,8 @@ export const useAppStore = create<AppState>()(
             reward_value: data.reward_value,
             type: data.type,
             recurrence_rule: data.recurrence_rule,
-            is_active: data.is_active
+            is_active: data.is_active,
+            created_at: data.created_at
           };
 
           set((state) => ({ 
@@ -221,6 +225,26 @@ export const useAppStore = create<AppState>()(
           return { error: null };
         } catch (error) {
           console.error('Error adding task:', error);
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      updateTask: async (taskId, updates) => {
+        set({ isLoading: true });
+        try {
+          const updatedTask = await dataService.updateTask(taskId, updates);
+          
+          if (!updatedTask) throw new Error('Failed to update task');
+
+          set((state) => ({
+            tasks: state.tasks.map(t => t.id === taskId ? updatedTask : t)
+          }));
+
+          return { error: null };
+        } catch (error) {
+          console.error('Error updating task:', error);
           return { error };
         } finally {
           set({ isLoading: false });
@@ -273,6 +297,46 @@ export const useAppStore = create<AppState>()(
         }
       },
 
+      updateReward: async (rewardId, updates) => {
+        set({ isLoading: true });
+        try {
+          const updatedReward = await dataService.updateReward(rewardId, updates);
+          
+          if (!updatedReward) throw new Error('Failed to update reward');
+
+          set((state) => ({
+            rewards: state.rewards.map(r => r.id === rewardId ? updatedReward : r)
+          }));
+
+          return { error: null };
+        } catch (error) {
+          console.error('Error updating reward:', error);
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      deleteReward: async (rewardId) => {
+        set({ isLoading: true });
+        try {
+          const success = await dataService.deleteReward(rewardId);
+          
+          if (!success) throw new Error('Failed to delete reward');
+
+          set((state) => ({
+            rewards: state.rewards.filter(r => r.id !== rewardId)
+          }));
+
+          return { error: null };
+        } catch (error) {
+          console.error('Error deleting reward:', error);
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
       setOnboardingStep: (step) => set({ onboardingStep: step }),
 
       setSession: (session) => set({ session }),
@@ -317,7 +381,7 @@ export const useAppStore = create<AppState>()(
 
           if (data.session) {
             set({ session: data.session });
-            const profile = await get().fetchUserProfile(data.session.user.id);
+            await get().fetchUserProfile(data.session.user.id);
           }
           return { error: null };
         } catch (error) {

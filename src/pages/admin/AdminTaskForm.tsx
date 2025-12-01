@@ -1,48 +1,78 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
-import { FaArrowLeft } from 'react-icons/fa';
+import { FaArrowLeft, FaTrash } from 'react-icons/fa';
+import { AlertModal } from '../../components/design-system';
 
 const REPETITION_OPTIONS = ['Once', 'Daily', 'Weekly', 'Monthly'];
 
 const AdminTaskForm = () => {
   const navigate = useNavigate();
-  const { addTask, children } = useAppStore(); // Fixed: use addTask instead of addPendingTask
+  const { id } = useParams(); // Get task ID from URL if editing
+  const { addTask, updateTask, tasks, children } = useAppStore();
 
   const [title, setTitle] = useState('');
   const [reward, setReward] = useState(10);
   const [duration, setDuration] = useState(15);
   const [repetition, setRepetition] = useState('Once');
   const [selectedChildId, setSelectedChildId] = useState(children[0]?.id || '');
+  const [isActive, setIsActive] = useState(true);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  // Load existing task if editing
+  useEffect(() => {
+    if (id) {
+      const taskToEdit = tasks.find(t => t.id === id);
+      if (taskToEdit) {
+        setTitle(taskToEdit.name);
+        setReward(taskToEdit.reward_value);
+        setRepetition(taskToEdit.recurrence_rule || 'Once');
+        setIsActive(taskToEdit.is_active !== false);
+      }
+    }
+  }, [id, tasks]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Map local form state to Task object schema for database
-    // Note: The database schema for 'tasks' does not store 'childId' directly in the same way
-    // because 'tasks' are templates. However, if the intention is to assign it, we might need
-    // a separate assignment or just create the template. 
-    // The current 'addTask' in store calls Supabase 'tasks' table which has parent_id.
-    // For now, we will create the task template.
-    
-    await addTask({
+    const taskData = {
       name: title,
       reward_value: Number(reward),
-      type: repetition === 'Once' ? 'ONE_TIME' : 'RECURRING',
+      type: repetition === 'Once' ? 'ONE_TIME' : 'RECURRING' as const,
       recurrence_rule: repetition,
-      is_active: true
-    });
+      is_active: isActive
+    };
+
+    if (id) {
+      await updateTask(id, taskData);
+    } else {
+      await addTask(taskData);
+    }
     
     navigate('/admin/tasks');
   };
 
+  const handleDelete = async () => {
+    if (id) {
+      await updateTask(id, { is_active: false });
+      navigate('/admin/tasks');
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6 pb-24">
+      <div className="flex items-center justify-between">
       <div className="flex items-center gap-4">
         <button onClick={() => navigate(-1)} className="btn btn-circle btn-ghost btn-sm">
           <FaArrowLeft />
         </button>
-        <h2 className="text-2xl font-bold text-gray-800">New Mission</h2>
+          <h2 className="text-2xl font-bold text-gray-800">{id ? 'Edit Mission' : 'New Mission'}</h2>
+        </div>
+        {id && (
+          <button onClick={() => setIsDeleteModalOpen(true)} className="btn btn-ghost btn-circle text-error">
+            <FaTrash />
+          </button>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
@@ -123,9 +153,19 @@ const AdminTaskForm = () => {
         </div>
 
         <button type="submit" className="btn btn-primary rounded-xl w-full mt-4 text-white font-bold text-lg shadow-md">
-          Save Mission
+          {id ? 'Update Mission' : 'Save Mission'}
         </button>
       </form>
+
+      <AlertModal
+        isOpen={isDeleteModalOpen}
+        title="Delete Mission"
+        message="Are you sure you want to delete (archive) this mission?"
+        confirmText="Delete"
+        type="danger"
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 };

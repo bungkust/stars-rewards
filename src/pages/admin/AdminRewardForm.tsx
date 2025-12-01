@@ -1,7 +1,9 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
-import { FaArrowLeft, FaGamepad, FaIceCream, FaTicketAlt, FaGift } from 'react-icons/fa';
+import { FaArrowLeft, FaGamepad, FaIceCream, FaTicketAlt, FaGift, FaTrash, FaChevronDown, FaCheck } from 'react-icons/fa';
+import { AlertModal } from '../../components/design-system';
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
 
 const ICONS = [
   { id: 'game', icon: FaGamepad, label: 'Game' },
@@ -12,7 +14,8 @@ const ICONS = [
 
 const AdminRewardForm = () => {
   const navigate = useNavigate();
-  const { addReward, tasks } = useAppStore();
+  const { id } = useParams();
+  const { addReward, updateReward, deleteReward, tasks, rewards } = useAppStore();
   
   const [name, setName] = useState('');
   const [cost, setCost] = useState(10);
@@ -20,6 +23,22 @@ const AdminRewardForm = () => {
   const [type, setType] = useState<'ONE_TIME' | 'UNLIMITED' | 'ACCUMULATIVE'>('UNLIMITED');
   const [requiredTaskId, setRequiredTaskId] = useState('');
   const [requiredTaskCount, setRequiredTaskCount] = useState(1);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  // Load existing reward if editing
+  useEffect(() => {
+    if (id) {
+      const rewardToEdit = rewards.find(r => r.id === id);
+      if (rewardToEdit) {
+        setName(rewardToEdit.name);
+        setCost(rewardToEdit.cost_value);
+        setSelectedIcon(rewardToEdit.category || ICONS[0].id);
+        setType(rewardToEdit.type as any);
+        if (rewardToEdit.required_task_id) setRequiredTaskId(rewardToEdit.required_task_id);
+        if (rewardToEdit.required_task_count) setRequiredTaskCount(rewardToEdit.required_task_count);
+      }
+    }
+  }, [id, rewards]);
 
   const handleCostAdjust = (amount: number) => {
     setCost(Math.max(0, cost + amount)); // Allow 0 cost for accumulative rewards if desired
@@ -28,25 +47,40 @@ const AdminRewardForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    await addReward({
+    const rewardData = {
       name,
       cost_value: Number(cost),
       category: selectedIcon,
       type,
       required_task_id: type === 'ACCUMULATIVE' ? requiredTaskId : undefined,
       required_task_count: type === 'ACCUMULATIVE' ? Number(requiredTaskCount) : undefined,
-    });
+    };
+
+    if (id) {
+      await updateReward(id, rewardData);
+    } else {
+      await addReward(rewardData);
+    }
     
     navigate('/admin/rewards');
   };
 
+  const handleDelete = async () => {
+    // Currently not implementing hard delete, maybe just visual removal or soft delete if backend supported it.
+    // For now, skipping delete or we can implement it in dataService if requested.
+    // Assuming "Edit" is the main request.
+    alert("Delete functionality not yet implemented.");
+  };
+
   return (
     <div className="flex flex-col gap-6 pb-24">
-      <div className="flex items-center gap-4">
-        <button onClick={() => navigate(-1)} className="btn btn-circle btn-ghost btn-sm">
-          <FaArrowLeft />
-        </button>
-        <h2 className="text-2xl font-bold text-gray-800">New Reward</h2>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button onClick={() => navigate(-1)} className="btn btn-circle btn-ghost btn-sm">
+            <FaArrowLeft />
+          </button>
+          <h2 className="text-2xl font-bold text-gray-800">{id ? 'Edit Reward' : 'New Reward'}</h2>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
@@ -139,17 +173,45 @@ const AdminRewardForm = () => {
               <label className="label">
                 <span className="label-text font-bold">Required Mission</span>
               </label>
-              <select 
-                className="select select-bordered w-full rounded-xl"
-                value={requiredTaskId}
-                onChange={(e) => setRequiredTaskId(e.target.value)}
-                required={type === 'ACCUMULATIVE'}
-              >
-                <option value="" disabled>Select a mission...</option>
-                {tasks.map(task => (
-                  <option key={task.id} value={task.id}>{task.name}</option>
-                ))}
-              </select>
+              
+              <Listbox value={requiredTaskId} onChange={setRequiredTaskId}>
+                <div className="relative">
+                  <ListboxButton className="relative w-full cursor-pointer rounded-xl bg-white py-3 pl-4 pr-10 text-left border border-gray-300 focus:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 sm:text-sm min-h-[3rem] text-base">
+                    <span className={`block truncate ${!requiredTaskId ? 'text-gray-400' : 'text-gray-900'}`}>
+                      {tasks.find(t => t.id === requiredTaskId)?.name || 'Select a mission...'}
+                    </span>
+                    <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                      <FaChevronDown className="h-3 w-3 text-gray-400" aria-hidden="true" />
+                    </span>
+                  </ListboxButton>
+                  <ListboxOptions className="absolute mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm z-50">
+                    {tasks.map((task) => (
+                      <ListboxOption
+                        key={task.id}
+                        className={({ active }) =>
+                          `relative cursor-pointer select-none py-2 pl-10 pr-4 ${
+                            active ? 'bg-blue-50 text-primary' : 'text-gray-900'
+                          }`
+                        }
+                        value={task.id}
+                      >
+                        {({ selected }) => (
+                          <>
+                            <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
+                              {task.name}
+                            </span>
+                            {selected ? (
+                              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-primary">
+                                <FaCheck className="h-3 w-3" aria-hidden="true" />
+                              </span>
+                            ) : null}
+                          </>
+                        )}
+                      </ListboxOption>
+                    ))}
+                  </ListboxOptions>
+                </div>
+              </Listbox>
             </div>
 
             <div className="form-control w-full">
@@ -191,9 +253,19 @@ const AdminRewardForm = () => {
         </div>
 
         <button type="submit" className="btn btn-primary rounded-xl w-full mt-4 text-white font-bold text-lg shadow-md">
-          Save Reward
+          {id ? 'Update Reward' : 'Save Reward'}
         </button>
       </form>
+
+      <AlertModal
+        isOpen={isDeleteModalOpen}
+        title="Delete Reward"
+        message="Are you sure you want to delete this reward?"
+        confirmText="Delete"
+        type="danger"
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 };

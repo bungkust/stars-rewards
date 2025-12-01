@@ -1,15 +1,26 @@
 {
   "name": "stars-rewards",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "resources": "capacitor-assets generate",
+    "build:android": "npm run build && npx cap sync android && cd android && ./gradlew assembleDebug && cd .. && mkdir -p /Users/ruangguru/Documents/Bungkuss/android-build && cp android/app/build/outputs/apk/debug/app-debug.apk /Users/ruangguru/Documents/Bungkuss/android-build/stars-rewards-debug.apk && echo 'APK copied to /Users/ruangguru/Documents/Bungkuss/android-build/stars-rewards-debug.apk'",
+    "bump:major": "node scripts/bump-version.cjs major",
+    "bump:minor": "node scripts/bump-version.cjs minor",
+    "bump:patch": "node scripts/bump-version.cjs patch",
+    "bump:build": "node scripts/bump-version.cjs build"
   },
   "dependencies": {
+    "@capacitor/android": "^7.4.4",
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^7.4.4",
+    "@capacitor/core": "^7.4.4",
+    "@capacitor/local-notifications": "^7.0.3",
     "@headlessui/react": "^2.2.9",
     "@supabase/supabase-js": "^2.86.0",
     "daisyui": "^4.12.23",

@@ -1,5 +1,5 @@
 import { useAppStore } from '../../store/useAppStore';
-import { FaTasks, FaStar, FaClock } from 'react-icons/fa';
+import { FaTasks, FaStar } from 'react-icons/fa';
 
 const ChildTasks = () => {
   const { activeChildId, getTasksByChildId } = useAppStore();

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAppStore } from './store/useAppStore';
 import MobileLayout from './components/layout/MobileLayout';
 import ChildSelectorModal from './components/modals/ChildSelectorModal';
@@ -21,10 +21,9 @@ import AddParent from './pages/onboarding/AddParent';
 import AddChild from './pages/onboarding/AddChild';
 import FirstTask from './pages/onboarding/FirstTask';
 import FirstReward from './pages/onboarding/FirstReward';
-import PlaceholderPage from './components/layout/PlaceholderPage';
 
 function App() {
-  const { activeChildId, setActiveChild, isAdminMode, adminPin, onboardingStep, session, refreshData } = useAppStore();
+  const { activeChildId, setActiveChild, isAdminMode, onboardingStep, session, refreshData } = useAppStore();
   const [isChildSelectorOpen, setIsChildSelectorOpen] = useState(false);
 
   const isAuthenticated = !!session;
@@ -97,8 +96,10 @@ function App() {
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/tasks" element={<AdminTasks />} />
               <Route path="/admin/tasks/new" element={<AdminTaskForm />} />
+              <Route path="/admin/tasks/:id/edit" element={<AdminTaskForm />} />
               <Route path="/admin/rewards" element={<AdminRewards />} />
               <Route path="/admin/rewards/new" element={<AdminRewardForm />} />
+              <Route path="/admin/rewards/:id/edit" element={<AdminRewardForm />} />
               <Route path="/admin/stats" element={<AdminStats />} />
               
               {/* Redirect root to admin dashboard if in admin mode */}

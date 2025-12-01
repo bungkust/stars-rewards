@@ -58,8 +58,6 @@ const ChildStats = () => {
     .filter(t => t.child_id === child.id && t.amount < 0)
     .reduce((acc, t) => acc + Math.abs(t.amount), 0);
 
-  const net = earned - spent;
-
   return (
     <div className="flex flex-col gap-6">
       <H1Header>My Stats</H1Header>
