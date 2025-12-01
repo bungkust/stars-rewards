@@ -134,8 +134,14 @@ const ChildStats = () => {
                     <span className="font-bold text-gray-700 text-sm">{details.name}</span>
                     <span className="text-xs text-gray-400">{formatDate(t.created_at)}</span>
                   </div>
-                  <span className={`font-bold ${t.amount > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    {t.amount > 0 ? '+' : ''}{t.amount}
+                  <span className={`font-bold ${t.amount > 0 ? 'text-green-500' : t.amount < 0 ? 'text-red-500' : 'text-gray-500'}`}>
+                    {t.amount !== 0 ? (
+                      <>{t.amount > 0 ? '+' : ''}{t.amount}</>
+                    ) : (
+                      <span className="text-xs uppercase">
+                        {t.type === 'TASK_VERIFIED' ? 'Done' : t.type === 'REWARD_REDEEMED' ? 'Redeemed' : '-'}
+                      </span>
+                    )}
                   </span>
                 </div>
               );

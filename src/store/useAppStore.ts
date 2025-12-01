@@ -150,28 +150,9 @@ export const useAppStore = create<AppState>()(
           const { session } = get();
           if (!session?.user) throw new Error('No active session');
 
-          const { data, error } = await supabase
-            .from('children')
-            .insert({
-              parent_id: session.user.id,
-              name: child.name,
-              birth_date: child.birth_date,
-              avatar_url: child.avatar_url, 
-              current_balance: 0
-            })
-            .select()
-            .single();
-
-          if (error) throw error;
-
-          const newChild: Child = {
-            id: data.id,
-            parent_id: data.parent_id,
-            name: data.name,
-            birth_date: data.birth_date,
-            current_balance: data.current_balance,
-            avatar_url: data.avatar_url,
-          };
+          const newChild = await dataService.addChild(session.user.id, child);
+          
+          if (!newChild) throw new Error('Failed to add child');
 
           set((state) => ({ 
             children: [...state.children, newChild] 
@@ -192,31 +173,9 @@ export const useAppStore = create<AppState>()(
           const { session } = get();
           if (!session?.user) throw new Error('No active session');
 
-          const { data, error } = await supabase
-            .from('tasks')
-            .insert({
-              parent_id: session.user.id,
-              name: task.name,
-              reward_value: task.reward_value,
-              type: task.type,
-              recurrence_rule: task.recurrence_rule,
-              is_active: task.is_active !== undefined ? task.is_active : true
-            })
-            .select()
-            .single();
+          const newTask = await dataService.addTask(session.user.id, task);
 
-          if (error) throw error;
-
-          const newTask: Task = {
-            id: data.id,
-            parent_id: data.parent_id,
-            name: data.name,
-            reward_value: data.reward_value,
-            type: data.type,
-            recurrence_rule: data.recurrence_rule,
-            is_active: data.is_active,
-            created_at: data.created_at
-          };
+          if (!newTask) throw new Error('Failed to add task');
 
           set((state) => ({ 
             tasks: [...state.tasks, newTask] 
@@ -257,32 +216,9 @@ export const useAppStore = create<AppState>()(
           const { session } = get();
           if (!session?.user) throw new Error('No active session');
 
-          const { data, error } = await supabase
-            .from('rewards')
-            .insert({
-              parent_id: session.user.id,
-              name: reward.name,
-              cost_value: reward.cost_value,
-              category: reward.category,
-              type: reward.type,
-              required_task_id: reward.required_task_id,
-              required_task_count: reward.required_task_count
-            })
-            .select()
-            .single();
+          const newReward = await dataService.addReward(session.user.id, reward);
 
-          if (error) throw error;
-
-          const newReward: Reward = {
-            id: data.id,
-            parent_id: data.parent_id,
-            name: data.name,
-            cost_value: data.cost_value,
-            category: data.category,
-            type: data.type,
-            required_task_id: data.required_task_id,
-            required_task_count: data.required_task_count
-          };
+          if (!newReward) throw new Error('Failed to add reward');
 
           set((state) => ({ 
             rewards: [...state.rewards, newReward] 

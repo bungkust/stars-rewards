@@ -162,11 +162,13 @@ const ChildDashboard = () => {
                 </div>
                 <div>
                   <h4 className="font-bold text-gray-800">{task.name}</h4>
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <span className="flex items-center gap-1 text-warning font-bold">
-                      <FaStar className="w-3 h-3" /> {task.reward_value}
-                    </span>
-                  </div>
+                  {task.reward_value > 0 && (
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <span className="flex items-center gap-1 text-warning font-bold">
+                        <FaStar className="w-3 h-3" /> {task.reward_value}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
               

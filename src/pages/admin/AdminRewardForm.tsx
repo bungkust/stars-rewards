@@ -108,11 +108,14 @@ const AdminRewardForm = () => {
               className="input input-bordered flex-1 rounded-xl text-center font-bold text-lg" 
               value={cost}
               onChange={(e) => setCost(Number(e.target.value))}
-              min={1}
+              min={0}
             />
             <button type="button" onClick={() => handleCostAdjust(1)} className="btn btn-circle btn-sm bg-base-200">+1</button>
             <button type="button" onClick={() => handleCostAdjust(10)} className="btn btn-circle btn-sm bg-base-200">+10</button>
           </div>
+          <label className="label">
+             <span className="label-text-alt text-gray-500">Set to 0 for Milestone Rewards (Claimable for free once unlocked)</span>
+          </label>
         </div>
 
         <div className="form-control w-full">
@@ -158,8 +161,8 @@ const AdminRewardForm = () => {
                 onChange={() => setType('ACCUMULATIVE')} 
               />
               <div className="flex flex-col">
-                <span className="label-text font-bold">Accumulative</span>
-                <span className="text-xs text-gray-500">Unlock after completing a task multiple times</span>
+                <span className="label-text font-bold">Milestone / Accumulative</span>
+                <span className="text-xs text-gray-500">Unlock after completing specific tasks</span>
               </div>
             </label>
           </div>

@@ -3,6 +3,86 @@ import type { Child, Task, Reward, VerificationRequest, CoinTransaction, ChildTa
 
 export const dataService = {
   /**
+   * Adds a new child profile.
+   */
+  addChild: async (parentId: string, child: Omit<Child, 'id' | 'parent_id' | 'balance' | 'current_balance'>): Promise<Child | null> => {
+    const { data, error } = await supabase
+      .from('children')
+      .insert({
+        parent_id: parentId,
+        name: child.name,
+        birth_date: child.birth_date,
+        avatar_url: child.avatar_url, 
+        current_balance: 0
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error adding child:', error);
+      return null;
+    }
+
+    return {
+      id: data.id,
+      parent_id: data.parent_id,
+      name: data.name,
+      birth_date: data.birth_date,
+      current_balance: data.current_balance,
+      avatar_url: data.avatar_url,
+    } as Child;
+  },
+
+  /**
+   * Adds a new task template.
+   */
+  addTask: async (parentId: string, task: Omit<Task, 'id' | 'parent_id' | 'created_at'>): Promise<Task | null> => {
+    const { data, error } = await supabase
+      .from('tasks')
+      .insert({
+        parent_id: parentId,
+        name: task.name,
+        reward_value: task.reward_value,
+        type: task.type,
+        recurrence_rule: task.recurrence_rule,
+        is_active: task.is_active !== undefined ? task.is_active : true
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error adding task:', error);
+      return null;
+    }
+    return data as Task;
+  },
+
+  /**
+   * Adds a new reward.
+   */
+  addReward: async (parentId: string, reward: Omit<Reward, 'id' | 'parent_id'>): Promise<Reward | null> => {
+    const { data, error } = await supabase
+      .from('rewards')
+      .insert({
+        parent_id: parentId,
+        name: reward.name,
+        cost_value: reward.cost_value,
+        category: reward.category,
+        type: reward.type,
+        required_task_id: reward.required_task_id,
+        required_task_count: reward.required_task_count
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error adding reward:', error);
+      return null;
+    }
+    return data as Reward;
+  },
+
+  /**
    * Retrieves all child profiles and their current balances for a given parent.
    */
   fetchChildren: async (parentId: string): Promise<Child[]> => {

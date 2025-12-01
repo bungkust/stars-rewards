@@ -25,10 +25,11 @@ const ChildTasks = () => {
                 {/* Fixed: Use task.name instead of task.title */}
                 <h3 className="font-bold text-gray-800">{task.name}</h3>
                 <div className="flex gap-4 text-sm text-gray-500">
-                  <span className="flex items-center gap-1 text-warning font-bold">
-                    {/* Fixed: Use task.reward_value instead of task.reward */}
-                    <FaStar /> {task.reward_value}
-                  </span>
+                  {task.reward_value > 0 && (
+                    <span className="flex items-center gap-1 text-warning font-bold">
+                      <FaStar /> {task.reward_value}
+                    </span>
+                  )}
                   {/* task.duration removed as it's not in DB schema */}
                   {task.recurrence_rule && (
                     <span className="badge badge-ghost badge-sm">{task.recurrence_rule}</span>

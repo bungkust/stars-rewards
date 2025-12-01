@@ -50,6 +50,33 @@ const ChildRewards = () => {
     };
   };
 
+  // Helper to determine sorting weight
+  const getRewardSortWeight = (reward: typeof rewards[0]) => {
+    const isOneTime = reward.type === 'ONE_TIME';
+    // Milestone rewards (accumulative + cost 0) should be treated as one-time claimable
+    const isMilestone = reward.type === 'ACCUMULATIVE' && reward.cost_value === 0;
+    const redeemed = (isOneTime || isMilestone) && hasRedeemed(reward.id);
+    
+    const progress = getAccumulativeProgress(reward);
+    const isLocked = progress && !progress.isUnlocked;
+    const canAfford = (child?.current_balance || 0) >= reward.cost_value;
+
+    // 0: Available (Not Redeemed, Not Locked, Affordable)
+    if (!redeemed && !isLocked && canAfford) return 0;
+    // 1: Visible Goal (Not Redeemed, Not Locked, Too Expensive)
+    if (!redeemed && !isLocked && !canAfford) return 1;
+    // 2: Locked
+    if (isLocked) return 2;
+    // 3: Redeemed (Bottom)
+    if (redeemed) return 3;
+    
+    return 4; // Fallback
+  };
+
+  const sortedRewards = [...rewards].sort((a, b) => {
+    return getRewardSortWeight(a) - getRewardSortWeight(b);
+  });
+
   const handleBuyClick = (rewardId: string, cost: number, rewardName: string) => {
     if (!activeChildId || !child) return;
     if (child.current_balance < cost) {
@@ -97,15 +124,16 @@ const ChildRewards = () => {
         onClose={() => setSuccessRewardName(null)}
       />
       
-      {rewards.length === 0 ? (
+      {sortedRewards.length === 0 ? (
         <div className="text-center p-12 bg-base-100 rounded-xl border-2 border-dashed border-gray-300">
           <p className="text-gray-400">No rewards available yet.</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4">
-          {rewards.map((reward) => {
+          {sortedRewards.map((reward) => {
             const isOneTime = reward.type === 'ONE_TIME';
-            const isRedeemed = isOneTime && hasRedeemed(reward.id);
+            const isMilestone = reward.type === 'ACCUMULATIVE' && reward.cost_value === 0;
+            const isRedeemed = (isOneTime || isMilestone) && hasRedeemed(reward.id);
             const canAfford = (child?.current_balance || 0) >= reward.cost_value;
             
             const progress = getAccumulativeProgress(reward);
@@ -137,7 +165,7 @@ const ChildRewards = () => {
                     <FaLock className="mr-1 text-[10px]" /> Locked
                   </button>
                   <div className="text-[10px] text-gray-500 leading-tight px-1">
-                     Do "{progress?.taskName}" {progress?.required! - progress?.current!} more times
+                     Complete "{progress?.taskName}" {progress?.required! - progress?.current!} more times
                   </div>
                   <progress 
                     className="progress progress-primary w-full h-1.5 mt-1" 
@@ -147,11 +175,15 @@ const ChildRewards = () => {
                 </div>
               ) : (
                 <button 
-                  className="btn btn-sm btn-primary w-full rounded-full"
+                  className={`btn btn-sm w-full rounded-full ${reward.cost_value === 0 ? 'btn-success text-white' : 'btn-primary'}`}
                   onClick={() => handleBuyClick(reward.id, reward.cost_value, reward.name)}
                   disabled={isLoading || !canAfford}
                 >
-                  Buy for {reward.cost_value} <FaGift className="ml-1" />
+                  {reward.cost_value === 0 ? (
+                    <>Claim Reward</>
+                  ) : (
+                    <>Buy for {reward.cost_value}</>
+                  )}
                 </button>
               )}
               

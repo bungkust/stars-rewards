@@ -76,8 +76,14 @@ const AdminStats = () => {
                     </p>
                   </div>
                 </div>
-                <span className={`font-bold ${tx.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {tx.amount >= 0 ? '+' : ''}{tx.amount}
+                <span className={`font-bold ${tx.amount > 0 ? 'text-green-600' : tx.amount < 0 ? 'text-red-600' : 'text-gray-500'}`}>
+                  {tx.amount !== 0 ? (
+                    <>{tx.amount > 0 ? '+' : ''}{tx.amount}</>
+                  ) : (
+                    <span className="text-xs uppercase">
+                      {tx.type === 'TASK_VERIFIED' ? 'Done' : tx.type === 'REWARD_REDEEMED' ? 'Redeemed' : '-'}
+                    </span>
+                  )}
                 </span>
               </div>
             ))
