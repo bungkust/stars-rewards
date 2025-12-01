@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { FaCheckDouble, FaClock, FaCheck, FaTimes, FaEdit, FaSignOutAlt } from 'react-icons/fa';
-import { IoLogOutOutline } from 'react-icons/io5';
 import { useAppStore } from '../../store/useAppStore';
 import { AppCard } from '../../components/design-system/AppCard';
 import { H1Header } from '../../components/design-system/H1Header';
@@ -87,7 +86,7 @@ const AdminDashboard = () => {
           onClick={() => setShowLogoutConfirm(true)}
           title="Log Out"
         >
-          <IoLogOutOutline className="w-6 h-6" />
+          <FaSignOutAlt className="w-6 h-6" />
         </button>
       </div>
 

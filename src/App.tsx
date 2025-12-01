@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import { useAppStore } from './store/useAppStore';
 import MobileLayout from './components/layout/MobileLayout';
 import ChildSelectorModal from './components/modals/ChildSelectorModal';
@@ -21,6 +22,48 @@ import AddParent from './pages/onboarding/AddParent';
 import AddChild from './pages/onboarding/AddChild';
 import FirstTask from './pages/onboarding/FirstTask';
 import FirstReward from './pages/onboarding/FirstReward';
+import { PageTransition } from './components/design-system/Animations';
+
+// Wrapper to handle route transitions
+const AnimatedRoutes = ({ isAdminMode, activeChildId }: { isAdminMode: boolean, activeChildId: string | null }) => {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        {isAdminMode ? (
+          // ADMIN ROUTES
+          <>
+            <Route path="/admin/dashboard" element={<PageTransition><AdminDashboard /></PageTransition>} />
+            <Route path="/admin/tasks" element={<PageTransition><AdminTasks /></PageTransition>} />
+            <Route path="/admin/tasks/new" element={<PageTransition><AdminTaskForm /></PageTransition>} />
+            <Route path="/admin/tasks/:id/edit" element={<PageTransition><AdminTaskForm /></PageTransition>} />
+            <Route path="/admin/rewards" element={<PageTransition><AdminRewards /></PageTransition>} />
+            <Route path="/admin/rewards/new" element={<PageTransition><AdminRewardForm /></PageTransition>} />
+            <Route path="/admin/rewards/:id/edit" element={<PageTransition><AdminRewardForm /></PageTransition>} />
+            <Route path="/admin/stats" element={<PageTransition><AdminStats /></PageTransition>} />
+            
+            {/* Redirect root to admin dashboard if in admin mode */}
+            <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+          </>
+        ) : (
+          // CHILD ROUTES
+          <>
+            <Route path="/" element={activeChildId ? <PageTransition><ChildDashboard /></PageTransition> : <div />} />
+            <Route path="/tasks" element={<PageTransition><ChildTasks /></PageTransition>} />
+            <Route path="/rewards" element={<PageTransition><ChildRewards /></PageTransition>} />
+            <Route path="/stats" element={<PageTransition><ChildStats /></PageTransition>} />
+            
+            {/* Protect admin routes from non-admin users */}
+            <Route path="/admin/*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </>
+        )}
+      </Routes>
+    </AnimatePresence>
+  );
+};
 
 function App() {
   const { activeChildId, setActiveChild, isAdminMode, onboardingStep, session, refreshData } = useAppStore();
@@ -89,37 +132,7 @@ function App() {
   return (
     <Router>
       <MobileLayout>
-        <Routes>
-          {isAdminMode ? (
-            // ADMIN ROUTES
-            <>
-              <Route path="/admin/dashboard" element={<AdminDashboard />} />
-              <Route path="/admin/tasks" element={<AdminTasks />} />
-              <Route path="/admin/tasks/new" element={<AdminTaskForm />} />
-              <Route path="/admin/tasks/:id/edit" element={<AdminTaskForm />} />
-              <Route path="/admin/rewards" element={<AdminRewards />} />
-              <Route path="/admin/rewards/new" element={<AdminRewardForm />} />
-              <Route path="/admin/rewards/:id/edit" element={<AdminRewardForm />} />
-              <Route path="/admin/stats" element={<AdminStats />} />
-              
-              {/* Redirect root to admin dashboard if in admin mode */}
-              <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
-              <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
-            </>
-          ) : (
-            // CHILD ROUTES
-            <>
-              <Route path="/" element={activeChildId ? <ChildDashboard /> : <div />} />
-              <Route path="/tasks" element={<ChildTasks />} />
-              <Route path="/rewards" element={<ChildRewards />} />
-              <Route path="/stats" element={<ChildStats />} />
-              
-              {/* Protect admin routes from non-admin users */}
-              <Route path="/admin/*" element={<Navigate to="/" replace />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </>
-          )}
-        </Routes>
+        <AnimatedRoutes isAdminMode={isAdminMode} activeChildId={activeChildId} />
       </MobileLayout>
       
       {/* Child Selector Modal (Global Guard) */}

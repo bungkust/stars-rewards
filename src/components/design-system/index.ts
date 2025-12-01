@@ -5,4 +5,5 @@ export { PrimaryButton } from './PrimaryButton';
 export { SecondaryButton } from './SecondaryButton';
 export { WarningCTAButton } from './WarningCTAButton';
 export { default as AlertModal } from './AlertModal';
+export { PageTransition, StaggerContainer, StaggerItem, ScaleButton } from './Animations';
 
