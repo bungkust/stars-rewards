@@ -313,6 +313,11 @@ const ChildStats = () => {
                     <div className="flex flex-col">
                       <span className="font-bold text-gray-700 text-sm">{details.name}</span>
                       <span className="text-xs text-gray-400">{formatDate(log.completed_at)}</span>
+                      {log.rejection_reason && (
+                        <span className="text-xs text-red-500 italic mt-1">
+                          Reason: {log.rejection_reason}
+                        </span>
+                      )}
                     </div>
                     <span className="font-bold text-red-500">
                       <span className="text-xs uppercase">Rejected</span>
