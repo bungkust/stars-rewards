@@ -51,7 +51,7 @@ const Settings = () => {
       },
       {
         label: 'Terms & Conditions',
-        description: 'Understand the rules for using Stars Rewards as a parent or child.',
+        description: 'Understand the rules for using Star Habit as a parent or child.',
         href: 'https://app.starhabit.web.id/terms',
       },
     ],

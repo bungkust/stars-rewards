@@ -40,7 +40,7 @@ const ParentSetup = () => {
     <div className="min-h-screen flex flex-col items-center justify-center app-gradient p-6">
       <div className="w-full max-w-md text-center">
         <h1 className="text-3xl font-bold text-primary mb-2">Create Account</h1>
-        <p className="text-gray-500 mb-8">Secure your family's Stars Rewards.</p>
+        <p className="text-gray-500 mb-8">Secure your family's Star Habit.</p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           

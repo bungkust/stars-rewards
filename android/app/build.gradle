@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.myfamily.starsrewards"
+    namespace "com.myfamily.starhabit"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.myfamily.starsrewards"
+        applicationId "com.myfamily.starhabit"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
 
@@ -50,7 +50,7 @@ android {
 
     applicationVariants.all { variant ->
         variant.outputs.all {
-            def appName = "StarsRewards"
+            def appName = "StarHabit"
             def platform = "Android"
             def buildType = variant.buildType.name
             def version = variant.versionName

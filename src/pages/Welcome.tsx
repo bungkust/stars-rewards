@@ -15,7 +15,7 @@ const Welcome = () => {
           <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center text-primary text-4xl">
             ⭐
           </div>
-          <H1Header className="text-4xl text-primary">Stars Rewards</H1Header>
+          <H1Header className="text-4xl text-primary">Star Habit</H1Header>
           <p className="text-gray-500 text-lg">
             Make habits fun for your family.
           </p>

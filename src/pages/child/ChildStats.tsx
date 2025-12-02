@@ -288,23 +288,23 @@ const ChildStats = () => {
               if (item.type === 'transaction') {
                 const transaction = item.data;
                 const details = getTransactionDetails(transaction);
-                return (
+              return (
                   <div key={item.id} className="flex justify-between items-center border-b border-gray-100 pb-3 last:border-none last:pb-0">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-gray-700 text-sm">{details.name}</span>
+                  <div className="flex flex-col">
+                    <span className="font-bold text-gray-700 text-sm">{details.name}</span>
                       <span className="text-xs text-gray-400">{formatDate(transaction.created_at)}</span>
-                    </div>
+                  </div>
                     <span className={`font-bold ${transaction.amount > 0 ? 'text-green-500' : transaction.amount < 0 ? 'text-red-500' : 'text-gray-500'}`}>
                       {transaction.amount !== 0 ? (
                         <>{transaction.amount > 0 ? '+' : ''}{transaction.amount}</>
-                      ) : (
-                        <span className="text-xs uppercase">
+                    ) : (
+                      <span className="text-xs uppercase">
                           {transaction.type === 'TASK_VERIFIED' ? 'Done' : transaction.type === 'REWARD_REDEEMED' ? 'Redeemed' : '-'}
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                );
+                      </span>
+                    )}
+                  </span>
+                </div>
+              );
               } else if (item.type === 'rejected_mission') {
                 const log = item.data;
                 const details = getRejectedMissionDetails(log);

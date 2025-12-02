@@ -8,7 +8,7 @@ import { FaEye, FaEyeSlash } from 'react-icons/fa';
 const ResetPassword = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { updatePassword, isLoading } = useAppStore();
+  const { updatePassword, isLoading, setAuthFromUrl } = useAppStore();
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -16,25 +16,48 @@ const ResetPassword = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const { setAuthFromUrl } = useAppStore();
+  const [isValidToken, setIsValidToken] = useState<boolean | null>(null); // null = checking, true = valid, false = invalid
 
   // Check if we have the required tokens from URL and set auth
   useEffect(() => {
-    const accessToken = searchParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token');
-    const type = searchParams.get('type');
+    let accessToken = searchParams.get('access_token');
+    let refreshToken = searchParams.get('refresh_token');
+    let type = searchParams.get('type');
 
-    if (accessToken && refreshToken && type === 'recovery') {
-      // Set auth session from URL parameters
-      setAuthFromUrl();
-    } else {
-      setError('Invalid reset link. Please request a new password reset.');
+    // If not found in search params, try hash fragment (legacy support)
+    if (!accessToken || !refreshToken) {
+      const urlParams = new URLSearchParams(window.location.hash.substring(1));
+      accessToken = accessToken || urlParams.get('access_token');
+      refreshToken = refreshToken || urlParams.get('refresh_token');
+      type = type || urlParams.get('type');
     }
+
+    console.log('ResetPassword: URL params', { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
+
+    const validateToken = async () => {
+      if (accessToken && refreshToken && type === 'recovery') {
+        try {
+          await setAuthFromUrl();
+          setIsValidToken(true);
+        } catch (err) {
+          console.error('Auth setup failed:', err);
+          setIsValidToken(false);
+          setError('Failed to authenticate reset link. Please request a new password reset.');
+        }
+      } else {
+        setIsValidToken(false);
+        setError('Invalid reset link. Please request a new password reset.');
+      }
+    };
+
+    validateToken();
   }, [searchParams, setAuthFromUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    console.log('ResetPassword: Submitting form with password length:', password.length);
 
     if (!password) {
       setError('Please enter a new password.');
@@ -51,19 +74,28 @@ const ResetPassword = () => {
       return;
     }
 
-    const { error: updateError } = await updatePassword(password);
+    try {
+      console.log('ResetPassword: Calling updatePassword...');
+      const { error: updateError } = await updatePassword(password);
 
-    if (updateError) {
-      setError(updateError.message || 'Failed to update password. Please try again.');
-      return;
+      if (updateError) {
+        console.error('ResetPassword: Update password error:', updateError);
+        setError(updateError.message || 'Failed to update password. Please try again.');
+        return;
+      }
+
+      console.log('ResetPassword: Password updated successfully');
+      setSuccess(true);
+
+      // Redirect to login after 3 seconds
+      setTimeout(() => {
+        console.log('ResetPassword: Redirecting to login');
+        navigate('/login');
+      }, 3000);
+    } catch (err) {
+      console.error('ResetPassword: Unexpected error:', err);
+      setError('An unexpected error occurred. Please try again.');
     }
-
-    setSuccess(true);
-
-    // Redirect to login after 3 seconds
-    setTimeout(() => {
-      navigate('/login');
-    }, 3000);
   };
 
   if (success) {
@@ -95,9 +127,26 @@ const ResetPassword = () => {
     );
   }
 
-  const hasValidToken = searchParams.get('access_token') && searchParams.get('refresh_token') && searchParams.get('type') === 'recovery';
+  // Show loading while validating token
+  if (isValidToken === null) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center app-gradient p-6">
+        <div className="w-full max-w-md text-center">
+          <div className="flex flex-col items-center gap-4 mb-8">
+            <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center">
+              <svg className="w-10 h-10 text-blue-500 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </div>
+            <H1Header className="text-2xl">Validating Link</H1Header>
+            <p className="text-gray-500">Please wait while we validate your reset link...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  if (!hasValidToken) {
+  if (!isValidToken) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center app-gradient p-6">
         <div className="w-full max-w-md text-center">
@@ -111,6 +160,11 @@ const ResetPassword = () => {
             <p className="text-gray-500">
               This password reset link is invalid or has expired. Please request a new password reset.
             </p>
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-4">
+                <p className="text-red-700 text-sm">{error}</p>
+              </div>
+            )}
           </div>
 
           <div className="space-y-4 mt-6">
@@ -134,7 +188,14 @@ const ResetPassword = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <H1Header>Reset Password</H1Header>
-          <p className="text-gray-500">Enter your new password below.</p>
+          <p className="text-gray-500 mb-4">Enter your new password below.</p>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-blue-700 text-sm">
+              🔐 <strong>Password Requirements:</strong><br/>
+              • Minimum 6 characters<br/>
+              • Both password fields must match
+            </p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">

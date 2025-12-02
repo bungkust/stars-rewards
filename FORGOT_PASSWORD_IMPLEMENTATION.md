@@ -1,4 +1,4 @@
-# Forgot Password Implementation - Stars Rewards
+# Forgot Password Implementation - Star Habit
 
 ## 📋 Overview
 Fitur forgot password telah diimplementasikan menggunakan Supabase Auth untuk mengirim email reset password dan menangani update password melalui link yang dikirim ke email user.
@@ -55,9 +55,9 @@ Fitur forgot password telah diimplementasikan menggunakan Supabase Auth untuk me
 ### **resetPassword** (`src/store/useAppStore.ts`)
 ```typescript
 resetPassword: async (email: string) => {
-  // Mengirim email reset menggunakan Supabase
+  // Mengirim email reset menggunakan Supabase - direct mobile app opening
   await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `https://app.starhabit.web.id/reset-password`,
+    redirectTo: `starhabit://reset-password`,
   });
 }
 ```
@@ -99,9 +99,10 @@ setAuthFromUrl: async () => {
 
 ### **Supabase Auth Email**
 Supabase secara otomatis mengirim email dengan:
-- Subject: "Reset your password"
-- Link dengan format: `https://yourapp.com/reset-password#access_token=...&refresh_token=...&type=recovery`
-- Branded dengan nama app Anda
+  - Subject: "Reset your Star Habit password"
+  - Link dengan format: `starhabit://reset-password#access_token=...&refresh_token=...&type=recovery`
+  - Branded dengan nama Star Habit
+  - **Direct mobile app opening** - bukan web redirect
 
 ## 🔐 Security Features
 

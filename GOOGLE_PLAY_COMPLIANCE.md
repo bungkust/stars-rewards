@@ -1,11 +1,11 @@
-# Google Play Store Compliance Documentation - Stars Rewards
+# Google Play Store Compliance Documentation - Star Habit
 
 ## 📋 Overview
-This document outlines the Google Play Store requirements and compliance status for the Stars Rewards app.
+This document outlines the Google Play Store requirements and compliance status for the Star Habit app.
 
 ## 🎯 App Information
-- **App Name:** Stars Rewards
-- **Package ID:** com.myfamily.starsrewards
+- **App Name:** Star Habit
+- **Package ID:** com.myfamily.starhabit
 - **Target Audience:** Families (Parents managing children's tasks/rewards)
 - **Content Rating:** Everyone (Family-oriented)
 

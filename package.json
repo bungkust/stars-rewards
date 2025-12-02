@@ -1,5 +1,5 @@
 {
-  "name": "stars-rewards",
+  "name": "star-habit",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "resources": "capacitor-assets generate",
-    "build:android": "npm run build && npx cap sync android && cd android && ./gradlew assembleDebug && cd .. && mkdir -p /Users/ruangguru/Documents/Bungkuss/android-build && cp android/app/build/outputs/apk/debug/app-debug.apk /Users/ruangguru/Documents/Bungkuss/android-build/stars-rewards-debug.apk && echo 'APK copied to /Users/ruangguru/Documents/Bungkuss/android-build/stars-rewards-debug.apk'",
+    "build:android": "npm run build && npx cap sync android && cd android && ./gradlew assembleDebug && cd .. && mkdir -p /Users/ruangguru/Documents/Bungkuss/android-build && cp android/app/build/outputs/apk/debug/app-debug.apk /Users/ruangguru/Documents/Bungkuss/android-build/star-habit-debug.apk && echo 'APK copied to /Users/ruangguru/Documents/Bungkuss/android-build/star-habit-debug.apk'",
     "deploy:netlify": "npm run build && netlify deploy --dir=dist --prod",
     "bump:major": "node scripts/bump-version.cjs major",
     "bump:minor": "node scripts/bump-version.cjs minor",

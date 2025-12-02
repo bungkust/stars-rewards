@@ -1,20 +1,11 @@
 [build]
-  # Build settings for React SPA
-  publish = "dist"
-  command = "npm run build"
+  # Deploy docs folder (landing page, privacy, terms) to root domain
+  # React app should NOT be accessible from web - mobile only
+  publish = "docs"
+  command = "echo 'Deploying docs folder only - no build needed'"
 
-# SPA fallback for client-side routing
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
-# Temporary redirect for reset-password debugging
-# Redirect reset-password to login page until SPA routing works
-[[redirects]]
-  from = "/reset-password"
-  to = "/login"
-  status = 302
+# No SPA fallback needed for static docs
+# Remove all React app redirects
 
 [build.environment]
   NODE_VERSION = "18"

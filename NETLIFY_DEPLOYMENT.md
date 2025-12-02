@@ -1,7 +1,7 @@
-# Netlify Deployment Guide - Stars Rewards
+# Netlify Deployment Guide - Star Habit
 
 ## 📋 Overview
-Panduan lengkap untuk deploy Privacy Policy dan Terms of Use ke subdomain `app.starhabit.web.id` menggunakan Netlify.
+Panduan lengkap untuk deploy landing page, Privacy Policy, dan Terms of Use ke domain utama `app.starhabit.web.id` menggunakan Netlify. **App React TIDAK di-deploy ke web - mobile only.**
 
 ## 🚀 Quick Start
 

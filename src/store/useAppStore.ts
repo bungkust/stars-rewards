@@ -136,9 +136,9 @@ export const useAppStore = create<AppState>()(
             dataService.fetchRedeemedRewards(userId)
           ]);
 
-          set({
-            children,
-            tasks,
+          set({ 
+            children, 
+            tasks, 
             pendingVerifications: verifications,
             rewards,
             transactions,
@@ -409,8 +409,11 @@ export const useAppStore = create<AppState>()(
       resetPassword: async (email) => {
         set({ isLoading: true });
         try {
+          // Always use mobile deep link - app will handle the reset password flow
+          const redirectTo = `starsrewards://reset-password`;
+
           const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `https://app.starhabit.web.id/reset-password`,
+            redirectTo,
           });
 
           if (error) throw error;
@@ -431,7 +434,7 @@ export const useAppStore = create<AppState>()(
           });
 
           if (error) throw error;
-
+          
           return { error: null };
         } catch (error) {
           return { error };
@@ -654,9 +657,9 @@ export const useAppStore = create<AppState>()(
 
       logout: async () => {
         await supabase.auth.signOut();
-        set({
-          session: null,
-          userProfile: null,
+        set({ 
+          session: null, 
+          userProfile: null, 
           activeChildId: null,
           children: [],
           isAdminMode: false

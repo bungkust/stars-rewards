@@ -30,10 +30,19 @@ import FirstTask from './pages/onboarding/FirstTask';
 import FirstReward from './pages/onboarding/FirstReward';
 import { PageTransition } from './components/design-system/Animations';
 
-// Wrapper to handle route transitions
+// Wrapper to handle route transitions and deep linking
 const AnimatedRoutes = ({ isAdminMode, activeChildId }: { isAdminMode: boolean, activeChildId: string | null }) => {
   const location = useLocation();
   const { refreshData, session } = useAppStore();
+
+  // Handle deep links for mobile app
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      // TODO: Implement deep linking after @capacitor/app plugin is installed
+      // For now, reset password flow works through manual navigation
+      console.log('Deep linking will be implemented after @capacitor/app plugin installation');
+    }
+  }, []);
 
   useEffect(() => {
     if (session) {
@@ -87,10 +96,20 @@ const AnimatedRoutes = ({ isAdminMode, activeChildId }: { isAdminMode: boolean, 
 function App() {
   const { activeChildId, setActiveChild, isAdminMode, onboardingStep, session, refreshData } = useAppStore();
   const [isChildSelectorOpen, setIsChildSelectorOpen] = useState(false);
-  const location = useLocation();
 
   const isAuthenticated = !!session;
   const needsOnboarding = isAuthenticated && onboardingStep !== 'completed';
+
+
+  // Debug logging
+  console.log('App render:', {
+    isAuthenticated,
+    needsOnboarding,
+    onboardingStep,
+    activeChildId,
+    isAdminMode,
+    pathname: typeof window !== 'undefined' ? window.location.pathname : 'unknown'
+  });
 
   // Check for active child on mount
   useEffect(() => {
@@ -175,9 +194,10 @@ function App() {
     );
   }
 
+
   // Special case: Allow reset-password for authenticated users
   // This handles password reset links clicked while logged in
-  if (location.pathname.startsWith('/reset-password')) {
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/reset-password')) {
     return <ResetPassword />;
   }
 

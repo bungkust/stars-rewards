@@ -1,4 +1,6 @@
-# 🚀 Google Play Store Readiness Guide - Stars Rewards
+# 📱 Google Play Store Readiness Guide - Star Habit (Mobile Only)
+
+**Important:** Star Habit is a **mobile-only app**. Domain `app.starhabit.web.id` only serves landing page, privacy policy, and terms. Users cannot access the app through web browsers.
 
 ## 📊 Current Compliance Status
 

@@ -1,7 +1,11 @@
 {
-  "appId": "com.myfamily.starsrewards",
-  "appName": "Stars Rewards",
+  "appId": "com.myfamily.starhabit",
+  "appName": "Star Habit",
   "webDir": "dist",
+  "server": {
+    "hostname": "app.starhabit.web.id",
+    "androidScheme": "https"
+  },
   "plugins": {
     "StatusBar": {
       "overlaysWebView": false

@@ -1,73 +1,131 @@
-# React + TypeScript + Vite
+# Star Habit - Family Habit Tracker App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A mobile-first React application built with TypeScript, Vite, Capacitor, and Supabase for managing family habits and rewards.
 
-Currently, two official plugins are available:
+## 🚀 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Family Habit Tracking**: Create and manage habits for children with visual progress tracking
+- **Reward System**: Set up rewards that children can earn through completing habits
+- **Parent Dashboard**: Admin interface for parents to manage tasks and rewards
+- **Child Interface**: Simple, gamified interface for children to track their progress
+- **Real-time Updates**: Live synchronization across devices using Supabase
+- **Mobile App**: Native Android and iOS apps built with Capacitor
+- **Deep Linking**: Password reset links open directly in the mobile app
 
-## React Compiler
+## 🛠️ Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Frontend**: React 19, TypeScript, Tailwind CSS, DaisyUI
+- **Build Tool**: Vite
+- **Mobile**: Capacitor (Android & iOS)
+- **Backend**: Supabase (PostgreSQL, Auth, Real-time)
+- **State Management**: Zustand
+- **Routing**: React Router v7
+- **Animations**: Framer Motion
+- **Charts**: Recharts
 
-## Expanding the ESLint configuration
+## 📱 Getting Started
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Prerequisites
+- Node.js 18+
+- Android Studio (for Android development)
+- Xcode (for iOS development)
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Installation
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd star-habit
+   ```
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Environment Setup**
+   ```bash
+   # Copy and configure environment variables
+   cp .env.example .env.local
+   # Edit .env.local with your Supabase credentials
+   ```
+
+4. **Development**
+   ```bash
+   npm run dev
+   ```
+
+5. **Mobile Development**
+   ```bash
+   # Add platforms
+   npx cap add android
+   npx cap add ios
+
+   # Build and sync
+   npm run build
+   npx cap sync
+   ```
+
+## 📱 Building for Production
+
+### Android APK
+```bash
+npm run build:android
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Web Deployment
+```bash
+npm run build
+npm run deploy:netlify
 ```
+
+## 🔧 Configuration
+
+### Supabase Setup
+1. Create a new Supabase project
+2. Run the SQL migrations in `supabase_schema.sql`
+3. Configure authentication settings
+4. Update environment variables
+
+### Deep Linking
+- Custom URL scheme: `starhabit://`
+- Configured for password reset flows
+- Android intent filters in `AndroidManifest.xml`
+
+## 📋 Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run build:android` - Build Android APK
+- `npm run lint` - Run ESLint
+- `npm run deploy:netlify` - Deploy to Netlify
+
+## 📁 Project Structure
+
+```
+src/
+├── components/          # Reusable UI components
+│   ├── design-system/   # Design system components
+│   └── layout/          # Layout components
+├── pages/               # Page components
+│   ├── auth/            # Authentication pages
+│   ├── admin/           # Parent dashboard pages
+│   ├── child/           # Child interface pages
+│   └── onboarding/      # Onboarding flow
+├── services/            # API services
+├── store/               # State management (Zustand)
+├── types/               # TypeScript type definitions
+└── utils/               # Utility functions
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Open a Pull Request
+
+## 📄 License
+
+This project is private and proprietary.

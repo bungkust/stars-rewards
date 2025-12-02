@@ -42,7 +42,7 @@ const Header = ({ onParentLoginClick }: HeaderProps) => {
     >
       <div className="flex-1">
         <a className={`btn btn-ghost text-xl font-bold hover:bg-transparent ${titleColor}`}>
-          {isAdminMode ? 'Parent Dashboard' : 'Stars Rewards'}
+          {isAdminMode ? 'Parent Dashboard' : 'Star Habit'}
         </a>
       </div>
       <div className="flex-none">
