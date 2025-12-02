@@ -1,7 +1,7 @@
 # Netlify Deployment Guide - Stars Rewards
 
 ## 📋 Overview
-Panduan lengkap untuk deploy Privacy Policy dan Terms of Use ke domain `starhabit.web.id` menggunakan Netlify.
+Panduan lengkap untuk deploy Privacy Policy dan Terms of Use ke subdomain `app.starhabit.web.id` menggunakan Netlify.
 
 ## 🚀 Quick Start
 
@@ -27,7 +27,7 @@ npm run deploy:netlify
 1. Buka [Netlify Dashboard](https://app.netlify.com)
 2. Pilih site yang baru di-deploy
 3. Go to **Domain management**
-4. Add custom domain: `starhabit.web.id`
+4. Add custom domain: `app.starhabit.web.id`
 5. Configure DNS sesuai instruksi Netlify
 
 ---
@@ -84,9 +84,9 @@ docs/
 
 Setelah deploy, URL berikut akan aktif:
 
-- **Homepage:** https://starhabit.web.id
-- **Privacy Policy:** https://starhabit.web.id/privacy
-- **Terms & Conditions:** https://starhabit.web.id/terms
+- **Homepage:** https://app.starhabit.web.id
+- **Privacy Policy:** https://app.starhabit.web.id/privacy
+- **Terms & Conditions:** https://app.starhabit.web.id/terms
 
 ---
 
@@ -119,7 +119,7 @@ netlify deploy --dir=docs
 ## 🌐 Custom Domain Setup
 
 ### **DNS Configuration**
-1. **Login ke Domain Registrar** (starhabit.web.id)
+1. **Login ke Domain Registrar** (app.starhabit.web.id) - setup subdomain `app`
 2. **Add CNAME record:**
    ```
    Name: @
@@ -147,16 +147,16 @@ Setelah deployment, test semua URL:
 
 ```bash
 # Test homepage
-curl https://starhabit.web.id
+curl https://app.starhabit.web.id
 
 # Test privacy policy
-curl https://starhabit.web.id/privacy
+curl https://app.starhabit.web.id/privacy
 
 # Test terms
-curl https://starhabit.web.id/terms
+curl https://app.starhabit.web.id/terms
 
 # Test redirects
-curl -I https://starhabit.web.id/privacy  # Should return 200
+curl -I https://app.starhabit.web.id/privacy  # Should return 200
 ```
 
 ---
@@ -167,14 +167,14 @@ curl -I https://starhabit.web.id/privacy  # Should return 200
 Setelah deploy, update Google Play Console:
 
 1. **Store Settings** → **Store Listing**
-2. **Privacy Policy URL:** `https://starhabit.web.id/privacy`
+2. **Privacy Policy URL:** `https://app.starhabit.web.id/privacy`
 3. **Save changes**
 
 ### **App Configuration**
 URLs sudah di-update di `src/pages/settings/Settings.tsx`:
 ```typescript
-href: 'https://starhabit.web.id/privacy'
-href: 'https://starhabit.web.id/terms'
+href: 'https://app.starhabit.web.id/privacy'
+href: 'https://app.starhabit.web.id/terms'
 ```
 
 ---
@@ -197,7 +197,7 @@ cd docs && python -m http.server 8000
 ### **Domain Issues**
 ```bash
 # Check DNS propagation
-nslookup starhabit.web.id
+nslookup app.starhabit.web.id
 
 # Check Netlify domain settings
 # Go to Site Settings → Domain management
@@ -286,4 +286,4 @@ netlify sites:list
 
 ---
 
-**🎉 Site akan live di https://starhabit.web.id setelah deployment!**
+**🎉 Site akan live di https://app.starhabit.web.id setelah deployment!**

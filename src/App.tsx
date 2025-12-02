@@ -56,7 +56,9 @@ const AnimatedRoutes = ({ isAdminMode, activeChildId }: { isAdminMode: boolean, 
             <Route path="/admin/rewards/:id/edit" element={<PageTransition><AdminRewardForm /></PageTransition>} />
             <Route path="/admin/stats" element={<PageTransition><AdminStats /></PageTransition>} />
             <Route path="/settings" element={<PageTransition><Settings /></PageTransition>} />
-            
+            <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
+            <Route path="/forgot-password" element={<PageTransition><ForgotPassword /></PageTransition>} />
+
             {/* Redirect root to admin dashboard if in admin mode */}
             <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
@@ -68,6 +70,8 @@ const AnimatedRoutes = ({ isAdminMode, activeChildId }: { isAdminMode: boolean, 
             <Route path="/tasks" element={<PageTransition><ChildTasks /></PageTransition>} />
             <Route path="/rewards" element={<PageTransition><ChildRewards /></PageTransition>} />
             <Route path="/stats" element={<PageTransition><ChildStats /></PageTransition>} />
+            <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
+            <Route path="/forgot-password" element={<PageTransition><ForgotPassword /></PageTransition>} />
 
             {/* Protect admin routes from non-admin users */}
             <Route path="/admin/*" element={<Navigate to="/" replace />} />
@@ -83,6 +87,7 @@ const AnimatedRoutes = ({ isAdminMode, activeChildId }: { isAdminMode: boolean, 
 function App() {
   const { activeChildId, setActiveChild, isAdminMode, onboardingStep, session, refreshData } = useAppStore();
   const [isChildSelectorOpen, setIsChildSelectorOpen] = useState(false);
+  const location = useLocation();
 
   const isAuthenticated = !!session;
   const needsOnboarding = isAuthenticated && onboardingStep !== 'completed';
@@ -168,6 +173,12 @@ function App() {
         </Routes>
       </Router>
     );
+  }
+
+  // Special case: Allow reset-password for authenticated users
+  // This handles password reset links clicked while logged in
+  if (location.pathname.startsWith('/reset-password')) {
+    return <ResetPassword />;
   }
 
   // Authenticated but incomplete onboarding

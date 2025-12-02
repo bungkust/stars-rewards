@@ -57,7 +57,7 @@ Fitur forgot password telah diimplementasikan menggunakan Supabase Auth untuk me
 resetPassword: async (email: string) => {
   // Mengirim email reset menggunakan Supabase
   await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/reset-password`,
+    redirectTo: `https://app.starhabit.web.id/reset-password`,
   });
 }
 ```

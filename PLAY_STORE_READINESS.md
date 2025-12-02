@@ -23,7 +23,7 @@
 
 **Required Actions:**
 ```bash
-# 1. Deploy website to starhabit.web.id (Netlify)
+# 1. Deploy website to app.starhabit.web.id (Netlify)
 # 2. Upload PRIVACY_POLICY.md content
 # 3. Update Settings.tsx with correct URL
 # 4. Ensure COPPA compliance section is complete
@@ -101,7 +101,7 @@
 // Settings.tsx already includes links
 {
   label: 'Privacy Policy',
-  href: 'https://starhabit.web.id/privacy'
+  href: 'https://app.starhabit.web.id/privacy'
 }
 ```
 

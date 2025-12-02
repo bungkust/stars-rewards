@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
+import { Capacitor } from '@capacitor/core';
 import AccountDeletionModal from '../../components/modals/AccountDeletionModal';
 
 const Settings = () => {
@@ -19,6 +20,16 @@ const Settings = () => {
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
+  const handleExternalLink = (url: string) => {
+    if (Capacitor.isNativePlatform()) {
+      // For mobile apps: open in system browser
+      window.open(url, '_system');
+    } else {
+      // For web: open in new tab with security
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   const handleDeleteAccount = async () => {
     const { error } = await deleteAccount();
 
@@ -36,12 +47,12 @@ const Settings = () => {
       {
         label: 'Privacy Policy',
         description: 'Learn how we protect your family data and account information.',
-        href: 'https://starhabit.web.id/privacy',
+        href: 'https://app.starhabit.web.id/privacy',
       },
       {
         label: 'Terms & Conditions',
         description: 'Understand the rules for using Stars Rewards as a parent or child.',
-        href: 'https://starhabit.web.id/terms',
+        href: 'https://app.starhabit.web.id/terms',
       },
     ],
     []
@@ -119,19 +130,17 @@ const Settings = () => {
         </div>
         <div className="divide-y divide-base-200">
           {policyLinks.map((link) => (
-            <a
+            <button
               key={link.label}
-              className="flex items-center justify-between px-5 py-4 hover:bg-primary/5 transition-colors"
-              href={link.href}
-              target="_blank"
-              rel="noreferrer"
+              className="flex items-center justify-between px-5 py-4 hover:bg-primary/5 transition-colors w-full text-left"
+              onClick={() => handleExternalLink(link.href)}
             >
               <div>
                 <p className="font-medium text-gray-900">{link.label}</p>
                 <p className="text-sm text-gray-500">{link.description}</p>
               </div>
               <span className="text-sm font-semibold text-primary">View</span>
-            </a>
+            </button>
           ))}
         </div>
       </section>
