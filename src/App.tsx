@@ -20,6 +20,8 @@ import AdminRewardForm from './pages/admin/AdminRewardForm';
 import AdminStats from './pages/admin/AdminStats'; 
 import Welcome from './pages/Welcome';
 import Login from './pages/auth/Login';
+import ForgotPassword from './pages/auth/ForgotPassword';
+import ResetPassword from './pages/auth/ResetPassword';
 import FamilySetup from './pages/onboarding/FamilySetup'; 
 import ParentSetup from './pages/onboarding/ParentSetup'; 
 import AddParent from './pages/onboarding/AddParent'; 
@@ -66,10 +68,10 @@ const AnimatedRoutes = ({ isAdminMode, activeChildId }: { isAdminMode: boolean, 
             <Route path="/tasks" element={<PageTransition><ChildTasks /></PageTransition>} />
             <Route path="/rewards" element={<PageTransition><ChildRewards /></PageTransition>} />
             <Route path="/stats" element={<PageTransition><ChildStats /></PageTransition>} />
-            <Route path="/settings" element={<PageTransition><Settings /></PageTransition>} />
-            
+
             {/* Protect admin routes from non-admin users */}
             <Route path="/admin/*" element={<Navigate to="/" replace />} />
+            <Route path="/settings" element={<Navigate to="/" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </>
         )}
@@ -159,7 +161,9 @@ function App() {
         <Routes>
           <Route path="/" element={<Welcome />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/onboarding/parent-setup" element={<ParentSetup />} /> 
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/onboarding/parent-setup" element={<ParentSetup />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>

@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "resources": "capacitor-assets generate",
     "build:android": "npm run build && npx cap sync android && cd android && ./gradlew assembleDebug && cd .. && mkdir -p /Users/ruangguru/Documents/Bungkuss/android-build && cp android/app/build/outputs/apk/debug/app-debug.apk /Users/ruangguru/Documents/Bungkuss/android-build/stars-rewards-debug.apk && echo 'APK copied to /Users/ruangguru/Documents/Bungkuss/android-build/stars-rewards-debug.apk'",
+    "deploy:netlify": "npm run build && netlify deploy --dir=docs --prod",
     "bump:major": "node scripts/bump-version.cjs major",
     "bump:minor": "node scripts/bump-version.cjs minor",
     "bump:patch": "node scripts/bump-version.cjs patch",

@@ -19,7 +19,6 @@ const MobileLayout = ({ children }: MobileLayoutProps) => {
     <div className={`min-h-screen flex flex-col ${backgroundClass} font-sans text-neutral`}>
       <Header
         onParentLoginClick={() => setIsPinModalOpen(true)}
-        onSettingsClick={() => navigate('/settings')}
       />
       
       <main className="flex-1 w-full pt-24 pb-24 px-4 overflow-y-auto scroll-smooth">

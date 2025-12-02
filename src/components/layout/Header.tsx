@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { IoEllipsisVertical } from 'react-icons/io5';
+import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 
 interface HeaderProps {
   onParentLoginClick: () => void;
-  onSettingsClick: () => void;
 }
 
-const Header = ({ onParentLoginClick, onSettingsClick }: HeaderProps) => {
+const Header = ({ onParentLoginClick }: HeaderProps) => {
+  const navigate = useNavigate();
   const { isAdminMode, toggleAdminMode, logout } = useAppStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -58,18 +59,29 @@ const Header = ({ onParentLoginClick, onSettingsClick }: HeaderProps) => {
           </button>
           <ul className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-white/95 backdrop-blur rounded-box border border-base-200 min-w-44">
             {isAdminMode ? (
-              <>
+              <><li>
+              <button
+                className="justify-between text-sm font-medium"
+                onClick={() => {
+                  closeMenu();
+                  handleExitAdmin();
+                }}
+              >
+                Back to Child
+              </button>
+            </li>
                 <li>
                   <button
                     className="justify-between text-sm font-medium"
                     onClick={() => {
                       closeMenu();
-                      handleExitAdmin();
+                      navigate('/settings');
                     }}
                   >
-                    Back to Child
+                    Settings
                   </button>
                 </li>
+                
                 <li>
                   <button
                     className="justify-between text-sm font-medium text-error"
@@ -93,17 +105,6 @@ const Header = ({ onParentLoginClick, onSettingsClick }: HeaderProps) => {
                     }}
                   >
                     Parent Login
-                  </button>
-                </li>
-                <li>
-                  <button
-                    className="justify-between text-sm font-medium"
-                    onClick={() => {
-                      closeMenu();
-                      onSettingsClick();
-                    }}
-                  >
-                    Settings
                   </button>
                 </li>
               </>

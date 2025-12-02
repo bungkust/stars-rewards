@@ -9,6 +9,16 @@
         android:supportsRtl="true"
         android:networkSecurityConfig="@xml/network_security_config"
         android:theme="@style/AppTheme">
+
+        <!-- Google Play Family Policy Declaration -->
+        <meta-data
+            android:name="com.google.android.gms.family_policy"
+            android:value="FAMILY_POLICY_COMPLIANT" />
+
+        <!-- Target Family Audience -->
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation"
             android:name=".MainActivity"

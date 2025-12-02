@@ -73,21 +73,33 @@ const Login = () => {
 
           {error && <p className="text-error text-sm mt-2">{error}</p>}
 
-          <PrimaryButton 
-            type="submit" 
+          <PrimaryButton
+            type="submit"
             className={`rounded-xl mt-6 shadow-md text-lg font-bold ${isLoading ? 'loading' : ''}`}
             disabled={isLoading}
           >
             {isLoading ? 'Signing In...' : 'Sign In'}
           </PrimaryButton>
-          
-          <button 
-            type="button"
-            className="btn btn-ghost btn-sm mt-2"
-            onClick={() => navigate('/')} // Back to Welcome
-          >
-            Cancel
-          </button>
+
+          <div className="flex justify-between items-center mt-4">
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              onClick={() => navigate('/')} // Back to Welcome
+              disabled={isLoading}
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm text-primary hover:text-primary-focus"
+              onClick={() => navigate('/forgot-password')}
+              disabled={isLoading}
+            >
+              Forgot Password?
+            </button>
+          </div>
         </form>
       </div>
     </div>

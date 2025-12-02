@@ -16,7 +16,6 @@ const Layout = ({ children }: LayoutProps) => {
     <div className="min-h-screen flex flex-col bg-base-100">
       <Header
         onParentLoginClick={() => setIsPinModalOpen(true)}
-        onSettingsClick={() => navigate('/settings')}
       />
       
       <main className="flex-1 p-4 pb-24 overflow-y-auto">

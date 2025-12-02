@@ -55,9 +55,12 @@ interface AppState {
   
   // Auth Actions
   setSession: (session: Session | null) => void;
+  setAuthFromUrl: () => Promise<void>;
   fetchUserProfile: (userId: string) => Promise<Profile | null>;
   signInUser: (email: string, password: string) => Promise<{ error: any }>;
   signUpUser: (email: string, password: string, familyName?: string, pin?: string) => Promise<{ error: any }>;
+  resetPassword: (email: string) => Promise<{ error: any }>;
+  updatePassword: (password: string) => Promise<{ error: any }>;
   updateAdminPin: (familyName: string, pin: string) => Promise<{ error: any }>;
   updateParentName: (name: string) => Promise<{ error: any }>;
   updateChildAvatar: (childId: string, avatarUrl: string) => Promise<{ error: any }>;
@@ -67,6 +70,7 @@ interface AppState {
   redeemReward: (childId: string, cost: number, rewardId: string) => Promise<{ error: any }>;
   manualAdjustment: (childId: string, amount: number, reason?: string) => Promise<{ error: any }>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<{ error: any }>;
   setNotificationsEnabled: (value: boolean) => void;
 }
 
@@ -291,6 +295,32 @@ export const useAppStore = create<AppState>()(
 
       setSession: (session) => set({ session }),
 
+      setAuthFromUrl: async () => {
+        // Handle auth state from URL parameters (e.g., password reset)
+        const urlParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = urlParams.get('access_token');
+        const refreshToken = urlParams.get('refresh_token');
+        const type = urlParams.get('type');
+
+        if (accessToken && refreshToken && type === 'recovery') {
+          try {
+            const { data, error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+
+            if (error) throw error;
+
+            if (data.session) {
+              set({ session: data.session });
+              await get().fetchUserProfile(data.session.user.id);
+            }
+          } catch (error) {
+            console.error('Error setting auth from URL:', error);
+          }
+        }
+      },
+
       fetchUserProfile: async (userId) => {
         set({ isLoading: true });
         try {
@@ -368,6 +398,40 @@ export const useAppStore = create<AppState>()(
             await get().fetchUserProfile(data.user.id);
           }
           
+          return { error: null };
+        } catch (error) {
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      resetPassword: async (email) => {
+        set({ isLoading: true });
+        try {
+          const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/reset-password`,
+          });
+
+          if (error) throw error;
+
+          return { error: null };
+        } catch (error) {
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      updatePassword: async (password) => {
+        set({ isLoading: true });
+        try {
+          const { error } = await supabase.auth.updateUser({
+            password: password
+          });
+
+          if (error) throw error;
+
           return { error: null };
         } catch (error) {
           return { error };
@@ -590,13 +654,90 @@ export const useAppStore = create<AppState>()(
 
       logout: async () => {
         await supabase.auth.signOut();
-        set({ 
-          session: null, 
-          userProfile: null, 
+        set({
+          session: null,
+          userProfile: null,
           activeChildId: null,
           children: [],
           isAdminMode: false
         });
+      },
+
+      deleteAccount: async () => {
+        const { session } = get();
+        if (!session?.user) {
+          return { error: new Error('No active session') };
+        }
+
+        const userId = session.user.id;
+        set({ isLoading: true });
+
+        try {
+          const now = new Date().toISOString();
+
+          // Soft delete all associated data (set deleted_at timestamp)
+
+          // 1. Soft delete rewards
+          await supabase
+            .from('rewards')
+            .update({ deleted_at: now })
+            .eq('parent_id', userId)
+            .is('deleted_at', null);
+
+          // 2. Soft delete tasks
+          await supabase
+            .from('tasks')
+            .update({ deleted_at: now })
+            .eq('parent_id', userId)
+            .is('deleted_at', null);
+
+          // 3. Soft delete children (this will cascade to related transactions and logs)
+          await supabase
+            .from('children')
+            .update({ deleted_at: now })
+            .eq('parent_id', userId)
+            .is('deleted_at', null);
+
+          // 4. Soft delete user profile
+          await supabase
+            .from('profiles')
+            .update({ deleted_at: now })
+            .eq('id', userId)
+            .is('deleted_at', null);
+
+          // Note: We keep transaction logs and task logs for audit purposes
+          // They will become inaccessible due to RLS policies when profile is soft deleted
+
+          // Sign out the user (don't delete auth user, just soft delete the account data)
+          await supabase.auth.signOut();
+
+          // Clear all local state
+          set({
+            session: null,
+            userProfile: null,
+            activeChildId: null,
+            children: [],
+            tasks: [],
+            childLogs: [],
+            pendingVerifications: [],
+            rewards: [],
+            transactions: [],
+            redeemedHistory: [],
+            adminPin: null,
+            adminName: undefined,
+            familyName: undefined,
+            onboardingStep: 'family-setup',
+            isAdminMode: false,
+            isLoading: false
+          });
+
+          return { error: null };
+        } catch (error) {
+          console.error('Error deleting account:', error);
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
       }
     }),
     {

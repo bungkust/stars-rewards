@@ -89,7 +89,8 @@ export const dataService = {
     const { data, error } = await supabase
       .from('children')
       .select('*')
-      .eq('parent_id', parentId);
+      .eq('parent_id', parentId)
+      .is('deleted_at', null);
 
     if (error) {
       console.error('Error fetching children:', error);
@@ -107,7 +108,8 @@ export const dataService = {
       .from('tasks')
       .select('*')
       .eq('parent_id', parentId)
-      .eq('is_active', true); // Filter by is_active
+      .eq('is_active', true) // Filter by is_active
+      .is('deleted_at', null); // Exclude soft deleted tasks
 
     if (error) {
       console.error('Error fetching tasks:', error);
@@ -176,7 +178,8 @@ export const dataService = {
     const { data, error } = await supabase
       .from('rewards')
       .select('*')
-      .eq('parent_id', parentId);
+      .eq('parent_id', parentId)
+      .is('deleted_at', null);
 
     if (error) {
       console.error('Error fetching rewards:', error);

@@ -1,7 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
+import AccountDeletionModal from '../../components/modals/AccountDeletionModal';
 
 const Settings = () => {
+  const navigate = useNavigate();
   const {
     familyName,
     adminName,
@@ -10,19 +13,35 @@ const Settings = () => {
     children,
     notificationsEnabled,
     setNotificationsEnabled,
+    deleteAccount,
+    isLoading,
   } = useAppStore();
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    const { error } = await deleteAccount();
+
+    if (error) {
+      alert('Failed to delete account. Please try again or contact support.');
+      return;
+    }
+
+    // Account deleted successfully, navigate to welcome page
+    navigate('/');
+  };
 
   const policyLinks = useMemo(
     () => [
       {
         label: 'Privacy Policy',
         description: 'Learn how we protect your family data and account information.',
-        href: 'https://starsrewards.app/privacy',
+        href: 'https://starhabit.web.id/privacy',
       },
       {
         label: 'Terms & Conditions',
         description: 'Understand the rules for using Stars Rewards as a parent or child.',
-        href: 'https://starsrewards.app/terms',
+        href: 'https://starhabit.web.id/terms',
       },
     ],
     []
@@ -116,6 +135,34 @@ const Settings = () => {
           ))}
         </div>
       </section>
+
+      <section className="rounded-2xl border border-red-200 bg-red-50/50 shadow-sm">
+        <div className="border-b border-red-200 px-5 py-4">
+          <h2 className="text-lg font-semibold text-red-800">Danger Zone</h2>
+        </div>
+        <div className="p-5">
+          <div className="bg-white rounded-xl p-4 border border-red-200">
+            <h3 className="text-md font-semibold text-gray-800 mb-2">Delete Account</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Permanently delete your account and all associated data. This action cannot be undone.
+            </p>
+            <button
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors"
+              disabled={isLoading}
+            >
+              Delete Account
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <AccountDeletionModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteAccount}
+        isLoading={isLoading}
+      />
     </div>
   );
 };

@@ -3,8 +3,11 @@ create table profiles (
   id uuid references auth.users on delete cascade not null primary key,
   created_at timestamptz default now(),
   pin_admin text,
-  family_name text
+  family_name text,
+  deleted_at timestamptz -- Soft delete timestamp
 );
+
+create index profiles_deleted_at_idx on profiles(deleted_at) where deleted_at is not null;
 
 -- 2. Children Table
 create table children (
@@ -13,11 +16,13 @@ create table children (
   name text not null,
   birth_date date,
   current_balance integer default 0,
-  avatar_url text
+  avatar_url text,
+  deleted_at timestamptz -- Soft delete timestamp
 );
 
 -- Index for faster lookups by parent
 create index children_parent_id_idx on children(parent_id);
+create index children_deleted_at_idx on children(deleted_at) where deleted_at is not null;
 
 -- 3. Tasks Table (Templates)
 create table tasks (
@@ -28,10 +33,12 @@ create table tasks (
   type text check (type in ('ONE_TIME', 'RECURRING')) default 'ONE_TIME',
   recurrence_rule text, -- e.g., 'Daily', 'Weekly'
   is_active boolean default true,
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  deleted_at timestamptz -- Soft delete timestamp
 );
 
 create index tasks_parent_id_idx on tasks(parent_id);
+create index tasks_deleted_at_idx on tasks(deleted_at) where deleted_at is not null;
 
 -- 4. Rewards Table (Templates)
 create table rewards (
@@ -43,10 +50,12 @@ create table rewards (
   type text check (type in ('ONE_TIME', 'UNLIMITED', 'ACCUMULATIVE')) default 'UNLIMITED',
   required_task_id uuid references tasks(id) on delete set null,
   required_task_count integer default 0,
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  deleted_at timestamptz -- Soft delete timestamp
 );
 
 create index rewards_parent_id_idx on rewards(parent_id);
+create index rewards_deleted_at_idx on rewards(deleted_at) where deleted_at is not null;
 
 -- 5. Child Task Log (Verification Queue)
 create table child_tasks_log (
@@ -90,23 +99,23 @@ create policy "Public profiles are viewable by everyone." on profiles for select
 create policy "Users can insert their own profile." on profiles for insert with check ( auth.uid() = id );
 create policy "Users can update own profile." on profiles for update using ( auth.uid() = id );
 
--- Children: Parents can do everything
-create policy "Parents can view own children." on children for select using ( auth.uid() = parent_id );
+-- Children: Parents can do everything (soft delete aware)
+create policy "Parents can view own children." on children for select using ( auth.uid() = parent_id and deleted_at is null );
 create policy "Parents can insert own children." on children for insert with check ( auth.uid() = parent_id );
-create policy "Parents can update own children." on children for update using ( auth.uid() = parent_id );
-create policy "Parents can delete own children." on children for delete using ( auth.uid() = parent_id );
+create policy "Parents can update own children." on children for update using ( auth.uid() = parent_id and deleted_at is null );
+create policy "Parents can soft delete own children." on children for update using ( auth.uid() = parent_id );
 
--- Tasks: Parents can do everything
-create policy "Parents can view own tasks." on tasks for select using ( auth.uid() = parent_id );
+-- Tasks: Parents can do everything (soft delete aware)
+create policy "Parents can view own tasks." on tasks for select using ( auth.uid() = parent_id and deleted_at is null );
 create policy "Parents can insert own tasks." on tasks for insert with check ( auth.uid() = parent_id );
-create policy "Parents can update own tasks." on tasks for update using ( auth.uid() = parent_id );
-create policy "Parents can delete own tasks." on tasks for delete using ( auth.uid() = parent_id );
+create policy "Parents can update own tasks." on tasks for update using ( auth.uid() = parent_id and deleted_at is null );
+create policy "Parents can soft delete own tasks." on tasks for update using ( auth.uid() = parent_id );
 
--- Rewards: Parents can do everything
-create policy "Parents can view own rewards." on rewards for select using ( auth.uid() = parent_id );
+-- Rewards: Parents can do everything (soft delete aware)
+create policy "Parents can view own rewards." on rewards for select using ( auth.uid() = parent_id and deleted_at is null );
 create policy "Parents can insert own rewards." on rewards for insert with check ( auth.uid() = parent_id );
-create policy "Parents can update own rewards." on rewards for update using ( auth.uid() = parent_id );
-create policy "Parents can delete own rewards." on rewards for delete using ( auth.uid() = parent_id );
+create policy "Parents can update own rewards." on rewards for update using ( auth.uid() = parent_id and deleted_at is null );
+create policy "Parents can soft delete own rewards." on rewards for update using ( auth.uid() = parent_id );
 
 -- Logs: Parents can do everything
 create policy "Parents can view own logs." on child_tasks_log for select using ( auth.uid() = parent_id );
