@@ -35,10 +35,61 @@ const ChildStats = () => {
   const { activeChildId, children, transactions, tasks, rewards, childLogs } = useAppStore();
   const [timeframe, setTimeframe] = useState<Timeframe>('week');
   const child = children.find(c => c.id === activeChildId);
+
   const childTransactions = useMemo(
     () => transactions.filter(t => t.child_id === child?.id),
     [transactions, child?.id]
   );
+
+  // Get rejected mission logs for history display
+  const rejectedMissions = useMemo(
+    () => childLogs.filter(log => log.child_id === child?.id && log.status === 'REJECTED'),
+    [childLogs, child?.id]
+  );
+
+  // Combine transactions and rejected missions for history
+  const combinedHistory = useMemo(() => {
+    const transactionItems = childTransactions.map(t => ({
+      id: t.id,
+      type: 'transaction' as const,
+      data: t,
+      date: t.created_at
+    }));
+
+    const rejectedItems = rejectedMissions.map(log => ({
+      id: log.id,
+      type: 'rejected_mission' as const,
+      data: log,
+      date: log.completed_at
+    }));
+
+    return [...transactionItems, ...rejectedItems]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [childTransactions, rejectedMissions]);
+
+  // Calculate basic stats from transactions
+  const earned = childTransactions
+    .filter(t => t.amount > 0)
+    .reduce((acc, t) => acc + t.amount, 0);
+
+  const spent = childTransactions
+    .filter(t => t.amount < 0)
+    .reduce((acc, t) => acc + Math.abs(t.amount), 0);
+
+  const chartData = useMemo(
+    () => buildChartData(childTransactions, timeframe),
+    [childTransactions, timeframe]
+  );
+  const chartNetTotal = chartData.reduce((acc, point) => acc + point.value, 0);
+  const hasTransactions = childTransactions.length > 0;
+  const chartMinValue = chartData.reduce((min, point) => Math.min(min, point.value), 0);
+  const chartMaxValue = chartData.reduce((max, point) => Math.max(max, point.value), 0);
+  const chartAbsMax = Math.max(Math.abs(chartMinValue), Math.abs(chartMaxValue));
+  const yPadding = chartAbsMax === 0 ? 5 : chartAbsMax * 0.2;
+  const yDomain: [number, number] = [
+    Math.min(0, chartMinValue - yPadding),
+    Math.max(5, chartMaxValue + yPadding),
+  ];
 
   if (!child) return <div>Loading...</div>;
 
@@ -83,29 +134,13 @@ const ChildStats = () => {
     return { name, description };
   };
 
-  // Calculate basic stats from transactions
-  const earned = childTransactions
-    .filter(t => t.amount > 0)
-    .reduce((acc, t) => acc + t.amount, 0);
-
-  const spent = childTransactions
-    .filter(t => t.amount < 0)
-    .reduce((acc, t) => acc + Math.abs(t.amount), 0);
-
-  const chartData = useMemo(
-    () => buildChartData(childTransactions, timeframe),
-    [childTransactions, timeframe]
-  );
-  const chartNetTotal = chartData.reduce((acc, point) => acc + point.value, 0);
-  const hasTransactions = childTransactions.length > 0;
-  const chartMinValue = chartData.reduce((min, point) => Math.min(min, point.value), 0);
-  const chartMaxValue = chartData.reduce((max, point) => Math.max(max, point.value), 0);
-  const chartAbsMax = Math.max(Math.abs(chartMinValue), Math.abs(chartMaxValue));
-  const yPadding = chartAbsMax === 0 ? 5 : chartAbsMax * 0.2;
-  const yDomain: [number, number] = [
-    Math.min(0, chartMinValue - yPadding),
-    Math.max(5, chartMaxValue + yPadding),
-  ];
+  // Helper to get rejected mission details
+  const getRejectedMissionDetails = (log: typeof childLogs[0]) => {
+    const task = tasks.find(tsk => tsk.id === log.task_id);
+    const name = task?.name || 'Unknown Mission';
+    const description = log.rejection_reason || 'Mission Rejected';
+    return { name, description };
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -247,29 +282,47 @@ const ChildStats = () => {
       <div className="card bg-white shadow-md rounded-xl p-6">
         <h3 className="text-lg font-bold text-gray-700 mb-4">Recent History</h3>
         <div className="flex flex-col gap-3">
-          {childTransactions
+          {combinedHistory
             .slice(0, 10)
-            .map(t => {
-              const details = getTransactionDetails(t);
-              return (
-                <div key={t.id} className="flex justify-between items-center border-b border-gray-100 pb-3 last:border-none last:pb-0">
-                  <div className="flex flex-col">
-                    <span className="font-bold text-gray-700 text-sm">{details.name}</span>
-                    <span className="text-xs text-gray-400">{formatDate(t.created_at)}</span>
+            .map(item => {
+              if (item.type === 'transaction') {
+                const transaction = item.data;
+                const details = getTransactionDetails(transaction);
+                return (
+                  <div key={item.id} className="flex justify-between items-center border-b border-gray-100 pb-3 last:border-none last:pb-0">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-gray-700 text-sm">{details.name}</span>
+                      <span className="text-xs text-gray-400">{formatDate(transaction.created_at)}</span>
+                    </div>
+                    <span className={`font-bold ${transaction.amount > 0 ? 'text-green-500' : transaction.amount < 0 ? 'text-red-500' : 'text-gray-500'}`}>
+                      {transaction.amount !== 0 ? (
+                        <>{transaction.amount > 0 ? '+' : ''}{transaction.amount}</>
+                      ) : (
+                        <span className="text-xs uppercase">
+                          {transaction.type === 'TASK_VERIFIED' ? 'Done' : transaction.type === 'REWARD_REDEEMED' ? 'Redeemed' : '-'}
+                        </span>
+                      )}
+                    </span>
                   </div>
-                  <span className={`font-bold ${t.amount > 0 ? 'text-green-500' : t.amount < 0 ? 'text-red-500' : 'text-gray-500'}`}>
-                    {t.amount !== 0 ? (
-                      <>{t.amount > 0 ? '+' : ''}{t.amount}</>
-                    ) : (
-                      <span className="text-xs uppercase">
-                        {t.type === 'TASK_VERIFIED' ? 'Done' : t.type === 'REWARD_REDEEMED' ? 'Redeemed' : '-'}
-                      </span>
-                    )}
-                  </span>
-                </div>
-              );
+                );
+              } else if (item.type === 'rejected_mission') {
+                const log = item.data;
+                const details = getRejectedMissionDetails(log);
+                return (
+                  <div key={item.id} className="flex justify-between items-center border-b border-gray-100 pb-3 last:border-none last:pb-0">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-gray-700 text-sm">{details.name}</span>
+                      <span className="text-xs text-gray-400">{formatDate(log.completed_at)}</span>
+                    </div>
+                    <span className="font-bold text-red-500">
+                      <span className="text-xs uppercase">Rejected</span>
+                    </span>
+                  </div>
+                );
+              }
+              return null;
             })}
-            {childTransactions.length === 0 && (
+            {combinedHistory.length === 0 && (
               <p className="text-gray-400 text-center text-sm">No activity yet.</p>
             )}
         </div>

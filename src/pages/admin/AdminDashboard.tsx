@@ -134,7 +134,7 @@ const AdminDashboard = () => {
           isLoading={isLoading}
         />
       )}
-      
+
       <section>
         <h2 className="text-lg font-bold text-gray-700 mb-3">Verification Center</h2>
         {verifications.length === 0 ? (
