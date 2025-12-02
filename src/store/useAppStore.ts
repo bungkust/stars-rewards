@@ -132,15 +132,21 @@ export const useAppStore = create<AppState>()(
             dataService.fetchRedeemedRewards(userId)
           ]);
 
-          set({ 
-            children, 
-            tasks, 
+          set({
+            children,
+            tasks,
             pendingVerifications: verifications,
             rewards,
             transactions,
             childLogs: logs,
             redeemedHistory
           });
+
+          // Automatically determine onboarding completion based on existing data
+          // If user has children, tasks, or rewards, they've completed onboarding
+          if (children.length > 0 || tasks.length > 0 || rewards.length > 0) {
+            set({ onboardingStep: 'completed' });
+          }
         } catch (error) {
           console.error('Error refreshing data:', error);
         } finally {

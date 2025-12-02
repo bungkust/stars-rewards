@@ -27,12 +27,10 @@ const Login = () => {
       return;
     }
 
-    // Assuming if login is successful, onboarding is effectively "done" or we should check profile
-    // For now, assume existing users are done with setup
-    // But wait, useAppStore persists onboardingStep.
-    // If they login on a new device, onboardingStep might be "family-setup" (default).
-    // We should probably sync it or force it to completed.
+    // Force onboarding to completed for existing users who login
+    // The refreshData call in signInUser should have loaded existing data
     setOnboardingStep('completed');
+
     navigate('/');
   };
 
