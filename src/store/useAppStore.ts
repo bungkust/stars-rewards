@@ -152,11 +152,7 @@ export const useAppStore = create<AppState>()(
             redeemedHistory
           });
 
-          // Automatically determine onboarding completion based on existing data
-          // If user has children, tasks, or rewards, they've completed onboarding
-          if (children.length > 0 || tasks.length > 0 || rewards.length > 0) {
-            set({ onboardingStep: 'completed' });
-          }
+          // Onboarding completion is now managed by database state, not derived from data
         } catch (error) {
           console.error('Error refreshing data:', error);
         } finally {
@@ -297,7 +293,32 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      setOnboardingStep: (step) => set({ onboardingStep: step }),
+      setOnboardingStep: async (step) => {
+        // Update both local state and database
+        set({ onboardingStep: step });
+
+        // Update database if user is logged in
+        const { session } = get();
+        if (session?.user) {
+          try {
+            const { error } = await supabase
+              .from('profiles')
+              .update({ onboarding_step: step })
+              .eq('id', session.user.id);
+
+            if (error) {
+              console.error('Error updating onboarding step in database:', error);
+            } else {
+              // Update local profile state
+              set((state) => ({
+                userProfile: state.userProfile ? { ...state.userProfile, onboarding_step: step } : null
+              }));
+            }
+          } catch (error) {
+            console.error('Failed to update onboarding step:', error);
+          }
+        }
+      },
 
       setSession: (session) => set({ session }),
 
@@ -337,7 +358,8 @@ export const useAppStore = create<AppState>()(
           set({ userProfile: data as Profile });
           if (data.pin_admin) set({ adminPin: data.pin_admin });
           if (data.family_name) set({ familyName: data.family_name });
-          if (data.parent_name) set({ adminName: data.parent_name }); 
+          if (data.parent_name) set({ adminName: data.parent_name });
+          if (data.onboarding_step) set({ onboardingStep: data.onboarding_step }); 
           
           return data as Profile;
         } catch (error) {

@@ -4,6 +4,8 @@ create table profiles (
   created_at timestamptz default now(),
   pin_admin text,
   family_name text,
+  parent_name text,
+  onboarding_step text check (onboarding_step in ('family-setup', 'parent-setup', 'add-parent', 'add-child', 'first-task', 'first-reward', 'completed')) default 'family-setup',
   deleted_at timestamptz -- Soft delete timestamp
 );
 

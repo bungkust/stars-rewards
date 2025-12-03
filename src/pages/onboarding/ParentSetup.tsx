@@ -32,7 +32,7 @@ const ParentSetup = () => {
     }
 
     // Navigate to Family Setup where user will set Family Name (if logic kept) and PIN
-    setOnboardingStep('family-setup');
+    await setOnboardingStep('family-setup');
     navigate('/onboarding/family-setup');
   };
 

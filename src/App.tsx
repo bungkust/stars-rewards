@@ -95,16 +95,14 @@ const AnimatedRoutes = ({ isAdminMode, activeChildId }: { isAdminMode: boolean, 
 };
 
 function App() {
-  const { activeChildId, setActiveChild, isAdminMode, onboardingStep, session, refreshData, isLoading, children, tasks, rewards, sessionExpired, setSessionExpired } = useAppStore();
+  const { activeChildId, setActiveChild, isAdminMode, onboardingStep, session, refreshData, isLoading, userProfile, sessionExpired, setSessionExpired } = useAppStore();
   const [isChildSelectorOpen, setIsChildSelectorOpen] = useState(false);
 
   const isAuthenticated = !!session;
 
-  // Check if user has completed onboarding either by:
-  // 1. Persisted onboardingStep being 'completed', OR
-  // 2. Having actual data (children/tasks/rewards) indicating they've gone through onboarding
-  const hasCompletedOnboarding = onboardingStep === 'completed' || children.length > 0 || tasks.length > 0 || rewards.length > 0;
-  const needsOnboarding = isAuthenticated && !hasCompletedOnboarding;
+  // Use onboarding_step from database profile, fallback to local state if not loaded yet
+  const currentOnboardingStep = userProfile?.onboarding_step || onboardingStep;
+  const needsOnboarding = isAuthenticated && currentOnboardingStep !== 'completed';
 
   // Auth state is now managed by onAuthStateChange listener in the store
   // No need for manual initialization
@@ -240,8 +238,8 @@ function App() {
           {/* Explicit redirects for flow enforcement */}
           <Route path="/onboarding/parent-setup" element={<Navigate to="/onboarding/family-setup" replace />} />
           
-          {/* Fallback logic based on current step in store */}
-          <Route path="*" element={<OnboardingRedirect step={onboardingStep} />} />
+          {/* Fallback logic based on current step from database */}
+          <Route path="*" element={<OnboardingRedirect step={currentOnboardingStep} />} />
         </Routes>
       </Router>
     );

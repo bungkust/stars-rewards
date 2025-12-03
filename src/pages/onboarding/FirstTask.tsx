@@ -43,7 +43,7 @@ const FirstTask = () => {
       return;
     }
     
-    setOnboardingStep('first-reward');
+    await setOnboardingStep('first-reward');
     navigate('/onboarding/first-reward');
   };
 

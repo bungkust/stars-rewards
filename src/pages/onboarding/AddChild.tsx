@@ -66,7 +66,7 @@ const AddChild = () => {
       return; 
     }
 
-    setOnboardingStep('first-task');
+    await setOnboardingStep('first-task');
     navigate('/onboarding/first-task');
   };
 

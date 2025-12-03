@@ -21,7 +21,7 @@ const AddParent = () => {
       }
       
       // Move to next step
-      setOnboardingStep('add-child');
+      await setOnboardingStep('add-child');
       navigate('/onboarding/add-child');
     }
   };

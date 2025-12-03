@@ -52,7 +52,7 @@ const FamilySetup = () => {
     // Usually we setAdminName too if that's what the store uses
     setAdminName(name.trim()); 
 
-    setOnboardingStep('add-child');
+    await setOnboardingStep('add-child');
     navigate('/onboarding/add-child');
   };
 

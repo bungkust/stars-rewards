@@ -51,16 +51,16 @@ const FirstReward = () => {
     setShowSuccess(true);
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     // Flow Completion
-    setOnboardingStep('completed');
+    await setOnboardingStep('completed');
     toggleAdminMode(false);
-    
+
     if (children.length > 0) {
       setActiveChild(children[0].id);
     }
 
-    navigate('/'); 
+    navigate('/');
   };
 
   if (showSuccess) {
