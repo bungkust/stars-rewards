@@ -9,6 +9,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(
   supabaseUrl || '',
-  supabaseAnonKey || ''
+  supabaseAnonKey || '',
+  {
+    auth: {
+      // Critical: Prevent token refresh errors
+      autoRefreshToken: true,
+      persistSession: true,
+
+      // Use localStorage (default) - more stable than sessionStorage for Capacitor
+      storage: window.localStorage,
+    }
+  }
 );
 

@@ -8,7 +8,7 @@ import { FaEye, FaEyeSlash } from 'react-icons/fa';
 const ResetPassword = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { updatePassword, isLoading, setAuthFromUrl } = useAppStore();
+  const { updatePassword, isLoading, session } = useAppStore();
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -18,40 +18,39 @@ const ResetPassword = () => {
   const [success, setSuccess] = useState(false);
   const [isValidToken, setIsValidToken] = useState<boolean | null>(null); // null = checking, true = valid, false = invalid
 
-  // Check if we have the required tokens from URL and set auth
+  // Check if we have a valid session (handled by onAuthStateChange listener)
   useEffect(() => {
-    let accessToken = searchParams.get('access_token');
-    let refreshToken = searchParams.get('refresh_token');
-    let type = searchParams.get('type');
-
-    // If not found in search params, try hash fragment (legacy support)
-    if (!accessToken || !refreshToken) {
-      const urlParams = new URLSearchParams(window.location.hash.substring(1));
-      accessToken = accessToken || urlParams.get('access_token');
-      refreshToken = refreshToken || urlParams.get('refresh_token');
-      type = type || urlParams.get('type');
-    }
-
-    console.log('ResetPassword: URL params', { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
-
-    const validateToken = async () => {
-      if (accessToken && refreshToken && type === 'recovery') {
-        try {
-          await setAuthFromUrl();
-          setIsValidToken(true);
-        } catch (err) {
-          console.error('Auth setup failed:', err);
-          setIsValidToken(false);
-          setError('Failed to authenticate reset link. Please request a new password reset.');
-        }
+    const checkAuthState = () => {
+      // The onAuthStateChange listener handles token validation and session setup
+      // We just need to check if we have a valid session
+      if (session) {
+        setIsValidToken(true);
       } else {
-        setIsValidToken(false);
-        setError('Invalid reset link. Please request a new password reset.');
+        // Check if we have recovery tokens in URL (but let the listener handle it)
+        let accessToken = searchParams.get('access_token');
+        let refreshToken = searchParams.get('refresh_token');
+        let type = searchParams.get('type');
+
+        // If not found in search params, try hash fragment (legacy support)
+        if (!accessToken || !refreshToken) {
+          const urlParams = new URLSearchParams(window.location.hash.substring(1));
+          accessToken = accessToken || urlParams.get('access_token');
+          refreshToken = refreshToken || urlParams.get('refresh_token');
+          type = type || urlParams.get('type');
+        }
+
+        console.log('ResetPassword: URL params', { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
+
+        if (!accessToken || !refreshToken || type !== 'recovery') {
+          setIsValidToken(false);
+          setError('Invalid reset link. Please request a new password reset.');
+        }
+        // If we have tokens, the onAuthStateChange listener will handle setting the session
       }
     };
 
-    validateToken();
-  }, [searchParams, setAuthFromUrl]);
+    checkAuthState();
+  }, [searchParams, session]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

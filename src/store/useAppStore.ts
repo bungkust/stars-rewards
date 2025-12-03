@@ -55,8 +55,8 @@ interface AppState {
   
   // Auth Actions
   setSession: (session: Session | null) => void;
-  setAuthFromUrl: () => Promise<void>;
-  initializeAuth: () => Promise<void>;
+  clearSession: () => void;
+  setIsLoading: (isLoading: boolean) => void;
   fetchUserProfile: (userId: string) => Promise<Profile | null>;
   signInUser: (email: string, password: string) => Promise<{ error: any }>;
   signUpUser: (email: string, password: string, familyName?: string, pin?: string) => Promise<{ error: any }>;
@@ -296,55 +296,22 @@ export const useAppStore = create<AppState>()(
 
       setSession: (session) => set({ session }),
 
-      initializeAuth: async () => {
-        try {
-          // Get the current session
-          const { data: { session }, error } = await supabase.auth.getSession();
+      setIsLoading: (isLoading) => set({ isLoading }),
 
-          if (error) {
-            console.error('Error getting session:', error);
-            set({ session: null });
-            return;
-          }
+      clearSession: () => set({
+        session: null,
+        userProfile: null,
+        activeChildId: null,
+        children: [],
+        tasks: [],
+        childLogs: [],
+        pendingVerifications: [],
+        rewards: [],
+        transactions: [],
+        redeemedHistory: [],
+        isLoading: false
+      }),
 
-          if (session) {
-            set({ session });
-            await get().fetchUserProfile(session.user.id);
-            await get().refreshData();
-          } else {
-            set({ session: null });
-          }
-        } catch (error) {
-          console.error('Error initializing auth:', error);
-          set({ session: null });
-        }
-      },
-
-      setAuthFromUrl: async () => {
-        // Handle auth state from URL parameters (e.g., password reset)
-        const urlParams = new URLSearchParams(window.location.hash.substring(1));
-        const accessToken = urlParams.get('access_token');
-        const refreshToken = urlParams.get('refresh_token');
-        const type = urlParams.get('type');
-
-        if (accessToken && refreshToken && type === 'recovery') {
-          try {
-            const { data, error } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken,
-            });
-
-            if (error) throw error;
-
-            if (data.session) {
-              set({ session: data.session });
-              await get().fetchUserProfile(data.session.user.id);
-            }
-          } catch (error) {
-            console.error('Error setting auth from URL:', error);
-          }
-        }
-      },
 
       fetchUserProfile: async (userId) => {
         set({ isLoading: true });
@@ -681,14 +648,26 @@ export const useAppStore = create<AppState>()(
       },
 
       logout: async () => {
-        await supabase.auth.signOut();
-        set({ 
-          session: null, 
-          userProfile: null, 
-          activeChildId: null,
-          children: [],
-          isAdminMode: false
-        });
+        try {
+          // Sign out from Supabase (clears server-side session)
+          const { error } = await supabase.auth.signOut();
+
+          if (error) {
+            console.error('Error signing out:', error);
+          }
+
+          // Force cleanup of local storage tokens
+          if (window.localStorage) {
+            window.localStorage.removeItem('supabase.auth.token');
+          }
+
+          // Clear all local state using clearSession
+          get().clearSession();
+        } catch (error) {
+          console.error('Logout error:', error);
+          // Even if logout fails, clear local state
+          get().clearSession();
+        }
       },
 
       deleteAccount: async () => {
@@ -788,34 +767,51 @@ export const useAppStore = create<AppState>()(
   )
 );
 
-// Set up auth state change listener
+// Initialize auth state on app start - let the listener handle the initial state
+supabase.auth.getSession().then(({ data: { session }, error }) => {
+  if (error) {
+    console.error('Error getting initial session:', error);
+    useAppStore.getState().clearSession();
+  } else if (session) {
+    // The onAuthStateChange listener will handle this
+    console.log('Initial session found, listener will handle auth state');
+  } else {
+    // No session, ensure clean state
+    useAppStore.getState().clearSession();
+  }
+});
+
+// Set up auth state change listener as SINGLE SOURCE OF TRUTH
 supabase.auth.onAuthStateChange(async (event, session) => {
   console.log('Auth state changed:', event, session?.user?.id);
 
-  if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' && !session) {
-    // Clear session and redirect to login
-    useAppStore.getState().setSession(null);
-    // Clear user profile and all data
-    useAppStore.setState({
-      userProfile: null,
-      activeChildId: null,
-      children: [],
-      tasks: [],
-      childLogs: [],
-      pendingVerifications: [],
-      rewards: [],
-      transactions: [],
-      redeemedHistory: [],
-      isLoading: false
-    });
-    // Redirect to login page
-    window.location.href = '/login';
-  } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-    // Update session and refresh data
-    useAppStore.getState().setSession(session);
+  const store = useAppStore.getState();
+
+  if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
+    // Clear all session data
+    store.clearSession();
+
+    // Only redirect if we're not on auth-related pages
+    const currentPath = window.location.pathname || window.location.hash.replace('#', '');
+    if (!currentPath.includes('/login') && !currentPath.includes('/forgot-password') && !currentPath.includes('/reset-password')) {
+      window.location.href = '/login';
+    }
+  } else if (event === 'SIGNED_IN' || (event === 'TOKEN_REFRESHED' && session)) {
+    // Update session and fetch profile/data
+    store.setSession(session);
+
     if (session?.user) {
-      await useAppStore.getState().fetchUserProfile(session.user.id);
-      await useAppStore.getState().refreshData();
+      // Set loading to true during data fetch
+      store.setIsLoading(true);
+
+      try {
+        await store.fetchUserProfile(session.user.id);
+        await store.refreshData();
+      } catch (error) {
+        console.error('Error fetching user data after auth change:', error);
+      } finally {
+        store.setIsLoading(false);
+      }
     }
   }
 });

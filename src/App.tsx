@@ -94,17 +94,14 @@ const AnimatedRoutes = ({ isAdminMode, activeChildId }: { isAdminMode: boolean, 
 };
 
 function App() {
-  const { activeChildId, setActiveChild, isAdminMode, onboardingStep, session, refreshData, initializeAuth } = useAppStore();
+  const { activeChildId, setActiveChild, isAdminMode, onboardingStep, session, refreshData, isLoading } = useAppStore();
   const [isChildSelectorOpen, setIsChildSelectorOpen] = useState(false);
 
   const isAuthenticated = !!session;
   const needsOnboarding = isAuthenticated && onboardingStep !== 'completed';
 
-
-  // Initialize auth on mount
-  useEffect(() => {
-    initializeAuth();
-  }, [initializeAuth]);
+  // Auth state is now managed by onAuthStateChange listener in the store
+  // No need for manual initialization
 
   // Debug logging
   console.log('App render:', {
@@ -182,6 +179,18 @@ function App() {
     setActiveChild(childId);
     setIsChildSelectorOpen(false);
   };
+
+  // Show loading spinner while auth state is being determined
+  if (isLoading && !session && !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-blue-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Unauthenticated Router
   if (!isAuthenticated) {
