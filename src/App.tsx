@@ -97,6 +97,7 @@ const AnimatedRoutes = ({ isAdminMode, activeChildId }: { isAdminMode: boolean, 
 function App() {
   const { activeChildId, setActiveChild, isAdminMode, onboardingStep, session, refreshData, isLoading, userProfile, sessionExpired, setSessionExpired } = useAppStore();
   const [isChildSelectorOpen, setIsChildSelectorOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const isAuthenticated = !!session;
 
@@ -140,44 +141,67 @@ function App() {
     }
   }, [isAuthenticated, refreshData]);
 
-  // Realtime Subscription
+  // MODE SWITCHING: Force token refresh and data sync
   useEffect(() => {
-    if (!isAuthenticated || !session?.user) return;
+    const handleModeSwitch = async () => {
+      if (!session) {
+        console.log('🚫 Mode switch skipped: no active session');
+        return; // Exit if not logged in
+      }
 
-    const userId = session.user.id;
+      console.log(`🔄 MODE SWITCH DETECTED: ${isAdminMode ? 'ADMIN' : 'CHILD'} mode activated`);
+      setIsRefreshing(true);
+      console.log(`⏳ Starting mode switch process for: ${isAdminMode ? 'ADMIN' : 'CHILD'}`);
 
-    // Subscribe to all relevant tables for the current user (parent)
-    const channels = [
-      supabase
-        .channel('public:tasks')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks', filter: `parent_id=eq.${userId}` }, () => refreshData())
-        .subscribe(),
-      
-      supabase
-        .channel('public:rewards')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'rewards', filter: `parent_id=eq.${userId}` }, () => refreshData())
-        .subscribe(),
+      try {
+        // --- STEP 1: FORCE TOKEN REFRESH & VALIDATION ---
+        console.log('🔐 Validating session and refreshing token...');
+        const { data: { session: newSession }, error: refreshError } = await supabase.auth.getSession();
 
-      supabase
-        .channel('public:children')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'children', filter: `parent_id=eq.${userId}` }, () => refreshData())
-        .subscribe(),
+        if (refreshError || !newSession) {
+          console.error('❌ Token refresh failed during mode switch:', refreshError);
+          // If refresh fails, token refresh is dead -> Force logout
+          await useAppStore.getState().logout();
+          return; // Don't set isRefreshing false here as we're navigating away
+        }
 
-      supabase
-        .channel('public:child_tasks_log')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'child_tasks_log', filter: `parent_id=eq.${userId}` }, () => refreshData())
-        .subscribe(),
+        console.log('✅ Token refresh successful, proceeding with data sync');
 
-      supabase
-        .channel('public:coin_transactions')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'coin_transactions', filter: `parent_id=eq.${userId}` }, () => refreshData())
-        .subscribe()
-    ];
+        // --- STEP 2: FETCH MODE-SPECIFIC DATA (SYNC) ---
+        console.log('📊 Starting data synchronization for mode:', isAdminMode ? 'ADMIN' : 'CHILD');
 
-    return () => {
-      channels.forEach(channel => supabase.removeChannel(channel));
+        if (isAdminMode) {
+          // CRITICAL ADMIN DATA: Pending verification queue
+          console.log('📋 Syncing admin data: pending verifications');
+          await refreshData(); // This will fetch pendingVerifications and other admin data
+        } else {
+          // CRITICAL CHILD DATA: Child's daily tasks and progress
+          console.log('👶 Syncing child data: daily tasks and progress');
+          await refreshData(); // This will fetch child-specific data including tasks and logs
+        }
+
+        console.log('✅ Mode switch data sync completed successfully');
+      } catch (error) {
+        console.error('❌ Error during mode switch data sync:', error);
+        console.error('🚨 Error details:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        });
+        // Don't force logout here, just log the error
+        // User can try again or data will sync on next mode switch
+      } finally {
+        // Only set refreshing to false if we didn't logout (navigation away)
+        if (session) {
+          setIsRefreshing(false);
+          console.log(`✅ MODE SWITCH COMPLETED: ${isAdminMode ? 'ADMIN' : 'CHILD'} mode ready`);
+        } else {
+          console.log('🚪 MODE SWITCH CANCELLED: user logged out during process');
+        }
+      }
     };
-  }, [isAuthenticated, session?.user?.id, refreshData]);
+
+    handleModeSwitch();
+  }, [isAdminMode, session]); // Run when mode or session changes
 
   const handleChildSelect = (childId: string) => {
     setActiveChild(childId);
@@ -189,13 +213,15 @@ function App() {
     window.location.href = '/login';
   };
 
-  // Show loading spinner while auth state is being determined
-  if (isLoading && !session && !isAuthenticated) {
+  // Show loading spinner while auth state is being determined or mode is switching
+  if ((isLoading && !session && !isAuthenticated) || isRefreshing) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-blue-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600">
+            {isRefreshing ? 'Menyinkronkan data terbaru...' : 'Loading...'}
+          </p>
         </div>
       </div>
     );

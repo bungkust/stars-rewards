@@ -300,15 +300,15 @@ export const useAppStore = create<AppState>()(
         // Update database if user is logged in
         const { session } = get();
         if (session?.user) {
-          try {
+        try {
             const { error } = await supabase
               .from('profiles')
               .update({ onboarding_step: step })
               .eq('id', session.user.id);
 
-            if (error) {
+          if (error) {
               console.error('Error updating onboarding step in database:', error);
-            } else {
+          } else {
               // Update local profile state
               set((state) => ({
                 userProfile: state.userProfile ? { ...state.userProfile, onboarding_step: step } : null
@@ -358,7 +358,7 @@ export const useAppStore = create<AppState>()(
           set({ userProfile: data as Profile });
           if (data.pin_admin) set({ adminPin: data.pin_admin });
           if (data.family_name) set({ familyName: data.family_name });
-          if (data.parent_name) set({ adminName: data.parent_name });
+          if (data.parent_name) set({ adminName: data.parent_name }); 
           if (data.onboarding_step) set({ onboardingStep: data.onboarding_step }); 
           
           return data as Profile;
