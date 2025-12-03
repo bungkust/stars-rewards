@@ -56,6 +56,7 @@ interface AppState {
   // Auth Actions
   setSession: (session: Session | null) => void;
   setAuthFromUrl: () => Promise<void>;
+  initializeAuth: () => Promise<void>;
   fetchUserProfile: (userId: string) => Promise<Profile | null>;
   signInUser: (email: string, password: string) => Promise<{ error: any }>;
   signUpUser: (email: string, password: string, familyName?: string, pin?: string) => Promise<{ error: any }>;
@@ -294,6 +295,30 @@ export const useAppStore = create<AppState>()(
       setOnboardingStep: (step) => set({ onboardingStep: step }),
 
       setSession: (session) => set({ session }),
+
+      initializeAuth: async () => {
+        try {
+          // Get the current session
+          const { data: { session }, error } = await supabase.auth.getSession();
+
+          if (error) {
+            console.error('Error getting session:', error);
+            set({ session: null });
+            return;
+          }
+
+          if (session) {
+            set({ session });
+            await get().fetchUserProfile(session.user.id);
+            await get().refreshData();
+          } else {
+            set({ session: null });
+          }
+        } catch (error) {
+          console.error('Error initializing auth:', error);
+          set({ session: null });
+        }
+      },
 
       setAuthFromUrl: async () => {
         // Handle auth state from URL parameters (e.g., password reset)
@@ -762,3 +787,35 @@ export const useAppStore = create<AppState>()(
     }
   )
 );
+
+// Set up auth state change listener
+supabase.auth.onAuthStateChange(async (event, session) => {
+  console.log('Auth state changed:', event, session?.user?.id);
+
+  if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' && !session) {
+    // Clear session and redirect to login
+    useAppStore.getState().setSession(null);
+    // Clear user profile and all data
+    useAppStore.setState({
+      userProfile: null,
+      activeChildId: null,
+      children: [],
+      tasks: [],
+      childLogs: [],
+      pendingVerifications: [],
+      rewards: [],
+      transactions: [],
+      redeemedHistory: [],
+      isLoading: false
+    });
+    // Redirect to login page
+    window.location.href = '/login';
+  } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+    // Update session and refresh data
+    useAppStore.getState().setSession(session);
+    if (session?.user) {
+      await useAppStore.getState().fetchUserProfile(session.user.id);
+      await useAppStore.getState().refreshData();
+    }
+  }
+});

@@ -192,13 +192,36 @@ export const dataService = {
   /**
    * Retrieves transaction history.
    */
-  fetchTransactions: async (parentId: string): Promise<CoinTransaction[]> => {
+  fetchTransactions: async (parentId: string, limit: number = 100): Promise<CoinTransaction[]> => {
     const { data, error } = await supabase
       .from('coin_transactions')
       .select('*')
       .eq('parent_id', parentId)
       .order('created_at', { ascending: false })
-      .limit(50);
+      .limit(limit);
+
+    if (error) {
+      console.error('Error fetching transactions:', error);
+      return [];
+    }
+
+    return data as CoinTransaction[];
+  },
+
+  /**
+   * Fetches transactions with pagination support
+   */
+  fetchTransactionsPaginated: async (
+    parentId: string,
+    limit: number = 50,
+    offset: number = 0
+  ): Promise<CoinTransaction[]> => {
+    const { data, error } = await supabase
+      .from('coin_transactions')
+      .select('*')
+      .eq('parent_id', parentId)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) {
       console.error('Error fetching transactions:', error);
@@ -260,13 +283,35 @@ export const dataService = {
    * Retrieves logs for all children of a parent (typically for today or recent history).
    * Simplified to fetch last 50 logs for now to check status.
    */
-  fetchChildLogs: async (parentId: string): Promise<ChildTaskLog[]> => {
+  fetchChildLogs: async (parentId: string, limit: number = 200): Promise<ChildTaskLog[]> => {
     const { data, error } = await supabase
       .from('child_tasks_log')
       .select('*')
       .eq('parent_id', parentId)
       .order('completed_at', { ascending: false })
-      .limit(100);
+      .limit(limit);
+
+    if (error) {
+      console.error('Error fetching logs:', error);
+      return [];
+    }
+    return data as ChildTaskLog[];
+  },
+
+  /**
+   * Fetches child logs with pagination support
+   */
+  fetchChildLogsPaginated: async (
+    parentId: string,
+    limit: number = 100,
+    offset: number = 0
+  ): Promise<ChildTaskLog[]> => {
+    const { data, error } = await supabase
+      .from('child_tasks_log')
+      .select('*')
+      .eq('parent_id', parentId)
+      .order('completed_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) {
       console.error('Error fetching logs:', error);
@@ -286,7 +331,7 @@ export const dataService = {
       .from('child_tasks_log')
       .select(`
         *,
-        task:tasks(name, reward_value),
+        task:tasks(name, reward_value, type),
         child:children(name)
       `)
       .eq('parent_id', parentId)
@@ -302,6 +347,7 @@ export const dataService = {
       task_title: item.task?.name || 'Unknown Task',
       reward_value: item.task?.reward_value || 0,
       child_name: item.child?.name || 'Unknown Child',
+      task_type: item.task?.type || 'ONE_TIME',
     }));
   },
 

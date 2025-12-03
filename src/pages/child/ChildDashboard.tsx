@@ -5,19 +5,31 @@ import AvatarSelectionModal from '../../components/modals/AvatarSelectionModal';
 import TaskCompletionModal from '../../components/modals/TaskCompletionModal';
 import TaskRejectionDetailsModal from '../../components/modals/TaskRejectionDetailsModal';
 
+type TaskFilter = 'daily' | 'once' | 'all';
+
 const ChildDashboard = () => {
   const { activeChildId, children, getTasksByChildId, updateChildAvatar, completeTask, isLoading, childLogs } = useAppStore();
+  const [taskFilter, setTaskFilter] = useState<TaskFilter>('daily');
   const child = children.find(c => c.id === activeChildId);
   const allTasks = activeChildId ? getTasksByChildId(activeChildId) : [];
 
-  // Filter for "Today" and Sort by Newest
+  // Filter for "Today" based on task filter and Sort by Newest
   const tasks = allTasks.filter(task => {
     if (!task.is_active) return false;
-    
-    // Always show Daily tasks
+
+    // Filter by task type first
+    if (taskFilter === 'daily' && task.recurrence_rule !== 'Daily') {
+      return false;
+    }
+    if (taskFilter === 'once' && task.type !== 'ONE_TIME') {
+      return false;
+    }
+    // For 'all', show all active tasks
+
+    // Apply date logic for today's display
     if (task.recurrence_rule === 'Daily') return true;
 
-    // Check recurrence date logic
+    // Check recurrence date logic for other types
     if (!task.created_at) return true; // Fallback if missing date, show it
     const created = new Date(task.created_at);
     const today = new Date();
@@ -25,11 +37,11 @@ const ChildDashboard = () => {
     if (task.recurrence_rule === 'Weekly') {
       return created.getDay() === today.getDay();
     }
-    
+
     if (task.recurrence_rule === 'Monthly') {
       return created.getDate() === today.getDate();
     }
-    
+
     // 'Once' or default: Show only if created today
     return created.toDateString() === today.toDateString();
   }).sort((a, b) => {
@@ -133,7 +145,29 @@ const ChildDashboard = () => {
       {/* Today's Tasks Section */}
       <div className="flex flex-col gap-4">
         <h3 className="text-xl font-bold text-gray-700 px-1">Today's Missions</h3>
-        
+
+        {/* Task Filter */}
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          <button
+            onClick={() => setTaskFilter('daily')}
+            className={`btn btn-sm rounded-full ${taskFilter === 'daily' ? 'btn-primary' : 'btn-outline'}`}
+          >
+            Daily
+          </button>
+          <button
+            onClick={() => setTaskFilter('once')}
+            className={`btn btn-sm rounded-full ${taskFilter === 'once' ? 'btn-primary' : 'btn-outline'}`}
+          >
+            Once
+          </button>
+          <button
+            onClick={() => setTaskFilter('all')}
+            className={`btn btn-sm rounded-full ${taskFilter === 'all' ? 'btn-primary' : 'btn-outline'}`}
+          >
+            All
+          </button>
+        </div>
+
         {tasks.length === 0 ? (
           <div className="text-center p-8 bg-base-100 rounded-xl border-2 border-dashed border-gray-300 text-gray-400">
             <p>No missions for today. You're free!</p>

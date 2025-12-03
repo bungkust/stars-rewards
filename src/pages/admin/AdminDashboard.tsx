@@ -7,18 +7,23 @@ import RejectionReasonModal from '../../components/modals/RejectionReasonModal';
 import VerificationSuccessModal from '../../components/modals/VerificationSuccessModal';
 import StarAdjustmentModal from '../../components/modals/StarAdjustmentModal';
 
+type TaskTypeFilter = 'all' | 'ONE_TIME' | 'RECURRING';
+
 const AdminDashboard = () => {
   const { pendingVerifications, verifyTask, rejectTask, manualAdjustment, children, isLoading } = useAppStore();
-  
+
   const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [adjustmentModalOpen, setAdjustmentModalOpen] = useState(false);
-  
+
   const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
   const [selectedChild, setSelectedChild] = useState<{id: string, name: string, balance: number} | null>(null);
   const [successType, setSuccessType] = useState<'approve' | 'reject'>('approve');
+  const [taskTypeFilter, setTaskTypeFilter] = useState<TaskTypeFilter>('all');
 
-  const verifications = pendingVerifications || [];
+  const verifications = (pendingVerifications || []).filter(item =>
+    taskTypeFilter === 'all' || item.task_type === taskTypeFilter
+  );
 
   const handleApprove = async (logId: string, childId: string, rewardValue: number) => {
     const { error } = await verifyTask(logId, childId, rewardValue);
@@ -137,6 +142,32 @@ const AdminDashboard = () => {
 
       <section>
         <h2 className="text-lg font-bold text-gray-700 mb-3">Verification Center</h2>
+
+        {/* Task Type Filter */}
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={() => setTaskTypeFilter('all')}
+            className={`btn btn-sm rounded-full ${taskTypeFilter === 'all' ? 'btn-primary' : 'btn-outline'} ${!pendingVerifications || pendingVerifications.length === 0 ? 'btn-disabled' : ''}`}
+            disabled={!pendingVerifications || pendingVerifications.length === 0}
+          >
+            All Types
+          </button>
+          <button
+            onClick={() => setTaskTypeFilter('ONE_TIME')}
+            className={`btn btn-sm rounded-full ${taskTypeFilter === 'ONE_TIME' ? 'btn-primary' : 'btn-outline'} ${!pendingVerifications || pendingVerifications.length === 0 ? 'btn-disabled' : ''}`}
+            disabled={!pendingVerifications || pendingVerifications.length === 0}
+          >
+            One-time
+          </button>
+          <button
+            onClick={() => setTaskTypeFilter('RECURRING')}
+            className={`btn btn-sm rounded-full ${taskTypeFilter === 'RECURRING' ? 'btn-primary' : 'btn-outline'} ${!pendingVerifications || pendingVerifications.length === 0 ? 'btn-disabled' : ''}`}
+            disabled={!pendingVerifications || pendingVerifications.length === 0}
+          >
+            Recurring
+          </button>
+        </div>
+
         {verifications.length === 0 ? (
           <AppCard className="flex flex-col items-center justify-center py-12 text-center">
             <FaCheckDouble className="w-16 h-16 text-gray-300 mb-4" />
@@ -152,7 +183,16 @@ const AdminDashboard = () => {
                     <FaClock className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-gray-800">{item.task_title}</h4>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-bold text-gray-800">{item.task_title}</h4>
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        item.task_type === 'ONE_TIME'
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-green-100 text-green-700'
+                      }`}>
+                        {item.task_type === 'ONE_TIME' ? 'One-time' : 'Recurring'}
+                      </span>
+                    </div>
                     <p className="text-xs text-gray-500">
                       {item.child_name} • Reward: {item.reward_value} Stars
                     </p>

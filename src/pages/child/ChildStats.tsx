@@ -31,9 +31,13 @@ const timeframeOptions: { value: Timeframe; label: string }[] = [
   { value: 'month', label: 'Month' },
 ];
 
+type DateRange = 'today' | '7days' | '30days';
+
 const ChildStats = () => {
   const { activeChildId, children, transactions, tasks, rewards, childLogs } = useAppStore();
   const [timeframe, setTimeframe] = useState<Timeframe>('week');
+  const [selectedRange, setSelectedRange] = useState<DateRange>('today');
+  const [historyPageSize, setHistoryPageSize] = useState(10);
   const child = children.find(c => c.id === activeChildId);
 
   const childTransactions = useMemo(
@@ -47,25 +51,51 @@ const ChildStats = () => {
     [childLogs, child?.id]
   );
 
+  // Helper to check if a date falls within the selected range
+  const isDateInSelectedRange = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    switch (selectedRange) {
+      case 'today':
+        return date >= today;
+      case '7days':
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(today.getDate() - 7);
+        return date >= sevenDaysAgo;
+      case '30days':
+        const thirtyDaysAgo = new Date(today);
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+        return date >= thirtyDaysAgo;
+      default:
+        return true;
+    }
+  };
+
   // Combine transactions and rejected missions for history
   const combinedHistory = useMemo(() => {
-    const transactionItems = childTransactions.map(t => ({
-      id: t.id,
-      type: 'transaction' as const,
-      data: t,
-      date: t.created_at
-    }));
+    const transactionItems = childTransactions
+      .filter(t => isDateInSelectedRange(t.created_at))
+      .map(t => ({
+        id: t.id,
+        type: 'transaction' as const,
+        data: t,
+        date: t.created_at
+      }));
 
-    const rejectedItems = rejectedMissions.map(log => ({
-      id: log.id,
-      type: 'rejected_mission' as const,
-      data: log,
-      date: log.completed_at
-    }));
+    const rejectedItems = rejectedMissions
+      .filter(log => isDateInSelectedRange(log.completed_at))
+      .map(log => ({
+        id: log.id,
+        type: 'rejected_mission' as const,
+        data: log,
+        date: log.completed_at
+      }));
 
     return [...transactionItems, ...rejectedItems]
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [childTransactions, rejectedMissions]);
+  }, [childTransactions, rejectedMissions, selectedRange]);
 
   // Calculate basic stats from transactions
   const earned = childTransactions
@@ -281,9 +311,41 @@ const ChildStats = () => {
       {/* Recent History (Simple List) */}
       <div className="card bg-white shadow-md rounded-xl p-6">
         <h3 className="text-lg font-bold text-gray-700 mb-4">Recent History</h3>
+        <div className="flex flex-col gap-3 mb-4">
+          <span className="text-sm text-gray-600">Filter by time period:</span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setSelectedRange('today');
+                setHistoryPageSize(10);
+              }}
+              className={`btn btn-sm ${selectedRange === 'today' ? 'btn-primary text-white' : 'btn-ghost text-gray-500'}`}
+            >
+              Today
+            </button>
+            <button
+              onClick={() => {
+                setSelectedRange('7days');
+                setHistoryPageSize(10);
+              }}
+              className={`btn btn-sm ${selectedRange === '7days' ? 'btn-primary text-white' : 'btn-ghost text-gray-500'}`}
+            >
+              7 Days
+            </button>
+            <button
+              onClick={() => {
+                setSelectedRange('30days');
+                setHistoryPageSize(10);
+              }}
+              className={`btn btn-sm ${selectedRange === '30days' ? 'btn-primary text-white' : 'btn-ghost text-gray-500'}`}
+            >
+              30 Days
+            </button>
+          </div>
+        </div>
         <div className="flex flex-col gap-3">
           {combinedHistory
-            .slice(0, 10)
+            .slice(0, historyPageSize)
             .map(item => {
               if (item.type === 'transaction') {
                 const transaction = item.data;
@@ -329,6 +391,16 @@ const ChildStats = () => {
             })}
             {combinedHistory.length === 0 && (
               <p className="text-gray-400 text-center text-sm">No activity yet.</p>
+            )}
+            {combinedHistory.length > historyPageSize && (
+              <div className="flex justify-center mt-4">
+                <button
+                  onClick={() => setHistoryPageSize(prev => prev + 10)}
+                  className="btn btn-sm btn-outline btn-primary"
+                >
+                  Load More ({combinedHistory.length - historyPageSize} remaining)
+                </button>
+              </div>
             )}
         </div>
       </div>

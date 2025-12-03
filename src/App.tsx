@@ -94,12 +94,17 @@ const AnimatedRoutes = ({ isAdminMode, activeChildId }: { isAdminMode: boolean, 
 };
 
 function App() {
-  const { activeChildId, setActiveChild, isAdminMode, onboardingStep, session, refreshData } = useAppStore();
+  const { activeChildId, setActiveChild, isAdminMode, onboardingStep, session, refreshData, initializeAuth } = useAppStore();
   const [isChildSelectorOpen, setIsChildSelectorOpen] = useState(false);
 
   const isAuthenticated = !!session;
   const needsOnboarding = isAuthenticated && onboardingStep !== 'completed';
 
+
+  // Initialize auth on mount
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
 
   // Debug logging
   console.log('App render:', {
