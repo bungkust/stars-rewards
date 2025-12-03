@@ -16,6 +16,9 @@ export const supabase = createClient(
       autoRefreshToken: true,
       persistSession: true,
 
+      // Session timeout: 24 hours - set via JWT exp claim
+      // Note: This is configured server-side in Supabase dashboard under Authentication > Settings
+
       // Use localStorage (default) - more stable than sessionStorage for Capacitor
       storage: window.localStorage,
     }
