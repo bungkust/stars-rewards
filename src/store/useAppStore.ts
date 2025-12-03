@@ -32,6 +32,7 @@ interface AppState {
   session: Session | null;
   userProfile: Profile | null;
   isLoading: boolean;
+  sessionExpired: boolean;
 
   // Actions
   setActiveChild: (childId: string | null) => void;
@@ -57,6 +58,7 @@ interface AppState {
   setSession: (session: Session | null) => void;
   clearSession: () => void;
   setIsLoading: (isLoading: boolean) => void;
+  setSessionExpired: (expired: boolean) => void;
   fetchUserProfile: (userId: string) => Promise<Profile | null>;
   signInUser: (email: string, password: string) => Promise<{ error: any }>;
   signUpUser: (email: string, password: string, familyName?: string, pin?: string) => Promise<{ error: any }>;
@@ -94,6 +96,7 @@ export const useAppStore = create<AppState>()(
       session: null,
       userProfile: null,
       isLoading: false,
+      sessionExpired: false,
 
       setActiveChild: (childId) => set({ activeChildId: childId }),
       
@@ -120,8 +123,10 @@ export const useAppStore = create<AppState>()(
       setNotificationsEnabled: (value) => set({ notificationsEnabled: value }),
 
       refreshData: async () => {
-        const { session } = get();
-        if (!session?.user) return;
+        const { session, isLoading } = get();
+
+        // GATED ACCESS: Prevent data fetching during auth uncertainty or when already loading
+        if (!session?.user || isLoading) return;
 
         set({ isLoading: true });
         try {
@@ -297,6 +302,8 @@ export const useAppStore = create<AppState>()(
       setSession: (session) => set({ session }),
 
       setIsLoading: (isLoading) => set({ isLoading }),
+
+      setSessionExpired: (expired) => set({ sessionExpired: expired }),
 
       clearSession: () => set({
         session: null,
@@ -648,25 +655,29 @@ export const useAppStore = create<AppState>()(
       },
 
       logout: async () => {
+        // OPTIMISTIC LOGOUT: Clear local state immediately for instant UI response
+        // This prevents stuck logout states even if server request fails
+        const store = get();
+
+        // Clear all sensitive local state immediately
+        store.clearSession();
+
+        // Force cleanup of local storage tokens immediately
+        if (window.localStorage) {
+          window.localStorage.removeItem('supabase.auth.token');
+        }
+
         try {
-          // Sign out from Supabase (clears server-side session)
+          // Attempt server-side sign out (runs in background)
           const { error } = await supabase.auth.signOut();
 
           if (error) {
-            console.error('Error signing out:', error);
+            console.error('Error signing out from server:', error);
+            // Local state is already cleared, so user sees login page immediately
           }
-
-          // Force cleanup of local storage tokens
-          if (window.localStorage) {
-            window.localStorage.removeItem('supabase.auth.token');
-          }
-
-          // Clear all local state using clearSession
-          get().clearSession();
         } catch (error) {
-          console.error('Logout error:', error);
-          // Even if logout fails, clear local state
-          get().clearSession();
+          console.error('Logout request failed:', error);
+          // Local state is already cleared, preventing stuck UI
         }
       },
 
@@ -791,11 +802,9 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     // Clear all session data
     store.clearSession();
 
-    // Only redirect if we're not on auth-related pages
-    const currentPath = window.location.pathname || window.location.hash.replace('#', '');
-    if (!currentPath.includes('/login') && !currentPath.includes('/forgot-password') && !currentPath.includes('/reset-password')) {
-      window.location.href = '/login';
-    }
+    // Show session expired modal instead of immediate redirect
+    // This provides better UX and prevents stuck states
+    store.setSessionExpired(true);
   } else if (event === 'SIGNED_IN' || (event === 'TOKEN_REFRESHED' && session)) {
     // Update session and fetch profile/data
     store.setSession(session);

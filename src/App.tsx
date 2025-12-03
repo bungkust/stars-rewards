@@ -7,6 +7,7 @@ import { useAppStore } from './store/useAppStore';
 import { supabase } from './utils/supabase';
 import MobileLayout from './components/layout/MobileLayout';
 import ChildSelectorModal from './components/modals/ChildSelectorModal';
+import SessionExpiredModal from './components/modals/SessionExpiredModal';
 import Settings from './pages/settings/Settings';
 import ChildDashboard from './pages/child/ChildDashboard';
 import ChildTasks from './pages/child/ChildTasks';
@@ -94,11 +95,16 @@ const AnimatedRoutes = ({ isAdminMode, activeChildId }: { isAdminMode: boolean, 
 };
 
 function App() {
-  const { activeChildId, setActiveChild, isAdminMode, onboardingStep, session, refreshData, isLoading } = useAppStore();
+  const { activeChildId, setActiveChild, isAdminMode, onboardingStep, session, refreshData, isLoading, children, tasks, rewards, sessionExpired, setSessionExpired } = useAppStore();
   const [isChildSelectorOpen, setIsChildSelectorOpen] = useState(false);
 
   const isAuthenticated = !!session;
-  const needsOnboarding = isAuthenticated && onboardingStep !== 'completed';
+
+  // Check if user has completed onboarding either by:
+  // 1. Persisted onboardingStep being 'completed', OR
+  // 2. Having actual data (children/tasks/rewards) indicating they've gone through onboarding
+  const hasCompletedOnboarding = onboardingStep === 'completed' || children.length > 0 || tasks.length > 0 || rewards.length > 0;
+  const needsOnboarding = isAuthenticated && !hasCompletedOnboarding;
 
   // Auth state is now managed by onAuthStateChange listener in the store
   // No need for manual initialization
@@ -180,6 +186,11 @@ function App() {
     setIsChildSelectorOpen(false);
   };
 
+  const handleSessionExpiredLogin = () => {
+    setSessionExpired(false);
+    window.location.href = '/login';
+  };
+
   // Show loading spinner while auth state is being determined
   if (isLoading && !session && !isAuthenticated) {
     return (
@@ -247,6 +258,12 @@ function App() {
       <ChildSelectorModal 
         isOpen={isChildSelectorOpen && !isAdminMode} 
         onSelect={handleChildSelect} 
+      />
+
+      {/* Session Expired Modal (Global - shows when session dies) */}
+      <SessionExpiredModal
+        isOpen={sessionExpired}
+        onLogin={handleSessionExpiredLogin}
       />
     </Router>
   );

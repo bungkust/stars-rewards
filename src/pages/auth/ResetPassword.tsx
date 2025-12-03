@@ -27,19 +27,19 @@ const ResetPassword = () => {
         setIsValidToken(true);
       } else {
         // Check if we have recovery tokens in URL (but let the listener handle it)
-        let accessToken = searchParams.get('access_token');
-        let refreshToken = searchParams.get('refresh_token');
-        let type = searchParams.get('type');
+    let accessToken = searchParams.get('access_token');
+    let refreshToken = searchParams.get('refresh_token');
+    let type = searchParams.get('type');
 
-        // If not found in search params, try hash fragment (legacy support)
-        if (!accessToken || !refreshToken) {
-          const urlParams = new URLSearchParams(window.location.hash.substring(1));
-          accessToken = accessToken || urlParams.get('access_token');
-          refreshToken = refreshToken || urlParams.get('refresh_token');
-          type = type || urlParams.get('type');
-        }
+    // If not found in search params, try hash fragment (legacy support)
+    if (!accessToken || !refreshToken) {
+      const urlParams = new URLSearchParams(window.location.hash.substring(1));
+      accessToken = accessToken || urlParams.get('access_token');
+      refreshToken = refreshToken || urlParams.get('refresh_token');
+      type = type || urlParams.get('type');
+    }
 
-        console.log('ResetPassword: URL params', { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
+    console.log('ResetPassword: URL params', { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
 
         if (!accessToken || !refreshToken || type !== 'recovery') {
           setIsValidToken(false);

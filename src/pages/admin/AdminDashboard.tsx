@@ -21,15 +21,24 @@ const AdminDashboard = () => {
   const [successType, setSuccessType] = useState<'approve' | 'reject'>('approve');
   const [taskTypeFilter, setTaskTypeFilter] = useState<TaskTypeFilter>('all');
 
+  // Local loading states for verification actions to prevent global loading interference
+  const [verifyingTaskId, setVerifyingTaskId] = useState<string | null>(null);
+  const [rejectingTaskId, setRejectingTaskId] = useState<string | null>(null);
+
   const verifications = (pendingVerifications || []).filter(item =>
     taskTypeFilter === 'all' || item.task_type === taskTypeFilter
   );
 
   const handleApprove = async (logId: string, childId: string, rewardValue: number) => {
-    const { error } = await verifyTask(logId, childId, rewardValue);
-    if (!error) {
-      setSuccessType('approve');
-      setSuccessModalOpen(true);
+    setVerifyingTaskId(logId);
+    try {
+      const { error } = await verifyTask(logId, childId, rewardValue);
+      if (!error) {
+        setSuccessType('approve');
+        setSuccessModalOpen(true);
+      }
+    } finally {
+      setVerifyingTaskId(null);
     }
   };
 
@@ -40,12 +49,17 @@ const AdminDashboard = () => {
 
   const handleConfirmReject = async (reason: string) => {
     if (selectedLogId) {
-      const { error } = await rejectTask(selectedLogId, reason);
-      if (!error) {
-        setRejectionModalOpen(false);
-        setSelectedLogId(null);
-        setSuccessType('reject');
-        setSuccessModalOpen(true);
+      setRejectingTaskId(selectedLogId);
+      try {
+        const { error } = await rejectTask(selectedLogId, reason);
+        if (!error) {
+          setRejectionModalOpen(false);
+          setSelectedLogId(null);
+          setSuccessType('reject');
+          setSuccessModalOpen(true);
+        }
+      } finally {
+        setRejectingTaskId(null);
       }
     }
   };
@@ -192,19 +206,19 @@ const AdminDashboard = () => {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button 
-                    className="btn btn-sm btn-square btn-outline btn-error" 
+                  <button
+                    className="btn btn-sm btn-square btn-outline btn-error"
                     title="Reject"
                     onClick={() => onRejectClick(item.id)}
-                    disabled={isLoading}
+                    disabled={verifyingTaskId === item.id || rejectingTaskId === item.id}
                   >
                     <FaTimes />
                   </button>
-                  <button 
-                    className="btn btn-sm btn-square btn-success text-white" 
+                  <button
+                    className="btn btn-sm btn-square btn-success text-white"
                     title="Approve"
                     onClick={() => handleApprove(item.id, item.child_id, item.reward_value)}
-                    disabled={isLoading}
+                    disabled={verifyingTaskId === item.id || rejectingTaskId === item.id}
                   >
                     <FaCheck />
                   </button>
