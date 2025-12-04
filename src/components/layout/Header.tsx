@@ -78,6 +78,7 @@ const Header = ({ onParentLoginClick, onSettingsClick, onChildSelectClick }: Hea
           <ul className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-white/95 backdrop-blur rounded-box border border-base-200 min-w-44">
             {isAdminMode ? (
               <>
+
                 <li>
                   <button
                     className="justify-between text-sm font-medium"
@@ -87,6 +88,17 @@ const Header = ({ onParentLoginClick, onSettingsClick, onChildSelectClick }: Hea
                     }}
                   >
                     Back to Child
+                  </button>
+                </li>
+                <li>
+                  <button
+                    className="justify-between text-sm font-medium"
+                    onClick={() => {
+                      closeMenu();
+                      onSettingsClick();
+                    }}
+                  >
+                    Settings
                   </button>
                 </li>
                 <li>
@@ -112,17 +124,6 @@ const Header = ({ onParentLoginClick, onSettingsClick, onChildSelectClick }: Hea
                     }}
                   >
                     Parent Login
-                  </button>
-                </li>
-                <li>
-                  <button
-                    className="justify-between text-sm font-medium"
-                    onClick={() => {
-                      closeMenu();
-                      onSettingsClick();
-                    }}
-                  >
-                    Settings
                   </button>
                 </li>
               </>

@@ -1,5 +1,9 @@
 import { useMemo, useState } from 'react';
+import { FaUsers, FaBell, FaShieldAlt, FaDatabase, FaCloudDownloadAlt, FaFileUpload } from 'react-icons/fa';
 import { useAppStore } from '../../store/useAppStore';
+import { AppCard } from '../../components/design-system/AppCard';
+import { H1Header } from '../../components/design-system/H1Header';
+import { IconWrapper } from '../../components/design-system/IconWrapper';
 import RestoreConfirmationModal from '../../components/modals/RestoreConfirmationModal';
 import BackupConfirmationModal from '../../components/modals/BackupConfirmationModal';
 
@@ -49,107 +53,94 @@ const Settings = () => {
   };
 
   return (
-    <div className="space-y-6 pb-12">
-      <div className="flex items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-      </div>
+    <div className="flex flex-col gap-6 pb-24">
+      <H1Header>Settings</H1Header>
 
-      <section className="rounded-2xl border border-base-200 bg-white/95 shadow-sm">
-        <div className="border-b border-base-200 px-5 py-4">
-          <h2 className="text-lg font-semibold text-gray-800">Family Information</h2>
+      {/* Family Information */}
+      <AppCard>
+        <div className="flex items-center gap-3 mb-4">
+          <IconWrapper icon={FaUsers} />
+          <h3 className="font-bold text-lg">Family Information</h3>
         </div>
-        <div className="divide-y divide-base-200">
-          <div className="px-5 py-4 flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Family Name</p>
-              <p className="font-semibold text-gray-900">{familySummary.familyLabel}</p>
-            </div>
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-center border-b border-base-200 pb-3 last:border-0 last:pb-0">
+            <span className="text-gray-500">Family Name</span>
+            <span className="font-bold text-gray-800">{familySummary.familyLabel}</span>
           </div>
-          <div className="px-5 py-4 flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Primary Parent</p>
-              <p className="font-semibold text-gray-900">{familySummary.parentLabel}</p>
-            </div>
+          <div className="flex justify-between items-center border-b border-base-200 pb-3 last:border-0 last:pb-0">
+            <span className="text-gray-500">Primary Parent</span>
+            <span className="font-bold text-gray-800">{familySummary.parentLabel}</span>
           </div>
-          <div className="px-5 py-4 flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Parent Email</p>
-              <p className="font-semibold text-gray-900">{familySummary.parentEmail}</p>
-            </div>
+          <div className="flex justify-between items-center border-b border-base-200 pb-3 last:border-0 last:pb-0">
+            <span className="text-gray-500">Parent Email</span>
+            <span className="font-bold text-gray-800">{familySummary.parentEmail}</span>
           </div>
-          <div className="px-5 py-4 flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Children Linked</p>
-              <p className="font-semibold text-gray-900">{familySummary.childCount}</p>
-            </div>
+          <div className="flex justify-between items-center border-b border-base-200 pb-3 last:border-0 last:pb-0">
+            <span className="text-gray-500">Children Linked</span>
+            <span className="font-bold text-gray-800">{familySummary.childCount}</span>
           </div>
         </div>
-      </section>
+      </AppCard>
 
-      <section className="rounded-2xl border border-base-200 bg-white/95 shadow-sm p-5">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Notifications</h2>
-        <label className="flex items-start justify-between gap-4 p-4 rounded-2xl bg-base-100 border border-base-200 cursor-pointer">
+      {/* Notifications */}
+      <AppCard>
+        <div className="flex items-center gap-3 mb-4">
+          <IconWrapper icon={FaBell} />
+          <h3 className="font-bold text-lg">Notifications</h3>
+        </div>
+        <label className="flex items-start justify-between gap-4 cursor-pointer">
           <div>
-            <p className="font-medium text-gray-900">Parent reminders</p>
-            <p className="text-sm text-gray-500">
+            <p className="font-bold text-gray-800">Parent reminders</p>
+            <p className="text-sm text-gray-500 mt-1">
               Receive alerts for mission approvals, reward redemptions, and weekly summaries.
             </p>
           </div>
           <input
             type="checkbox"
-            className="toggle toggle-primary mt-1"
+            className="toggle toggle-primary"
             checked={notificationsEnabled}
             onChange={(event) => setNotificationsEnabled(event.target.checked)}
           />
         </label>
-        <p className="text-xs text-gray-400 mt-3">
+        <p className="text-xs text-gray-400 mt-4 bg-base-100 p-3 rounded-lg">
           Push notifications require permissions on your device. You can change this anytime.
         </p>
-      </section>
+      </AppCard>
 
-      <section className="rounded-2xl border border-base-200 bg-white/95 shadow-sm">
-        <div className="border-b border-base-200 px-5 py-4">
-          <h2 className="text-lg font-semibold text-gray-800">Legal & Policy</h2>
+      {/* Data Management */}
+      <AppCard>
+        <div className="flex items-center gap-3 mb-4">
+          <IconWrapper icon={FaDatabase} />
+          <h3 className="font-bold text-lg">Data Management</h3>
         </div>
-        <div className="divide-y divide-base-200">
-          {policyLinks.map((link) => (
-            <a
-              key={link.label}
-              className="flex items-center justify-between px-5 py-4 hover:bg-primary/5 transition-colors"
-              href={link.href}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <div>
-                <p className="font-medium text-gray-900">{link.label}</p>
-                <p className="text-sm text-gray-500">{link.description}</p>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-base-100 border border-base-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 text-blue-600 rounded-full">
+                <FaCloudDownloadAlt />
               </div>
-              <span className="text-sm font-semibold text-primary">View</span>
-            </a>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-2xl border border-base-200 bg-white/95 shadow-sm p-5">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Data Management</h2>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-base-100 border border-base-200">
-            <div>
-              <p className="font-medium text-gray-900">Backup Data</p>
-              <p className="text-sm text-gray-500">Download a copy of your current data.</p>
+              <div>
+                <p className="font-bold text-gray-800">Backup Data</p>
+                <p className="text-xs text-gray-500">Download a copy of your data</p>
+              </div>
             </div>
             <button
               onClick={() => setIsBackupModalOpen(true)}
               className="btn btn-primary btn-sm"
             >
-              Download Backup
+              Download
             </button>
           </div>
 
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-base-100 border border-base-200">
-            <div>
-              <p className="font-medium text-gray-900">Restore Data</p>
-              <p className="text-sm text-gray-500">Restore data from a backup file. This will overwrite current data.</p>
+          <div className="flex items-center justify-between p-4 rounded-xl bg-base-100 border border-base-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-orange-100 text-orange-600 rounded-full">
+                <FaFileUpload />
+              </div>
+              <div>
+                <p className="font-bold text-gray-800">Restore Data</p>
+                <p className="text-xs text-gray-500">Overwrite with backup file</p>
+              </div>
             </div>
             <div className="relative">
               <input
@@ -183,12 +174,37 @@ const Settings = () => {
                 }}
               />
               <button className="btn btn-outline btn-sm pointer-events-none">
-                Restore from File
+                Restore
               </button>
             </div>
           </div>
         </div>
-      </section>
+      </AppCard>
+
+      {/* Legal & Policy */}
+      <AppCard>
+        <div className="flex items-center gap-3 mb-4">
+          <IconWrapper icon={FaShieldAlt} />
+          <h3 className="font-bold text-lg">Legal & Policy</h3>
+        </div>
+        <div className="flex flex-col gap-2">
+          {policyLinks.map((link) => (
+            <a
+              key={link.label}
+              className="flex items-center justify-between p-3 hover:bg-base-100 rounded-lg transition-colors group"
+              href={link.href}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <div>
+                <p className="font-medium text-gray-800 group-hover:text-primary transition-colors">{link.label}</p>
+                <p className="text-xs text-gray-500">{link.description}</p>
+              </div>
+              <span className="text-xs font-bold text-gray-400 group-hover:text-primary">View</span>
+            </a>
+          ))}
+        </div>
+      </AppCard>
 
       {/* Restore Confirmation Modal */}
       {isRestoreModalOpen && restoreData && (

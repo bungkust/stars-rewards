@@ -47,6 +47,14 @@ const ChildStats = () => {
     [childLogs, child?.id]
   );
 
+  const [historyFilter, setHistoryFilter] = useState<'today' | 'week' | 'month'>('today');
+  const [visibleHistoryCount, setVisibleHistoryCount] = useState(10);
+
+  const handleHistoryFilterChange = (filter: 'today' | 'week' | 'month') => {
+    setHistoryFilter(filter);
+    setVisibleHistoryCount(10);
+  };
+
   // Combine transactions and rejected missions for history
   const combinedHistory = useMemo(() => {
     const transactionItems = childTransactions.map(t => ({
@@ -63,9 +71,35 @@ const ChildStats = () => {
       date: log.completed_at
     }));
 
-    return [...transactionItems, ...rejectedItems]
+    const allItems = [...transactionItems, ...rejectedItems]
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [childTransactions, rejectedMissions]);
+
+    // Apply Time Filter
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const oneDay = 24 * 60 * 60 * 1000;
+
+    return allItems.filter(item => {
+      const itemDate = new Date(item.date).getTime();
+
+      if (historyFilter === 'today') {
+        return itemDate >= today;
+      }
+
+      if (historyFilter === 'week') {
+        return itemDate >= today - (6 * oneDay); // Last 7 days including today
+      }
+
+      if (historyFilter === 'month') {
+        return itemDate >= today - (29 * oneDay); // Last 30 days
+      }
+
+      return true;
+    });
+  }, [childTransactions, rejectedMissions, historyFilter]);
+
+  const visibleHistory = combinedHistory.slice(0, visibleHistoryCount);
+  const hasMoreHistory = visibleHistory.length < combinedHistory.length;
 
   // Calculate basic stats from transactions
   const earned = childTransactions
@@ -98,7 +132,7 @@ const ChildStats = () => {
     const date = new Date(dateString);
     const now = new Date();
     const isToday = date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-    
+
     if (isToday) {
       return `Today, ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
     }
@@ -176,9 +210,8 @@ const ChildStats = () => {
             {timeframeOptions.map(option => (
               <button
                 key={option.value}
-                className={`btn btn-sm ${
-                  option.value === timeframe ? 'btn-primary text-white' : 'btn-ghost text-gray-500'
-                }`}
+                className={`btn btn-sm ${option.value === timeframe ? 'btn-primary text-white' : 'btn-ghost text-gray-500'
+                  }`}
                 onClick={() => setTimeframe(option.value)}
               >
                 {option.label}
@@ -190,9 +223,8 @@ const ChildStats = () => {
         <div className="mt-4 flex items-center gap-2">
           <span className="text-sm text-gray-500">Net change</span>
           <span
-            className={`text-xl font-bold ${
-              chartNetTotal >= 0 ? 'text-primary' : 'text-error'
-            }`}
+            className={`text-xl font-bold ${chartNetTotal >= 0 ? 'text-primary' : 'text-error'
+              }`}
           >
             {chartNetTotal >= 0 ? '+' : '-'}
             {Math.abs(chartNetTotal)} Stars
@@ -255,8 +287,8 @@ const ChildStats = () => {
               <span className="font-bold text-primary">{child.current_balance} Stars</span>
             </div>
             <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden">
-              <div 
-                className="bg-primary h-4 rounded-full transition-all duration-500" 
+              <div
+                className="bg-primary h-4 rounded-full transition-all duration-500"
                 style={{ width: `${Math.min((child.current_balance / (earned || 1)) * 100, 100)}%` }}
               ></div>
             </div>
@@ -269,8 +301,8 @@ const ChildStats = () => {
               <span className="font-bold text-error">{spent} Stars</span>
             </div>
             <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden">
-              <div 
-                className="bg-error h-4 rounded-full transition-all duration-500" 
+              <div
+                className="bg-error h-4 rounded-full transition-all duration-500"
                 style={{ width: `${Math.min((spent / (earned || 1)) * 100, 100)}%` }}
               ></div>
             </div>
@@ -280,56 +312,89 @@ const ChildStats = () => {
 
       {/* Recent History (Simple List) */}
       <div className="card bg-white shadow-md rounded-xl p-6">
-        <h3 className="text-lg font-bold text-gray-700 mb-4">Recent History</h3>
+        <div className="flex flex-col gap-3 mb-4">
+          <h3 className="text-lg font-bold text-gray-700">Recent History</h3>
+
+          {/* History Filter Tabs */}
+          <div className="tabs tabs-boxed bg-base-200 p-1 rounded-lg w-fit">
+            <a
+              className={`tab tab-xs rounded-md transition-all ${historyFilter === 'today' ? 'bg-primary text-white shadow-md' : 'text-gray-600 hover:bg-base-300'}`}
+              onClick={() => handleHistoryFilterChange('today')}
+            >
+              Today
+            </a>
+            <a
+              className={`tab tab-xs rounded-md transition-all ${historyFilter === 'week' ? 'bg-primary text-white shadow-md' : 'text-gray-600 hover:bg-base-300'}`}
+              onClick={() => handleHistoryFilterChange('week')}
+            >
+              Week
+            </a>
+            <a
+              className={`tab tab-xs rounded-md transition-all ${historyFilter === 'month' ? 'bg-primary text-white shadow-md' : 'text-gray-600 hover:bg-base-300'}`}
+              onClick={() => handleHistoryFilterChange('month')}
+            >
+              Month
+            </a>
+          </div>
+        </div>
+
         <div className="flex flex-col gap-3">
-          {combinedHistory
-            .slice(0, 10)
-            .map(item => {
-              if (item.type === 'transaction') {
-                const transaction = item.data;
-                const details = getTransactionDetails(transaction);
-                return (
-                  <div key={item.id} className="flex justify-between items-center border-b border-gray-100 pb-3 last:border-none last:pb-0">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-gray-700 text-sm">{details.name}</span>
-                      <span className="text-xs text-gray-400">{formatDate(transaction.created_at)}</span>
-                    </div>
-                    <span className={`font-bold ${transaction.amount > 0 ? 'text-green-500' : transaction.amount < 0 ? 'text-red-500' : 'text-gray-500'}`}>
-                      {transaction.amount !== 0 ? (
-                        <>{transaction.amount > 0 ? '+' : ''}{transaction.amount}</>
-                      ) : (
-                        <span className="text-xs uppercase">
-                          {transaction.type === 'TASK_VERIFIED' ? 'Done' : transaction.type === 'REWARD_REDEEMED' ? 'Redeemed' : '-'}
-                        </span>
-                      )}
-                    </span>
+          {visibleHistory.map(item => {
+            if (item.type === 'transaction') {
+              const transaction = item.data;
+              const details = getTransactionDetails(transaction);
+              return (
+                <div key={item.id} className="flex justify-between items-center border-b border-gray-100 pb-3 last:border-none last:pb-0">
+                  <div className="flex flex-col">
+                    <span className="font-bold text-gray-700 text-sm">{details.name}</span>
+                    <span className="text-xs text-gray-400">{formatDate(transaction.created_at)}</span>
                   </div>
-                );
-              } else if (item.type === 'rejected_mission') {
-                const log = item.data;
-                const details = getRejectedMissionDetails(log);
-                return (
-                  <div key={item.id} className="flex justify-between items-center border-b border-gray-100 pb-3 last:border-none last:pb-0">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-gray-700 text-sm">{details.name}</span>
-                      <span className="text-xs text-gray-400">{formatDate(log.completed_at)}</span>
-                      {log.rejection_reason && (
-                        <span className="text-xs text-red-500 italic mt-1">
-                          Reason: {log.rejection_reason}
-                        </span>
-                      )}
-                    </div>
-                    <span className="font-bold text-red-500">
-                      <span className="text-xs uppercase">Rejected</span>
-                    </span>
+                  <span className={`font-bold ${transaction.amount > 0 ? 'text-green-500' : transaction.amount < 0 ? 'text-red-500' : 'text-gray-500'}`}>
+                    {transaction.amount !== 0 ? (
+                      <>{transaction.amount > 0 ? '+' : ''}{transaction.amount}</>
+                    ) : (
+                      <span className="text-xs uppercase">
+                        {transaction.type === 'TASK_VERIFIED' ? 'Done' : transaction.type === 'REWARD_REDEEMED' ? 'Redeemed' : '-'}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              );
+            } else if (item.type === 'rejected_mission') {
+              const log = item.data;
+              const details = getRejectedMissionDetails(log);
+              return (
+                <div key={item.id} className="flex justify-between items-center border-b border-gray-100 pb-3 last:border-none last:pb-0">
+                  <div className="flex flex-col">
+                    <span className="font-bold text-gray-700 text-sm">{details.name}</span>
+                    <span className="text-xs text-gray-400">{formatDate(log.completed_at)}</span>
+                    {log.rejection_reason && (
+                      <span className="text-xs text-red-500 italic mt-1">
+                        Reason: {log.rejection_reason}
+                      </span>
+                    )}
                   </div>
-                );
-              }
-              return null;
-            })}
-            {combinedHistory.length === 0 && (
-              <p className="text-gray-400 text-center text-sm">No activity yet.</p>
-            )}
+                  <span className="font-bold text-red-500">
+                    <span className="text-xs uppercase">Rejected</span>
+                  </span>
+                </div>
+              );
+            }
+            return null;
+          })}
+
+          {visibleHistory.length === 0 && (
+            <p className="text-gray-400 text-center text-sm py-4">No activity in this period.</p>
+          )}
+
+          {hasMoreHistory && (
+            <button
+              className="btn btn-ghost btn-sm w-full text-gray-500 mt-2"
+              onClick={() => setVisibleHistoryCount(prev => prev + 10)}
+            >
+              Load More
+            </button>
+          )}
         </div>
       </div>
     </div>

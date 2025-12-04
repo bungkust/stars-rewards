@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { FaStar, FaCheckCircle, FaCamera, FaTimesCircle, FaHourglassHalf } from 'react-icons/fa';
 import AvatarSelectionModal from '../../components/modals/AvatarSelectionModal';
@@ -10,40 +10,63 @@ const ChildDashboard = () => {
   const child = children.find(c => c.id === activeChildId);
   const allTasks = activeChildId ? getTasksByChildId(activeChildId) : [];
 
-  // Filter for "Today" and Sort by Newest
-  const tasks = allTasks.filter(task => {
-    if (!task.is_active) return false;
-    
-    // Always show Daily tasks
-    if (task.recurrence_rule === 'Daily') return true;
+  const [filter, setFilter] = useState<'today' | 'once' | 'all'>('today');
+  const [visibleCount, setVisibleCount] = useState(20);
 
-    // Check recurrence date logic
-    if (!task.created_at) return true; // Fallback if missing date, show it
-    const created = new Date(task.created_at);
-    const today = new Date();
+  // Reset visible count when filter changes
+  const handleFilterChange = (newFilter: 'today' | 'once' | 'all') => {
+    setFilter(newFilter);
+    setVisibleCount(20);
+  };
 
-    if (task.recurrence_rule === 'Weekly') {
-      return created.getDay() === today.getDay();
-    }
-    
-    if (task.recurrence_rule === 'Monthly') {
-      return created.getDate() === today.getDate();
-    }
-    
-    // 'Once' or default: Show only if created today
-    return created.toDateString() === today.toDateString();
-  }).sort((a, b) => {
-    const dateA = new Date(a.created_at || 0).getTime();
-    const dateB = new Date(b.created_at || 0).getTime();
-    return dateB - dateA; // Descending
-  });
-  
+  // Filter and Sort Tasks
+  const filteredTasks = useMemo(() => {
+    return allTasks.filter(task => {
+      if (!task.is_active) return false;
+
+      if (filter === 'all') return true;
+
+      if (filter === 'once') {
+        return task.recurrence_rule === 'Once';
+      }
+
+      // Default: 'today' logic
+      // Always show Daily tasks
+      if (task.recurrence_rule === 'Daily') return true;
+
+      // Check recurrence date logic
+      if (!task.created_at) return true; // Fallback
+      const created = new Date(task.created_at);
+      const today = new Date();
+
+      if (task.recurrence_rule === 'Weekly') {
+        return created.getDay() === today.getDay();
+      }
+
+      if (task.recurrence_rule === 'Monthly') {
+        return created.getDate() === today.getDate();
+      }
+
+      // 'Once' tasks show up in 'Today' only if created today
+      return created.toDateString() === today.toDateString();
+    }).sort((a, b) => {
+      // Sort by status (Pending/Rejected first, then incomplete, then Verified)
+      // This is complex, so for now keep simple date sort or refine later
+      const dateA = new Date(a.created_at || 0).getTime();
+      const dateB = new Date(b.created_at || 0).getTime();
+      return dateB - dateA; // Descending
+    });
+  }, [allTasks, filter]);
+
+  const visibleTasks = filteredTasks.slice(0, visibleCount);
+  const hasMore = visibleTasks.length < filteredTasks.length;
+
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
-  const [lastCompletedTask, setLastCompletedTask] = useState<{name: string, value: number} | null>(null);
-  
+  const [lastCompletedTask, setLastCompletedTask] = useState<{ name: string, value: number } | null>(null);
+
   const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
-  const [selectedRejection, setSelectedRejection] = useState<{taskName: string, reason: string} | null>(null);
+  const [selectedRejection, setSelectedRejection] = useState<{ taskName: string, reason: string } | null>(null);
 
   // Helper to find log status for today
   const getTaskStatus = (taskId: string) => {
@@ -52,10 +75,10 @@ const ChildDashboard = () => {
     // For simplicity, just check if ANY log exists for today. 
     // In real app, we should handle timezones properly.
     const today = new Date().toISOString().split('T')[0];
-    
-    return childLogs.find(log => 
-      log.child_id === activeChildId && 
-      log.task_id === taskId && 
+
+    return childLogs.find(log =>
+      log.child_id === activeChildId &&
+      log.task_id === taskId &&
       log.completed_at.startsWith(today)
     );
   };
@@ -78,7 +101,7 @@ const ChildDashboard = () => {
       alert('Something went wrong. Please try again.');
     }
   };
-  
+
   const handleViewRejection = (taskName: string, reason?: string) => {
     setSelectedRejection({ taskName, reason: reason || '' });
     setIsRejectionModalOpen(true);
@@ -108,7 +131,7 @@ const ChildDashboard = () => {
       </div>
 
       {/* Avatar Selection Modal */}
-      <AvatarSelectionModal 
+      <AvatarSelectionModal
         isOpen={isAvatarModalOpen}
         currentAvatar={child.avatar_url}
         onClose={() => setIsAvatarModalOpen(false)}
@@ -122,8 +145,8 @@ const ChildDashboard = () => {
         rewardValue={lastCompletedTask?.value || 0}
         onClose={() => setIsCompletionModalOpen(false)}
       />
-      
-      <TaskRejectionDetailsModal 
+
+      <TaskRejectionDetailsModal
         isOpen={isRejectionModalOpen}
         taskName={selectedRejection?.taskName || ''}
         reason={selectedRejection?.reason || ''}
@@ -132,68 +155,105 @@ const ChildDashboard = () => {
 
       {/* Today's Tasks Section */}
       <div className="flex flex-col gap-4">
-        <h3 className="text-xl font-bold text-gray-700 px-1">Today's Missions</h3>
-        
-        {tasks.length === 0 ? (
+        <div className="flex flex-col gap-3 px-1">
+          <h3 className="text-xl font-bold text-gray-700">Missions</h3>
+
+          {/* Filter Tabs */}
+          <div className="tabs tabs-boxed bg-base-200 p-1 rounded-lg w-fit">
+            <a
+              className={`tab tab-sm rounded-md transition-all ${filter === 'today' ? 'bg-primary text-white shadow-md' : 'text-gray-600 hover:bg-base-300'}`}
+              onClick={() => handleFilterChange('today')}
+            >
+              Today
+            </a>
+            <a
+              className={`tab tab-sm rounded-md transition-all ${filter === 'once' ? 'bg-primary text-white shadow-md' : 'text-gray-600 hover:bg-base-300'}`}
+              onClick={() => handleFilterChange('once')}
+            >
+              Once
+            </a>
+            <a
+              className={`tab tab-sm rounded-md transition-all ${filter === 'all' ? 'bg-primary text-white shadow-md' : 'text-gray-600 hover:bg-base-300'}`}
+              onClick={() => handleFilterChange('all')}
+            >
+              All
+            </a>
+          </div>
+        </div>
+
+        {visibleTasks.length === 0 ? (
           <div className="text-center p-8 bg-base-100 rounded-xl border-2 border-dashed border-gray-300 text-gray-400">
-            <p>No missions for today. You're free!</p>
+            <p>No missions found for this filter.</p>
           </div>
         ) : (
-          tasks.map((task) => {
-            const log = getTaskStatus(task.id);
-            const status = log?.status; // PENDING, VERIFIED, REJECTED
-            
-            return (
-            <div key={task.id} className={`card bg-white shadow-sm rounded-xl p-4 flex flex-row items-center justify-between border-l-4 ${
-              status === 'VERIFIED' ? 'border-success' : 
-              status === 'REJECTED' ? 'border-error' : 
-              status === 'PENDING' ? 'border-warning' : 'border-primary'
-            }`}>
-              <div className="flex items-center gap-3">
-                <div className={`p-3 rounded-full ${
-                   status === 'VERIFIED' ? 'bg-success/10 text-success' : 
-                   status === 'REJECTED' ? 'bg-error/10 text-error' : 
-                   status === 'PENDING' ? 'bg-warning/10 text-warning' : 'bg-blue-50 text-primary'
-                }`}>
-                  {status === 'VERIFIED' ? <FaCheckCircle className="w-6 h-6" /> :
-                   status === 'REJECTED' ? <FaTimesCircle className="w-6 h-6" /> :
-                   status === 'PENDING' ? <FaHourglassHalf className="w-6 h-6" /> :
-                   <FaCheckCircle className="w-6 h-6" />}
-                </div>
-                <div>
-                  <h4 className="font-bold text-gray-800">{task.name}</h4>
-                  {task.reward_value > 0 && (
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <span className="flex items-center gap-1 text-warning font-bold">
-                        <FaStar className="w-3 h-3" /> {task.reward_value}
-                      </span>
+          <>
+            {visibleTasks.map((task) => {
+              const log = getTaskStatus(task.id);
+              const status = log?.status; // PENDING, VERIFIED, REJECTED
+
+              return (
+                <div key={task.id} className={`card bg-white shadow-sm rounded-xl p-4 flex flex-row items-center justify-between border-l-4 ${status === 'VERIFIED' ? 'border-success' :
+                  status === 'REJECTED' ? 'border-error' :
+                    status === 'PENDING' ? 'border-warning' : 'border-primary'
+                  }`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`p-3 rounded-full ${status === 'VERIFIED' ? 'bg-success/10 text-success' :
+                      status === 'REJECTED' ? 'bg-error/10 text-error' :
+                        status === 'PENDING' ? 'bg-warning/10 text-warning' : 'bg-blue-50 text-primary'
+                      }`}>
+                      {status === 'VERIFIED' ? <FaCheckCircle className="w-6 h-6" /> :
+                        status === 'REJECTED' ? <FaTimesCircle className="w-6 h-6" /> :
+                          status === 'PENDING' ? <FaHourglassHalf className="w-6 h-6" /> :
+                            <FaCheckCircle className="w-6 h-6" />}
                     </div>
+                    <div>
+                      <h4 className="font-bold text-gray-800">{task.name}</h4>
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        {task.reward_value > 0 && (
+                          <span className="flex items-center gap-1 text-warning font-bold">
+                            <FaStar className="w-3 h-3" /> {task.reward_value}
+                          </span>
+                        )}
+                        {filter !== 'today' && (
+                          <span className="badge badge-ghost badge-xs">{task.recurrence_rule}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {status === 'VERIFIED' ? (
+                    <span className="badge badge-success text-white font-bold p-3">Approved</span>
+                  ) : status === 'REJECTED' ? (
+                    <button
+                      className="btn btn-sm btn-error btn-outline rounded-full"
+                      onClick={() => handleViewRejection(task.name, log?.rejection_reason)}
+                    >
+                      Why?
+                    </button>
+                  ) : status === 'PENDING' ? (
+                    <span className="badge badge-warning text-white font-bold p-3">Pending</span>
+                  ) : (
+                    <button
+                      className="btn btn-sm btn-primary rounded-full"
+                      onClick={() => handleTaskComplete(task)}
+                      disabled={isLoading}
+                    >
+                      Done
+                    </button>
                   )}
                 </div>
-              </div>
-              
-              {status === 'VERIFIED' ? (
-                <span className="badge badge-success text-white font-bold p-3">Approved</span>
-              ) : status === 'REJECTED' ? (
-                <button 
-                  className="btn btn-sm btn-error btn-outline rounded-full"
-                  onClick={() => handleViewRejection(task.name, log?.rejection_reason)}
-                >
-                  Why?
-                </button>
-              ) : status === 'PENDING' ? (
-                <span className="badge badge-warning text-white font-bold p-3">Pending</span>
-              ) : (
-                <button 
-                  className="btn btn-sm btn-primary rounded-full"
-                  onClick={() => handleTaskComplete(task)}
-                  disabled={isLoading}
-                >
-                  Done
-                </button>
-              )}
-            </div>
-          )})
+              )
+            })}
+
+            {hasMore && (
+              <button
+                className="btn btn-ghost btn-sm w-full text-gray-500"
+                onClick={() => setVisibleCount(prev => prev + 20)}
+              >
+                Load More
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>
