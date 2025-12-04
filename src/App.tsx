@@ -8,7 +8,7 @@ import { useAppStore } from './store/useAppStore';
 import Dashboard from './pages/Dashboard';
 import Tasks from './pages/Tasks';
 import Rewards from './pages/Rewards';
-import Stats from './pages/Stats'; // Wrapper page
+import Stats from './pages/Stats';
 import Settings from './pages/settings/Settings';
 import AddChild from './pages/onboarding/AddChild';
 import FamilySetup from './pages/onboarding/FamilySetup';
@@ -21,8 +21,18 @@ import Layout from './components/layout/Layout';
 import ChildSelector from './components/ChildSelector';
 
 function App() {
-  const { activeChildId, setActiveChild, isAdminMode, onboardingStep, userProfile, refreshData } = useAppStore();
+  const { activeChildId, setActiveChild, isAdminMode, onboardingStep, userProfile, refreshData, fetchUserProfile } = useAppStore();
   const [isChildSelectorOpen, setIsChildSelectorOpen] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  // Initial Auth Check
+  useEffect(() => {
+    const initAuth = async () => {
+      await fetchUserProfile();
+      setIsCheckingAuth(false);
+    };
+    initAuth();
+  }, [fetchUserProfile]);
 
   // Simplified Auth Check: Just check if we have a local user profile
   const isAuthenticated = !!userProfile;
@@ -30,7 +40,7 @@ function App() {
 
   // Check for active child on mount
   useEffect(() => {
-    if (isAuthenticated && !needsOnboarding && !activeChildId && !isAdminMode) {
+    if (!isCheckingAuth && isAuthenticated && !needsOnboarding && !activeChildId && !isAdminMode) {
       setIsChildSelectorOpen(true);
     } else {
       setIsChildSelectorOpen(false);
@@ -42,19 +52,27 @@ function App() {
       StatusBar.setBackgroundColor({ color: '#F0F9FF' }).catch(() => { }); // Light blue to match app theme
       StatusBar.setStyle({ style: Style.Light }).catch(() => { }); // Dark icons for light background
     }
-  }, [activeChildId, isAdminMode, needsOnboarding, isAuthenticated]);
+  }, [activeChildId, isAdminMode, needsOnboarding, isAuthenticated, isCheckingAuth]);
 
   // Fetch Data on Mount if Authenticated
   useEffect(() => {
-    if (isAuthenticated) {
+    if (!isCheckingAuth && isAuthenticated) {
       refreshData();
     }
-  }, [isAuthenticated, refreshData]);
+  }, [isAuthenticated, refreshData, isCheckingAuth]);
 
   const handleChildSelect = (childId: string) => {
     setActiveChild(childId);
     setIsChildSelectorOpen(false);
   };
+
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-base-100">
+        <span className="loading loading-spinner loading-lg text-primary"></span>
+      </div>
+    );
+  }
 
   // Unauthenticated Router
   if (!isAuthenticated) {

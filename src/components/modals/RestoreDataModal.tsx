@@ -12,11 +12,12 @@ interface RestoreDataModalProps {
 type RestoreState = 'upload' | 'confirm' | 'restoring' | 'success' | 'error';
 
 const RestoreDataModal = ({ isOpen, onClose, onSuccess }: RestoreDataModalProps) => {
-    const { importData } = useAppStore();
+    const { importData, children, tasks } = useAppStore();
     const [state, setState] = useState<RestoreState>('upload');
     const [errorMsg, setErrorMsg] = useState<string>('');
     const [restoreData, setRestoreData] = useState<any>(null);
     const [filename, setFilename] = useState('');
+    const [hasExistingData, setHasExistingData] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,6 +38,11 @@ const RestoreDataModal = ({ isOpen, onClose, onSuccess }: RestoreDataModalProps)
 
             setRestoreData(payload);
             setFilename(file.name);
+
+            // Check if we have existing data
+            const exists = children.length > 0 || tasks.length > 0;
+            setHasExistingData(exists);
+
             setState('confirm');
         } catch (error) {
             console.error('File parsing error:', error);
@@ -47,6 +53,10 @@ const RestoreDataModal = ({ isOpen, onClose, onSuccess }: RestoreDataModalProps)
 
     const handleConfirm = async () => {
         setState('restoring');
+
+        // Artificial delay to let the user see the spinner (UX)
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
         try {
             const { error } = await importData(restoreData);
             if (error) throw error;
@@ -127,7 +137,9 @@ const RestoreDataModal = ({ isOpen, onClose, onSuccess }: RestoreDataModalProps)
                                 <div className="w-16 h-16 bg-warning/10 rounded-full flex items-center justify-center mx-auto">
                                     <FaExclamationTriangle className="text-3xl text-warning" />
                                 </div>
-                                <h3 className="text-xl font-bold text-gray-900">Confirm Restore?</h3>
+                                <h3 className="text-xl font-bold text-gray-900">
+                                    {hasExistingData ? 'Overwrite Existing Data?' : 'Confirm Restore?'}
+                                </h3>
 
                                 <div className="bg-base-100 p-3 rounded-xl flex items-center gap-3 text-left">
                                     <FaFileAlt className="text-gray-400 text-xl" />
@@ -137,17 +149,23 @@ const RestoreDataModal = ({ isOpen, onClose, onSuccess }: RestoreDataModalProps)
                                     </div>
                                 </div>
 
-                                <div className="text-gray-600 text-sm bg-error/5 p-3 rounded-xl border border-error/10">
-                                    <p className="font-bold text-error mb-1">Warning:</p>
-                                    <p>This will <b>overwrite</b> all current data on this device.</p>
-                                </div>
+                                {hasExistingData ? (
+                                    <div className="text-gray-600 text-sm bg-error/5 p-3 rounded-xl border border-error/10 text-left">
+                                        <p className="font-bold text-error mb-1">⚠️ Warning:</p>
+                                        <p>You have existing data on this device. Restoring will <b>permanently delete</b> your current data and replace it with the backup.</p>
+                                    </div>
+                                ) : (
+                                    <p className="text-gray-500 text-sm">
+                                        This will restore your family data from the backup file.
+                                    </p>
+                                )}
 
                                 <div className="flex gap-3 pt-2">
                                     <button onClick={handleRetry} className="btn btn-ghost flex-1">
-                                        Back
+                                        Cancel
                                     </button>
                                     <button onClick={handleConfirm} className="btn btn-primary flex-1">
-                                        Restore Now
+                                        {hasExistingData ? 'Yes, Overwrite' : 'Restore Now'}
                                     </button>
                                 </div>
                             </div>
