@@ -4,7 +4,6 @@ import { AnimatePresence } from 'framer-motion';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Capacitor } from '@capacitor/core';
 import { useAppStore } from './store/useAppStore';
-import { supabase } from './utils/supabase';
 import MobileLayout from './components/layout/MobileLayout';
 import ChildSelectorModal from './components/modals/ChildSelectorModal';
 import SessionExpiredModal from './components/modals/SessionExpiredModal';
@@ -44,6 +43,12 @@ const AnimatedRoutes = ({ isAdminMode, activeChildId }: { isAdminMode: boolean, 
       console.log('Deep linking will be implemented after @capacitor/app plugin installation');
     }
   }, []);
+
+  useEffect(() => {
+    if (session) {
+      refreshData();
+    }
+  }, [location.pathname, session, refreshData]);
 
   useEffect(() => {
     if (session) {
@@ -95,28 +100,21 @@ const AnimatedRoutes = ({ isAdminMode, activeChildId }: { isAdminMode: boolean, 
 };
 
 function App() {
-  const { activeChildId, setActiveChild, isAdminMode, onboardingStep, session, refreshData, isLoading, userProfile, sessionExpired, setSessionExpired } = useAppStore();
+  const { activeChildId, setActiveChild, isAdminMode, session, refreshData, isLoading, sessionExpired, setSessionExpired, children, tasks, rewards } = useAppStore();
   const [isChildSelectorOpen, setIsChildSelectorOpen] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const isAuthenticated = !!session;
 
-  // Use onboarding_step from database profile, fallback to local state if not loaded yet
-  const currentOnboardingStep = userProfile?.onboarding_step || onboardingStep;
-  const needsOnboarding = isAuthenticated && currentOnboardingStep !== 'completed';
+  // Simple data-based onboarding check: if user has any children/tasks/rewards, they're onboarded
+  const hasData = children.length > 0 || tasks.length > 0 || rewards.length > 0;
+  const needsOnboarding = isAuthenticated && !hasData;
+
+  // Simple debug
+  console.log('🔍 [ONBOARDING] needsOnboarding:', needsOnboarding, 'hasData:', hasData);
+
 
   // Auth state is now managed by onAuthStateChange listener in the store
   // No need for manual initialization
-
-  // Debug logging
-  console.log('App render:', {
-    isAuthenticated,
-    needsOnboarding,
-    onboardingStep,
-    activeChildId,
-    isAdminMode,
-    pathname: typeof window !== 'undefined' ? window.location.pathname : 'unknown'
-  });
 
   // Check for active child on mount
   useEffect(() => {
@@ -141,67 +139,6 @@ function App() {
     }
   }, [isAuthenticated, refreshData]);
 
-  // MODE SWITCHING: Force token refresh and data sync
-  useEffect(() => {
-    const handleModeSwitch = async () => {
-      if (!session) {
-        console.log('🚫 Mode switch skipped: no active session');
-        return; // Exit if not logged in
-      }
-
-      console.log(`🔄 MODE SWITCH DETECTED: ${isAdminMode ? 'ADMIN' : 'CHILD'} mode activated`);
-      setIsRefreshing(true);
-      console.log(`⏳ Starting mode switch process for: ${isAdminMode ? 'ADMIN' : 'CHILD'}`);
-
-      try {
-        // --- STEP 1: FORCE TOKEN REFRESH & VALIDATION ---
-        console.log('🔐 Validating session and refreshing token...');
-        const { data: { session: newSession }, error: refreshError } = await supabase.auth.getSession();
-
-        if (refreshError || !newSession) {
-          console.error('❌ Token refresh failed during mode switch:', refreshError);
-          // If refresh fails, token refresh is dead -> Force logout
-          await useAppStore.getState().logout();
-          return; // Don't set isRefreshing false here as we're navigating away
-        }
-
-        console.log('✅ Token refresh successful, proceeding with data sync');
-
-        // --- STEP 2: FETCH MODE-SPECIFIC DATA (SYNC) ---
-        console.log('📊 Starting data synchronization for mode:', isAdminMode ? 'ADMIN' : 'CHILD');
-
-        if (isAdminMode) {
-          // CRITICAL ADMIN DATA: Pending verification queue
-          console.log('📋 Syncing admin data: pending verifications');
-          await refreshData(); // This will fetch pendingVerifications and other admin data
-        } else {
-          // CRITICAL CHILD DATA: Child's daily tasks and progress
-          console.log('👶 Syncing child data: daily tasks and progress');
-          await refreshData(); // This will fetch child-specific data including tasks and logs
-        }
-
-        console.log('✅ Mode switch data sync completed successfully');
-      } catch (error) {
-        console.error('❌ Error during mode switch data sync:', error);
-        console.error('🚨 Error details:', {
-          message: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined
-        });
-        // Don't force logout here, just log the error
-        // User can try again or data will sync on next mode switch
-      } finally {
-        // Only set refreshing to false if we didn't logout (navigation away)
-        if (session) {
-          setIsRefreshing(false);
-          console.log(`✅ MODE SWITCH COMPLETED: ${isAdminMode ? 'ADMIN' : 'CHILD'} mode ready`);
-        } else {
-          console.log('🚪 MODE SWITCH CANCELLED: user logged out during process');
-        }
-      }
-    };
-
-    handleModeSwitch();
-  }, [isAdminMode, session]); // Run when mode or session changes
 
   const handleChildSelect = (childId: string) => {
     setActiveChild(childId);
@@ -213,15 +150,13 @@ function App() {
     window.location.href = '/login';
   };
 
-  // Show loading spinner while auth state is being determined or mode is switching
-  if ((isLoading && !session && !isAuthenticated) || isRefreshing) {
+  // Show loading spinner while auth state is being determined
+  if (isLoading && !session && !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-blue-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">
-            {isRefreshing ? 'Menyinkronkan data terbaru...' : 'Loading...'}
-          </p>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );
@@ -250,6 +185,7 @@ function App() {
     return <ResetPassword />;
   }
 
+
   // Authenticated but incomplete onboarding
   if (needsOnboarding) {
     return (
@@ -264,8 +200,8 @@ function App() {
           {/* Explicit redirects for flow enforcement */}
           <Route path="/onboarding/parent-setup" element={<Navigate to="/onboarding/family-setup" replace />} />
           
-          {/* Fallback logic based on current step from database */}
-          <Route path="*" element={<OnboardingRedirect step={currentOnboardingStep} />} />
+          {/* Always start from family setup for new users */}
+          <Route path="*" element={<Navigate to="/onboarding/family-setup" replace />} />
         </Routes>
       </Router>
     );
@@ -293,17 +229,5 @@ function App() {
   );
 }
 
-// Helper component to redirect based on step
-const OnboardingRedirect = ({ step }: { step: string }) => {
-  switch (step) {
-    case 'family-setup': return <Navigate to="/onboarding/family-setup" replace />;
-    case 'parent-setup': return <Navigate to="/onboarding/add-parent" replace />; // Map old step name if legacy
-    case 'add-parent': return <Navigate to="/onboarding/add-parent" replace />; // New Step
-    case 'add-child': return <Navigate to="/onboarding/add-child" replace />;
-    case 'first-task': return <Navigate to="/onboarding/first-task" replace />;
-    case 'first-reward': return <Navigate to="/onboarding/first-reward" replace />;
-    default: return <Navigate to="/onboarding/family-setup" replace />;
-  }
-};
 
 export default App;

@@ -16,7 +16,7 @@ const AVATAR_OPTIONS = [
 
 const AddChild = () => {
   const navigate = useNavigate();
-  const { addChild, setOnboardingStep, children, isLoading } = useAppStore();
+  const { addChild, children, isLoading } = useAppStore();
   
   const [name, setName] = useState('');
   const [dob, setDob] = useState('');
@@ -66,7 +66,6 @@ const AddChild = () => {
       return; 
     }
 
-    await setOnboardingStep('first-task');
     navigate('/onboarding/first-task');
   };
 

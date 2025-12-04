@@ -6,7 +6,7 @@ import { PrimaryButton } from '../../components/design-system/PrimaryButton';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { signInUser, isLoading, setOnboardingStep } = useAppStore();
+  const { signInUser, isLoading } = useAppStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -26,10 +26,6 @@ const Login = () => {
       setError(authError.message || 'Login failed. Please check your credentials.');
       return;
     }
-
-    // Force onboarding to completed for existing users who login
-    // The refreshData call in signInUser should have loaded existing data
-    setOnboardingStep('completed');
 
     navigate('/');
   };

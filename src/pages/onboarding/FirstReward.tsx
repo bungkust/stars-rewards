@@ -14,7 +14,7 @@ const ICONS = [
 
 const FirstReward = () => {
   const navigate = useNavigate();
-  const { addReward, setOnboardingStep, toggleAdminMode, setActiveChild, children, isLoading, tasks } = useAppStore();
+  const { addReward, toggleAdminMode, setActiveChild, children, isLoading, tasks } = useAppStore();
   
   const [name, setName] = useState('');
   const [cost, setCost] = useState(30); 
@@ -51,16 +51,15 @@ const FirstReward = () => {
     setShowSuccess(true);
   };
 
-  const handleFinish = async () => {
-    // Flow Completion
-    await setOnboardingStep('completed');
+  const handleFinish = () => {
+    // Flow Completion - onboarding completed when user has data
     toggleAdminMode(false);
-
+    
     if (children.length > 0) {
       setActiveChild(children[0].id);
     }
 
-    navigate('/');
+    navigate('/'); 
   };
 
   if (showSuccess) {

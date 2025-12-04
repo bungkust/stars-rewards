@@ -6,7 +6,7 @@ import { PrimaryButton } from '../../components/design-system/PrimaryButton';
 
 const AddParent = () => {
   const navigate = useNavigate();
-  const { updateParentName, setOnboardingStep, isLoading } = useAppStore();
+  const { updateParentName, isLoading } = useAppStore();
   const [name, setName] = useState('');
   const [error, setError] = useState('');
 
@@ -21,7 +21,6 @@ const AddParent = () => {
       }
       
       // Move to next step
-      await setOnboardingStep('add-child');
       navigate('/onboarding/add-child');
     }
   };

@@ -5,7 +5,7 @@ import { PrimaryButton } from '../../components/design-system/PrimaryButton';
 
 const FamilySetup = () => {
   const navigate = useNavigate();
-  const { setFamilyName, setOnboardingStep, updateAdminPin, setAdminName } = useAppStore();
+  const { setFamilyName, updateAdminPin, setAdminName } = useAppStore();
   const [name, setName] = useState('');
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
@@ -52,7 +52,6 @@ const FamilySetup = () => {
     // Usually we setAdminName too if that's what the store uses
     setAdminName(name.trim()); 
 
-    await setOnboardingStep('add-child');
     navigate('/onboarding/add-child');
   };
 

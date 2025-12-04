@@ -5,7 +5,6 @@ import { supabase } from '../utils/supabase';
 import type { Profile, Child, Task, Reward, VerificationRequest, CoinTransaction, ChildTaskLog } from '../types';
 import { dataService } from '../services/dataService';
 
-export type OnboardingStep = 'family-setup' | 'parent-setup' | 'add-child' | 'first-task' | 'first-reward' | 'completed';
 
 interface AppState {
   // State
@@ -26,7 +25,6 @@ interface AppState {
   transactions: CoinTransaction[];
   redeemedHistory: { child_id: string; reward_id: string }[]; // Full history of redemptions for logic checks
   
-  onboardingStep: OnboardingStep;
   
   // Auth State
   session: Session | null;
@@ -52,7 +50,6 @@ interface AppState {
   updateReward: (rewardId: string, updates: Partial<Reward>) => Promise<{ error: any }>;
   deleteReward: (rewardId: string) => Promise<{ error: any }>;
   
-  setOnboardingStep: (step: OnboardingStep) => void;
   
   // Auth Actions
   setSession: (session: Session | null) => void;
@@ -91,8 +88,7 @@ export const useAppStore = create<AppState>()(
       rewards: [],
       transactions: [],
       redeemedHistory: [],
-      onboardingStep: 'family-setup', 
-      
+
       session: null,
       userProfile: null,
       isLoading: false,
@@ -293,32 +289,6 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      setOnboardingStep: async (step) => {
-        // Update both local state and database
-        set({ onboardingStep: step });
-
-        // Update database if user is logged in
-        const { session } = get();
-        if (session?.user) {
-        try {
-            const { error } = await supabase
-              .from('profiles')
-              .update({ onboarding_step: step })
-              .eq('id', session.user.id);
-
-          if (error) {
-              console.error('Error updating onboarding step in database:', error);
-          } else {
-              // Update local profile state
-              set((state) => ({
-                userProfile: state.userProfile ? { ...state.userProfile, onboarding_step: step } : null
-              }));
-            }
-          } catch (error) {
-            console.error('Failed to update onboarding step:', error);
-          }
-        }
-      },
 
       setSession: (session) => set({ session }),
 
@@ -359,7 +329,6 @@ export const useAppStore = create<AppState>()(
           if (data.pin_admin) set({ adminPin: data.pin_admin });
           if (data.family_name) set({ familyName: data.family_name });
           if (data.parent_name) set({ adminName: data.parent_name }); 
-          if (data.onboarding_step) set({ onboardingStep: data.onboarding_step }); 
           
           return data as Profile;
         } catch (error) {
@@ -766,7 +735,6 @@ export const useAppStore = create<AppState>()(
             adminPin: null,
             adminName: undefined,
             familyName: undefined,
-            onboardingStep: 'family-setup',
             isAdminMode: false,
             isLoading: false
           });
@@ -786,7 +754,6 @@ export const useAppStore = create<AppState>()(
         adminPin: state.adminPin,
         adminName: state.adminName,
         familyName: state.familyName,
-        onboardingStep: state.onboardingStep,
         session: state.session,
         // Persist important data
         children: state.children, 

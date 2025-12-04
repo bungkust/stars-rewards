@@ -15,7 +15,7 @@ const DIFFICULTY_PRESETS = [
 
 const FirstTask = () => {
   const navigate = useNavigate();
-  const { addTask, children, setOnboardingStep, isLoading } = useAppStore();
+  const { addTask, children, isLoading } = useAppStore();
   
   // Default to the first child added for simplicity in onboarding
   const child = children[0];
@@ -43,7 +43,6 @@ const FirstTask = () => {
       return;
     }
     
-    await setOnboardingStep('first-reward');
     navigate('/onboarding/first-reward');
   };
 

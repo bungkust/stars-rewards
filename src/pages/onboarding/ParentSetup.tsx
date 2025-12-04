@@ -4,7 +4,7 @@ import { useAppStore } from '../../store/useAppStore';
 
 const ParentSetup = () => {
   const navigate = useNavigate();
-  const { signUpUser, setOnboardingStep, isLoading } = useAppStore();
+  const { signUpUser, isLoading } = useAppStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -32,7 +32,6 @@ const ParentSetup = () => {
     }
 
     // Navigate to Family Setup where user will set Family Name (if logic kept) and PIN
-    await setOnboardingStep('family-setup');
     navigate('/onboarding/family-setup');
   };
 

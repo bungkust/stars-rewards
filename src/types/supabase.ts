@@ -4,7 +4,6 @@ export interface Profile {
   pin_admin?: string;
   family_name?: string;
   parent_name?: string;
-  onboarding_step?: 'family-setup' | 'parent-setup' | 'add-parent' | 'add-child' | 'first-task' | 'first-reward' | 'completed';
 }
 
 export interface Child {

@@ -32,10 +32,10 @@ const AdminDashboard = () => {
   const handleApprove = async (logId: string, childId: string, rewardValue: number) => {
     setVerifyingTaskId(logId);
     try {
-      const { error } = await verifyTask(logId, childId, rewardValue);
-      if (!error) {
-        setSuccessType('approve');
-        setSuccessModalOpen(true);
+    const { error } = await verifyTask(logId, childId, rewardValue);
+    if (!error) {
+      setSuccessType('approve');
+      setSuccessModalOpen(true);
       }
     } finally {
       setVerifyingTaskId(null);
@@ -51,12 +51,12 @@ const AdminDashboard = () => {
     if (selectedLogId) {
       setRejectingTaskId(selectedLogId);
       try {
-        const { error } = await rejectTask(selectedLogId, reason);
-        if (!error) {
-          setRejectionModalOpen(false);
-          setSelectedLogId(null);
-          setSuccessType('reject');
-          setSuccessModalOpen(true);
+      const { error } = await rejectTask(selectedLogId, reason);
+      if (!error) {
+        setRejectionModalOpen(false);
+        setSelectedLogId(null);
+        setSuccessType('reject');
+        setSuccessModalOpen(true);
         }
       } finally {
         setRejectingTaskId(null);
@@ -206,16 +206,16 @@ const AdminDashboard = () => {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button
-                    className="btn btn-sm btn-square btn-outline btn-error"
+                  <button 
+                    className="btn btn-sm btn-square btn-outline btn-error" 
                     title="Reject"
                     onClick={() => onRejectClick(item.id)}
                     disabled={verifyingTaskId === item.id || rejectingTaskId === item.id}
                   >
                     <FaTimes />
                   </button>
-                  <button
-                    className="btn btn-sm btn-square btn-success text-white"
+                  <button 
+                    className="btn btn-sm btn-square btn-success text-white" 
                     title="Approve"
                     onClick={() => handleApprove(item.id, item.child_id, item.reward_value)}
                     disabled={verifyingTaskId === item.id || rejectingTaskId === item.id}
