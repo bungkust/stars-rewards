@@ -1,279 +1,82 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
-import { FaGamepad, FaIceCream, FaTicketAlt, FaGift, FaCheckCircle, FaChevronDown, FaCheck } from 'react-icons/fa';
 import { PrimaryButton } from '../../components/design-system/PrimaryButton';
-import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
-
-const ICONS = [
-  { id: 'game', icon: FaGamepad, label: 'Game' },
-  { id: 'treat', icon: FaIceCream, label: 'Treat' },
-  { id: 'event', icon: FaTicketAlt, label: 'Event' },
-  { id: 'gift', icon: FaGift, label: 'Gift' },
-];
 
 const FirstReward = () => {
   const navigate = useNavigate();
-  const { addReward, setOnboardingStep, toggleAdminMode, setActiveChild, children, isLoading, tasks } = useAppStore();
-  
-  const [name, setName] = useState('');
-  const [cost, setCost] = useState(30); 
-  const [selectedIcon, setSelectedIcon] = useState(ICONS[1].id); 
-  const [type, setType] = useState<'ONE_TIME' | 'UNLIMITED' | 'ACCUMULATIVE'>('UNLIMITED');
-  const [requiredTaskId, setRequiredTaskId] = useState('');
-  const [requiredTaskCount, setRequiredTaskCount] = useState(1);
+  const { addReward, setOnboardingStep, isLoading } = useAppStore();
+  const [rewardName, setRewardName] = useState('');
+  const [costValue, setCostValue] = useState(50);
   const [error, setError] = useState('');
-  const [showSuccess, setShowSuccess] = useState(false);
-
-  const handleCostAdjust = (amount: number) => {
-    setCost(Math.max(0, cost + amount)); // Allow 0 for milestones
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
-    
-    const { error: dbError } = await addReward({
-      name: name.trim(),
-      cost_value: Number(cost),
-      category: selectedIcon,
-      type: type,
-      required_task_id: type === 'ACCUMULATIVE' ? requiredTaskId : undefined,
-      required_task_count: type === 'ACCUMULATIVE' ? Number(requiredTaskCount) : undefined,
-    });
-
-    if (dbError) {
-      setError('Failed to create reward. Please try again.');
+    if (!rewardName.trim()) {
+      setError('Please enter a reward name');
       return;
     }
 
-    // Instead of alert and redirect immediately, show success state
-    setShowSuccess(true);
-  };
+    const { error: rewardError } = await addReward({
+      name: rewardName,
+      cost_value: costValue,
+      type: 'ONE_TIME', // Default
+    });
 
-  const handleFinish = () => {
-    // Flow Completion
-    setOnboardingStep('completed');
-    toggleAdminMode(false);
-    
-    if (children.length > 0) {
-      setActiveChild(children[0].id);
+    if (rewardError) {
+      setError('Failed to create reward');
+      return;
     }
 
-    navigate('/'); 
+    setOnboardingStep('completed');
+    navigate('/');
   };
-
-  if (showSuccess) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-primary/90 p-6 animate-fade-in">
-        <div className="bg-base-100 rounded-2xl shadow-2xl p-8 w-full max-w-sm text-center transform scale-100 transition-transform">
-          <div className="flex justify-center mb-6">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
-              <FaCheckCircle className="w-10 h-10 text-green-500" />
-            </div>
-          </div>
-          
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">You're All Set!</h2>
-          <p className="text-gray-500 mb-8">
-            Your family profile is ready. Start verifying tasks and giving rewards!
-          </p>
-          
-          <button 
-            onClick={handleFinish}
-            className="btn btn-primary w-full rounded-xl text-lg font-bold shadow-lg animate-bounce-subtle"
-          >
-            Let's Go! 🚀
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center app-gradient p-6">
       <div className="w-full max-w-md">
         <h1 className="text-3xl font-bold text-primary text-center mb-2">Create First Reward</h1>
-        <p className="text-gray-500 text-center mb-8">Give them something to work towards!</p>
+        <p className="text-gray-500 text-center mb-8">What can they redeem their stars for?</p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           <div className="form-control w-full">
             <label className="label">
               <span className="label-text font-bold">Reward Name</span>
             </label>
-            <input 
-              type="text" 
-              placeholder="e.g. 30 min TV Time" 
-              className="input input-bordered w-full rounded-xl" 
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
+            <input
+              type="text"
+              value={rewardName}
+              onChange={(e) => setRewardName(e.target.value)}
+              className="input input-bordered w-full rounded-xl"
+              placeholder="e.g. Extra Screen Time, Ice Cream"
+              autoFocus
             />
           </div>
 
           <div className="form-control w-full">
             <label className="label">
-              <span className="label-text font-bold">Cost (Stars)</span>
+              <span className="label-text font-bold">Star Cost</span>
             </label>
             <div className="flex items-center gap-4">
-              <input 
-                type="number" 
-                className="input input-bordered flex-1 rounded-xl text-center font-bold text-lg" 
-                value={cost}
-                onChange={(e) => setCost(Number(e.target.value))}
-                min={0}
+              <input
+                type="range"
+                min="10"
+                max="500"
+                step="10"
+                value={costValue}
+                onChange={(e) => setCostValue(parseInt(e.target.value))}
+                className="range range-secondary flex-1"
               />
-              <button type="button" onClick={() => handleCostAdjust(1)} className="btn btn-circle btn-sm bg-base-200">+1</button>
-              <button type="button" onClick={() => handleCostAdjust(10)} className="btn btn-circle btn-sm bg-base-200">+10</button>
-            </div>
-            <label className="label">
-               <span className="label-text-alt text-gray-500">Set to 0 for Milestone Rewards (Claimable once unlocked)</span>
-            </label>
-          </div>
-
-          <div className="form-control w-full">
-            <label className="label">
-              <span className="label-text font-bold">Reward Type</span>
-            </label>
-            <div className="flex flex-col gap-3">
-              <div className="flex gap-4">
-                <label className="label cursor-pointer justify-start gap-2 border rounded-xl p-3 flex-1 hover:bg-base-200 transition-colors bg-white/50">
-                  <input 
-                    type="radio" 
-                    name="type" 
-                    className="radio radio-primary" 
-                    checked={type === 'UNLIMITED'}
-                    onChange={() => setType('UNLIMITED')} 
-                  />
-                  <div className="flex flex-col">
-                    <span className="label-text font-bold">Unlimited</span>
-                    <span className="text-xs text-gray-500">Multiple times</span>
-                  </div>
-                </label>
-                <label className="label cursor-pointer justify-start gap-2 border rounded-xl p-3 flex-1 hover:bg-base-200 transition-colors bg-white/50">
-                  <input 
-                    type="radio" 
-                    name="type" 
-                    className="radio radio-primary" 
-                    checked={type === 'ONE_TIME'}
-                    onChange={() => setType('ONE_TIME')} 
-                  />
-                  <div className="flex flex-col">
-                    <span className="label-text font-bold">One-time</span>
-                    <span className="text-xs text-gray-500">Once only</span>
-                  </div>
-                </label>
-              </div>
-
-              <label className="label cursor-pointer justify-start gap-2 border rounded-xl p-3 hover:bg-base-200 transition-colors bg-white/50">
-                <input 
-                  type="radio" 
-                  name="type" 
-                  className="radio radio-primary" 
-                  checked={type === 'ACCUMULATIVE'}
-                  onChange={() => setType('ACCUMULATIVE')} 
-                />
-                <div className="flex flex-col">
-                  <span className="label-text font-bold">Milestone / Accumulative</span>
-                  <span className="text-xs text-gray-500">Unlock after completing specific tasks</span>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          {type === 'ACCUMULATIVE' && (
-            <div className="card bg-base-200 p-4 rounded-xl animate-fade-in">
-              <h3 className="font-bold text-gray-700 mb-3">Unlock Requirements</h3>
-              
-              <div className="form-control w-full mb-4">
-                <label className="label">
-                  <span className="label-text font-bold">Required Mission</span>
-                </label>
-                
-                <Listbox value={requiredTaskId} onChange={setRequiredTaskId}>
-                  <div className="relative">
-                    <ListboxButton className="relative w-full cursor-pointer rounded-xl bg-white py-3 pl-4 pr-10 text-left border border-gray-300 focus:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 sm:text-sm min-h-[3rem] text-base">
-                      <span className={`block truncate ${!requiredTaskId ? 'text-gray-400' : 'text-gray-900'}`}>
-                        {tasks.find(t => t.id === requiredTaskId)?.name || 'Select a mission...'}
-                      </span>
-                      <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
-                        <FaChevronDown className="h-3 w-3 text-gray-400" aria-hidden="true" />
-                      </span>
-                    </ListboxButton>
-                    <ListboxOptions className="absolute mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm z-50">
-                      {tasks.length === 0 ? (
-                        <div className="py-2 px-4 text-gray-500 text-sm">No missions created yet</div>
-                      ) : (
-                        tasks.map((task) => (
-                          <ListboxOption
-                            key={task.id}
-                            className={({ active }) =>
-                              `relative cursor-pointer select-none py-2 pl-10 pr-4 ${
-                                active ? 'bg-blue-50 text-primary' : 'text-gray-900'
-                              }`
-                            }
-                            value={task.id}
-                          >
-                            {({ selected }) => (
-                              <>
-                                <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
-                                  {task.name}
-                                </span>
-                                {selected ? (
-                                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-primary">
-                                    <FaCheck className="h-3 w-3" aria-hidden="true" />
-                                  </span>
-                                ) : null}
-                              </>
-                            )}
-                          </ListboxOption>
-                        ))
-                      )}
-                    </ListboxOptions>
-                  </div>
-                </Listbox>
-              </div>
-
-              <div className="form-control w-full">
-                <label className="label">
-                  <span className="label-text font-bold">Required Completions</span>
-                </label>
-                <input 
-                  type="number" 
-                  className="input input-bordered w-full rounded-xl"
-                  value={requiredTaskCount}
-                  onChange={(e) => setRequiredTaskCount(Number(e.target.value))}
-                  min={1}
-                  required={type === 'ACCUMULATIVE'}
-                />
-              </div>
-            </div>
-          )}
-
-          <div className="form-control w-full">
-            <label className="label">
-              <span className="label-text font-bold">Icon Category</span>
-            </label>
-            <div className="flex gap-4 overflow-x-auto pb-2 justify-center">
-              {ICONS.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setSelectedIcon(item.id)}
-                  className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all min-w-[80px] ${selectedIcon === item.id ? 'border-primary bg-blue-50' : 'border-transparent bg-white/50'}`}
-                >
-                  <item.icon className={`w-8 h-8 ${selectedIcon === item.id ? 'text-primary' : 'text-gray-400'}`} />
-                  <span className="text-xs font-medium text-gray-600">{item.label}</span>
-                </button>
-              ))}
+              <span className="text-2xl font-bold text-secondary w-16 text-center">{costValue}</span>
             </div>
           </div>
 
           {error && <p className="text-error text-sm text-center">{error}</p>}
 
-          <PrimaryButton 
-            type="submit" 
-            className="rounded-xl mt-4 text-white font-bold text-lg shadow-md"
-            disabled={!name.trim() || isLoading}
+          <PrimaryButton
+            type="submit"
+            className="rounded-xl mt-4 shadow-md text-lg font-bold"
+            disabled={!rewardName.trim() || isLoading}
           >
             {isLoading ? 'Finishing...' : 'Finish Setup'}
           </PrimaryButton>

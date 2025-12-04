@@ -5,10 +5,12 @@ import { useAppStore } from '../../store/useAppStore';
 interface HeaderProps {
   onParentLoginClick: () => void;
   onSettingsClick: () => void;
+  onChildSelectClick?: () => void;
 }
 
-const Header = ({ onParentLoginClick, onSettingsClick }: HeaderProps) => {
-  const { isAdminMode, toggleAdminMode, logout } = useAppStore();
+const Header = ({ onParentLoginClick, onSettingsClick, onChildSelectClick }: HeaderProps) => {
+  const { activeChildId, children, isAdminMode, toggleAdminMode, logout } = useAppStore();
+  const activeChild = children.find(c => c.id === activeChildId);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -40,9 +42,26 @@ const Header = ({ onParentLoginClick, onSettingsClick }: HeaderProps) => {
       className={`navbar fixed top-0 left-0 right-0 z-50 px-4 h-auto min-h-16 pt-8 pb-2 ${headerGradient} backdrop-blur-sm shadow-sm`}
     >
       <div className="flex-1">
-        <a className={`btn btn-ghost text-xl font-bold hover:bg-transparent ${titleColor}`}>
-          {isAdminMode ? 'Parent Dashboard' : 'Stars Rewards'}
-        </a>
+        {activeChild && !isAdminMode ? (
+          <button
+            className="btn btn-ghost gap-2 normal-case"
+            onClick={onChildSelectClick}
+          >
+            <div className="avatar placeholder">
+              <div className="bg-neutral-focus text-neutral-content rounded-full w-8">
+                <img
+                  src={activeChild.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${activeChild.name}`}
+                  alt={activeChild.name}
+                />
+              </div>
+            </div>
+            <span className={`text-lg font-bold ${titleColor}`}>{activeChild.name}</span>
+          </button>
+        ) : (
+          <a className={`btn btn-ghost text-xl font-bold hover:bg-transparent ${titleColor}`}>
+            {isAdminMode ? 'Parent Dashboard' : 'Stars Rewards'}
+          </a>
+        )}
       </div>
       <div className="flex-none">
         <div
@@ -75,7 +94,7 @@ const Header = ({ onParentLoginClick, onSettingsClick }: HeaderProps) => {
                     className="justify-between text-sm font-medium text-error"
                     onClick={() => {
                       closeMenu();
-                      logout().catch(() => {});
+                      logout().catch(() => { });
                     }}
                   >
                     Logout

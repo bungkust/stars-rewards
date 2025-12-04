@@ -8,19 +8,12 @@ const BottomNav = () => {
   const location = useLocation();
   const { isAdminMode } = useAppStore();
 
-  const navItems = isAdminMode 
-    ? [
-        { id: 'admin-home', icon: FaHome, label: 'Home', path: '/admin/dashboard' },
-        { id: 'admin-tasks', icon: FaTasks, label: 'Missions', path: '/admin/tasks' },
-        { id: 'admin-rewards', icon: IoGiftOutline, label: 'Rewards', path: '/admin/rewards' },
-        { id: 'admin-stats', icon: FaChartLine, label: 'Stats', path: '/admin/stats' },
-      ]
-    : [
-        { id: 'home', icon: FaHome, label: 'Home', path: '/' },
-        { id: 'tasks', icon: FaTasks, label: 'Missions', path: '/tasks' },
-        { id: 'rewards', icon: IoGiftOutline, label: 'Rewards', path: '/rewards' },
-        { id: 'stats', icon: FaChartLine, label: 'Stats', path: '/stats' },
-      ];
+  const navItems = [
+    { id: 'home', icon: FaHome, label: 'Home', path: '/' },
+    { id: 'tasks', icon: FaTasks, label: 'Missions', path: '/tasks' },
+    { id: 'rewards', icon: IoGiftOutline, label: 'Rewards', path: '/rewards' },
+    { id: 'stats', icon: FaChartLine, label: 'Stats', path: '/stats' },
+  ];
 
   return (
     <div className="btm-nav bg-white border-t border-base-200 shadow-lg z-50 pb-safe py-2">

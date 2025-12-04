@@ -1,23 +1,22 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Session } from '@supabase/supabase-js';
-import { supabase } from '../utils/supabase';
 import type { Profile, Child, Task, Reward, VerificationRequest, CoinTransaction, ChildTaskLog } from '../types';
 import { dataService } from '../services/dataService';
+import { localStorageService } from '../services/localStorageService';
 
 export type OnboardingStep = 'family-setup' | 'parent-setup' | 'add-child' | 'first-task' | 'first-reward' | 'completed';
 
-interface AppState {
+export interface AppState {
   // State
   activeChildId: string | null;
   isAdminMode: boolean;
   adminPin: string | null;
-  adminName?: string; 
-  familyName?: string; 
+  adminName?: string;
+  familyName?: string;
   notificationsEnabled: boolean;
-  
+
   childLogs: ChildTaskLog[]; // Store logs for the active child
-  
+
   // Data Stores
   children: Child[];
   tasks: Task[]; // Templates
@@ -25,11 +24,10 @@ interface AppState {
   rewards: Reward[];
   transactions: CoinTransaction[];
   redeemedHistory: { child_id: string; reward_id: string }[]; // Full history of redemptions for logic checks
-  
+
   onboardingStep: OnboardingStep;
-  
-  // Auth State
-  session: Session | null;
+
+  // Auth State (Simplified for Offline)
   userProfile: Profile | null;
   isLoading: boolean;
 
@@ -39,9 +37,9 @@ interface AppState {
   verifyPin: (pin: string) => boolean;
   setAdminPin: (pin: string) => void;
   setAdminName: (name: string) => void;
-  setFamilyName: (name: string) => void; 
-  
-  // Data Actions (Sync with Backend)
+  setFamilyName: (name: string) => void;
+
+  // Data Actions
   refreshData: () => Promise<void>;
   getTasksByChildId: (childId: string) => Task[];
   addChild: (child: Omit<Child, 'id' | 'parent_id' | 'balance' | 'current_balance'>) => Promise<{ error: any }>;
@@ -50,14 +48,12 @@ interface AppState {
   addReward: (reward: Omit<Reward, 'id' | 'parent_id'>) => Promise<{ error: any }>;
   updateReward: (rewardId: string, updates: Partial<Reward>) => Promise<{ error: any }>;
   deleteReward: (rewardId: string) => Promise<{ error: any }>;
-  
+
   setOnboardingStep: (step: OnboardingStep) => void;
-  
+
   // Auth Actions
-  setSession: (session: Session | null) => void;
-  fetchUserProfile: (userId: string) => Promise<Profile | null>;
-  signInUser: (email: string, password: string) => Promise<{ error: any }>;
-  signUpUser: (email: string, password: string, familyName?: string, pin?: string) => Promise<{ error: any }>;
+  fetchUserProfile: () => Promise<Profile | null>;
+  createFamily: (familyName: string, pin: string, parentName: string) => Promise<{ error: any }>;
   updateAdminPin: (familyName: string, pin: string) => Promise<{ error: any }>;
   updateParentName: (name: string) => Promise<{ error: any }>;
   updateChildAvatar: (childId: string, avatarUrl: string) => Promise<{ error: any }>;
@@ -66,6 +62,7 @@ interface AppState {
   rejectTask: (logId: string, reason: string) => Promise<{ error: any }>;
   redeemReward: (childId: string, cost: number, rewardId: string) => Promise<{ error: any }>;
   manualAdjustment: (childId: string, amount: number, reason?: string) => Promise<{ error: any }>;
+  importData: (data: Partial<AppState>) => Promise<{ error: any }>;
   logout: () => Promise<void>;
   setNotificationsEnabled: (value: boolean) => void;
 }
@@ -75,7 +72,7 @@ export const useAppStore = create<AppState>()(
     (set, get) => ({
       activeChildId: null,
       isAdminMode: false,
-      adminPin: null, 
+      adminPin: null,
       notificationsEnabled: true,
       children: [],
       tasks: [],
@@ -84,25 +81,25 @@ export const useAppStore = create<AppState>()(
       rewards: [],
       transactions: [],
       redeemedHistory: [],
-      onboardingStep: 'family-setup', 
-      
-      session: null,
+      onboardingStep: 'family-setup',
+
       userProfile: null,
       isLoading: false,
 
       setActiveChild: (childId) => set({ activeChildId: childId }),
-      
+
       toggleAdminMode: (isAdmin) => set({ isAdminMode: isAdmin }),
-      
+
       verifyPin: (pin) => {
         const currentPin = get().adminPin;
+        // Fallback to profile pin if state is lost but profile exists
         const profilePin = get().userProfile?.pin_admin;
-        
+
         if (!currentPin && !profilePin) return false;
-        
+
         const targetPin = currentPin || profilePin;
         const isValid = pin === targetPin;
-        
+
         if (isValid) {
           set({ isAdminMode: true });
         }
@@ -115,12 +112,10 @@ export const useAppStore = create<AppState>()(
       setNotificationsEnabled: (value) => set({ notificationsEnabled: value }),
 
       refreshData: async () => {
-        const { session } = get();
-        if (!session?.user) return;
-
         set({ isLoading: true });
         try {
-          const userId = session.user.id;
+          const userId = 'local-user';
+
           // Fetch ALL data including REWARDS and TRANSACTIONS
           const [children, tasks, verifications, rewards, transactions, logs, redeemedHistory] = await Promise.all([
             dataService.fetchChildren(userId),
@@ -143,7 +138,6 @@ export const useAppStore = create<AppState>()(
           });
 
           // Automatically determine onboarding completion based on existing data
-          // If user has children, tasks, or rewards, they've completed onboarding
           if (children.length > 0 || tasks.length > 0 || rewards.length > 0) {
             set({ onboardingStep: 'completed' });
           }
@@ -153,23 +147,21 @@ export const useAppStore = create<AppState>()(
           set({ isLoading: false });
         }
       },
-      
+
       getTasksByChildId: (_childId) => {
-        return get().tasks; 
+        return get().tasks;
       },
 
       addChild: async (child) => {
         set({ isLoading: true });
         try {
-          const { session } = get();
-          if (!session?.user) throw new Error('No active session');
+          const userId = 'local-user';
+          const newChild = await dataService.addChild(userId, child);
 
-          const newChild = await dataService.addChild(session.user.id, child);
-          
           if (!newChild) throw new Error('Failed to add child');
 
-          set((state) => ({ 
-            children: [...state.children, newChild] 
+          set((state) => ({
+            children: [...state.children, newChild]
           }));
 
           return { error: null };
@@ -184,15 +176,13 @@ export const useAppStore = create<AppState>()(
       addTask: async (task) => {
         set({ isLoading: true });
         try {
-          const { session } = get();
-          if (!session?.user) throw new Error('No active session');
-
-          const newTask = await dataService.addTask(session.user.id, task);
+          const userId = 'local-user';
+          const newTask = await dataService.addTask(userId, task);
 
           if (!newTask) throw new Error('Failed to add task');
 
-          set((state) => ({ 
-            tasks: [...state.tasks, newTask] 
+          set((state) => ({
+            tasks: [...state.tasks, newTask]
           }));
 
           return { error: null };
@@ -208,7 +198,7 @@ export const useAppStore = create<AppState>()(
         set({ isLoading: true });
         try {
           const updatedTask = await dataService.updateTask(taskId, updates);
-          
+
           if (!updatedTask) throw new Error('Failed to update task');
 
           set((state) => ({
@@ -227,15 +217,13 @@ export const useAppStore = create<AppState>()(
       addReward: async (reward) => {
         set({ isLoading: true });
         try {
-          const { session } = get();
-          if (!session?.user) throw new Error('No active session');
-
-          const newReward = await dataService.addReward(session.user.id, reward);
+          const userId = 'local-user';
+          const newReward = await dataService.addReward(userId, reward);
 
           if (!newReward) throw new Error('Failed to add reward');
 
-          set((state) => ({ 
-            rewards: [...state.rewards, newReward] 
+          set((state) => ({
+            rewards: [...state.rewards, newReward]
           }));
 
           return { error: null };
@@ -251,7 +239,7 @@ export const useAppStore = create<AppState>()(
         set({ isLoading: true });
         try {
           const updatedReward = await dataService.updateReward(rewardId, updates);
-          
+
           if (!updatedReward) throw new Error('Failed to update reward');
 
           set((state) => ({
@@ -271,7 +259,7 @@ export const useAppStore = create<AppState>()(
         set({ isLoading: true });
         try {
           const success = await dataService.deleteReward(rewardId);
-          
+
           if (!success) throw new Error('Failed to delete reward');
 
           set((state) => ({
@@ -289,28 +277,19 @@ export const useAppStore = create<AppState>()(
 
       setOnboardingStep: (step) => set({ onboardingStep: step }),
 
-      setSession: (session) => set({ session }),
-
-      fetchUserProfile: async (userId) => {
+      fetchUserProfile: async () => {
         set({ isLoading: true });
         try {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .single();
-          
-          if (error) {
-             if (error.code === 'PGRST116') return null;
-             throw error;
+          const profile = await localStorageService.getProfile();
+
+          set({ userProfile: profile });
+          if (profile) {
+            if (profile.pin_admin) set({ adminPin: profile.pin_admin });
+            if (profile.family_name) set({ familyName: profile.family_name });
+            if (profile.parent_name) set({ adminName: profile.parent_name });
           }
-          
-          set({ userProfile: data as Profile });
-          if (data.pin_admin) set({ adminPin: data.pin_admin });
-          if (data.family_name) set({ familyName: data.family_name });
-          if (data.parent_name) set({ adminName: data.parent_name }); 
-          
-          return data as Profile;
+
+          return profile;
         } catch (error) {
           console.error('Error fetching profile:', error);
           return null;
@@ -319,57 +298,21 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      signInUser: async (email, password) => {
+      createFamily: async (familyName, pin, parentName) => {
         set({ isLoading: true });
         try {
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
+          const profile = await localStorageService.createFamily(familyName, pin, parentName);
+
+          set({
+            userProfile: profile,
+            adminPin: pin,
+            familyName: familyName,
+            adminName: parentName,
           });
 
-          if (error) throw error;
-
-          if (data.session) {
-            set({ session: data.session });
-            await get().fetchUserProfile(data.session.user.id);
-          }
           return { error: null };
         } catch (error) {
-          return { error };
-        } finally {
-          set({ isLoading: false });
-        }
-      },
-
-      signUpUser: async (email, password, familyName = '', pin = '') => {
-        set({ isLoading: true });
-        try {
-          const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-          });
-
-          if (error) throw error;
-
-          if (data.user) {
-            const { error: profileError } = await supabase
-              .from('profiles')
-              .insert({
-                id: data.user.id,
-                family_name: familyName,
-                pin_admin: pin,
-              });
-
-            if (profileError) {
-               console.error('Profile creation failed:', profileError);
-            }
-
-            set({ session: data.session });
-            await get().fetchUserProfile(data.user.id);
-          }
-          
-          return { error: null };
-        } catch (error) {
+          console.error('Error creating family:', error);
           return { error };
         } finally {
           set({ isLoading: false });
@@ -379,21 +322,13 @@ export const useAppStore = create<AppState>()(
       updateAdminPin: async (familyName: string, pin: string) => {
         set({ isLoading: true });
         try {
-          const { session } = get();
-          if (!session?.user) throw new Error('No active session');
+          await localStorageService.updateProfile({ family_name: familyName, pin_admin: pin });
 
-          const { error } = await supabase
-            .from('profiles')
-            .update({ family_name: familyName, pin_admin: pin })
-            .eq('id', session.user.id);
-
-          if (error) throw error;
-
-          set({ 
-            adminPin: pin, 
-            familyName: familyName, 
+          set({
+            adminPin: pin,
+            familyName: familyName,
           });
-          
+
           set((state) => ({
             userProfile: state.userProfile ? { ...state.userProfile, pin_admin: pin, family_name: familyName } : null
           }));
@@ -409,15 +344,7 @@ export const useAppStore = create<AppState>()(
       updateParentName: async (name: string) => {
         set({ isLoading: true });
         try {
-          const { session } = get();
-          if (!session?.user) throw new Error('No active session');
-
-          const { error } = await supabase
-            .from('profiles')
-            .update({ parent_name: name })
-            .eq('id', session.user.id);
-
-          if (error) throw error;
+          await localStorageService.updateProfile({ parent_name: name });
 
           set({ adminName: name });
           set((state) => ({
@@ -435,18 +362,14 @@ export const useAppStore = create<AppState>()(
       updateChildAvatar: async (childId: string, avatarUrl: string) => {
         set({ isLoading: true });
         try {
-          const { error } = await supabase
-            .from('children')
-            .update({ avatar_url: avatarUrl })
-            .eq('id', childId);
-
-          if (error) throw error;
-
+          // Optimistic update
           set((state) => ({
             children: state.children.map((c) =>
               c.id === childId ? { ...c, avatar_url: avatarUrl } : c
             ),
           }));
+
+          await localStorageService.updateChildAvatar(childId, avatarUrl);
 
           return { error: null };
         } catch (error) {
@@ -460,17 +383,18 @@ export const useAppStore = create<AppState>()(
       completeTask: async (taskId: string) => {
         set({ isLoading: true });
         try {
-          const { session, activeChildId } = get();
-          if (!session?.user || !activeChildId) throw new Error('Missing session or child ID');
+          const { activeChildId } = get();
+          if (!activeChildId) throw new Error('Missing child ID');
 
-          const newLog = await dataService.completeTask(session.user.id, activeChildId, taskId);
-          
+          const userId = 'local-user';
+          const newLog = await dataService.completeTask(userId, activeChildId, taskId);
+
           if (!newLog) throw new Error('Failed to complete task');
 
           set((state) => ({
             childLogs: [newLog, ...state.childLogs]
           }));
-          
+
           return { error: null };
         } catch (error) {
           console.error('Error completing task:', error);
@@ -484,26 +408,26 @@ export const useAppStore = create<AppState>()(
         set({ isLoading: true });
         try {
           const success = await dataService.verifyTask(logId, childId, rewardValue);
-          
+
           if (!success) throw new Error('Failed to verify task');
 
           // Remove from local pendingVerifications
           set((state) => ({
-             pendingVerifications: state.pendingVerifications.filter(v => v.id !== logId),
-             // Also update the child balance locally
-             children: state.children.map(c => 
-               c.id === childId ? { ...c, current_balance: (c.current_balance || 0) + rewardValue } : c
-             ),
-             // Update the specific log in childLogs
-             childLogs: state.childLogs.map(log => 
-               log.id === logId ? { ...log, status: 'VERIFIED' } : log
-             )
+            pendingVerifications: state.pendingVerifications.filter(v => v.id !== logId),
+            // Also update the child balance locally
+            children: state.children.map(c =>
+              c.id === childId ? { ...c, current_balance: (c.current_balance || 0) + rewardValue } : c
+            ),
+            // Update the specific log in childLogs
+            childLogs: state.childLogs.map(log =>
+              log.id === logId ? { ...log, status: 'VERIFIED' } : log
+            )
           }));
 
           return { error: null };
         } catch (error) {
-           console.error('Error verifying task:', error);
-           return { error };
+          console.error('Error verifying task:', error);
+          return { error };
         } finally {
           set({ isLoading: false });
         }
@@ -513,22 +437,22 @@ export const useAppStore = create<AppState>()(
         set({ isLoading: true });
         try {
           const success = await dataService.rejectTask(logId, reason);
-          
+
           if (!success) throw new Error('Failed to reject task');
 
           // Remove from local pendingVerifications
           set((state) => ({
-             pendingVerifications: state.pendingVerifications.filter(v => v.id !== logId),
-             // Update the specific log in childLogs
-             childLogs: state.childLogs.map(log => 
-               log.id === logId ? { ...log, status: 'REJECTED', rejection_reason: reason } : log
-             )
+            pendingVerifications: state.pendingVerifications.filter(v => v.id !== logId),
+            // Update the specific log in childLogs
+            childLogs: state.childLogs.map(log =>
+              log.id === logId ? { ...log, status: 'REJECTED', rejection_reason: reason } : log
+            )
           }));
 
           return { error: null };
         } catch (error) {
-           console.error('Error rejecting task:', error);
-           return { error };
+          console.error('Error rejecting task:', error);
+          return { error };
         } finally {
           set({ isLoading: false });
         }
@@ -538,15 +462,15 @@ export const useAppStore = create<AppState>()(
         set({ isLoading: true });
         try {
           const success = await dataService.redeemReward(childId, cost, rewardId);
-          
+
           if (!success) throw new Error('Failed to redeem reward');
 
           set((state) => ({
-            children: state.children.map(c => 
+            children: state.children.map(c =>
               c.id === childId ? { ...c, current_balance: (c.current_balance || 0) - cost } : c
             ),
             // Update local redemption history immediately
-            redeemedHistory: rewardId 
+            redeemedHistory: rewardId
               ? [...state.redeemedHistory, { child_id: childId, reward_id: rewardId }]
               : state.redeemedHistory
           }));
@@ -563,21 +487,16 @@ export const useAppStore = create<AppState>()(
       manualAdjustment: async (childId: string, amount: number, reason?: string) => {
         set({ isLoading: true });
         try {
-          const { session } = get();
-          if (!session?.user) throw new Error('No active session');
+          const userId = 'local-user';
+          const success = await dataService.manualAdjustment(userId, childId, amount, reason);
 
-          const success = await dataService.manualAdjustment(session.user.id, childId, amount, reason);
-          
           if (!success) throw new Error('Failed to update balance');
 
           set((state) => ({
-            children: state.children.map(c => 
+            children: state.children.map(c =>
               c.id === childId ? { ...c, current_balance: (c.current_balance || 0) + amount } : c
             ),
           }));
-
-          // Refresh data to get latest transaction
-          // get().refreshData(); // Optional, might be overkill
 
           return { error: null };
         } catch (error) {
@@ -589,14 +508,41 @@ export const useAppStore = create<AppState>()(
       },
 
       logout: async () => {
-        await supabase.auth.signOut();
-        set({ 
-          session: null, 
-          userProfile: null, 
+        localStorage.removeItem('stars-rewards-storage'); // Clear persisted state
+
+        set({
+          userProfile: null,
           activeChildId: null,
           children: [],
           isAdminMode: false
         });
+        window.location.reload(); // Force reload to clear any in-memory state
+      },
+
+      importData: async (data) => {
+        set({ isLoading: true });
+        try {
+          const userId = 'local-user';
+
+          // 1. Restore to Local
+          const { success, error } = await dataService.restoreBackup(userId, data);
+          if (!success) throw error;
+
+          // 2. Refresh local state
+          await get().refreshData();
+          await get().fetchUserProfile();
+
+          if (data.onboardingStep) {
+            set({ onboardingStep: data.onboardingStep });
+          }
+
+          return { error: null };
+        } catch (error) {
+          console.error('Error importing data:', error);
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
       }
     }),
     {
@@ -606,9 +552,8 @@ export const useAppStore = create<AppState>()(
         adminName: state.adminName,
         familyName: state.familyName,
         onboardingStep: state.onboardingStep,
-        session: state.session,
         // Persist important data
-        children: state.children, 
+        children: state.children,
         activeChildId: state.activeChildId,
         tasks: state.tasks,
         rewards: state.rewards,

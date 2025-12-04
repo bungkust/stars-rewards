@@ -1,465 +1,148 @@
-import { supabase } from '../utils/supabase';
+import { localStorageService } from './localStorageService';
 import type { Child, Task, Reward, VerificationRequest, CoinTransaction, ChildTaskLog } from '../types';
 
 export const dataService = {
   /**
    * Adds a new child profile.
    */
-  addChild: async (parentId: string, child: Omit<Child, 'id' | 'parent_id' | 'balance' | 'current_balance'>): Promise<Child | null> => {
-    const { data, error } = await supabase
-      .from('children')
-      .insert({
-        parent_id: parentId,
-        name: child.name,
-        birth_date: child.birth_date,
-        avatar_url: child.avatar_url, 
-        current_balance: 0
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error adding child:', error);
-      return null;
-    }
-
-    return {
-      id: data.id,
-      parent_id: data.parent_id,
-      name: data.name,
-      birth_date: data.birth_date,
-      current_balance: data.current_balance,
-      avatar_url: data.avatar_url,
-    } as Child;
+  addChild: async (_parentId: string, child: Omit<Child, 'id' | 'parent_id' | 'balance' | 'current_balance'>): Promise<Child | null> => {
+    return localStorageService.addChild(child);
   },
 
   /**
    * Adds a new task template.
    */
-  addTask: async (parentId: string, task: Omit<Task, 'id' | 'parent_id' | 'created_at'>): Promise<Task | null> => {
-    const { data, error } = await supabase
-      .from('tasks')
-      .insert({
-        parent_id: parentId,
-        name: task.name,
-        reward_value: task.reward_value,
-        type: task.type,
-        recurrence_rule: task.recurrence_rule,
-        is_active: task.is_active !== undefined ? task.is_active : true
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error adding task:', error);
-      return null;
-    }
-    return data as Task;
+  addTask: async (_parentId: string, task: Omit<Task, 'id' | 'parent_id' | 'created_at'>): Promise<Task | null> => {
+    return localStorageService.addTask(task);
   },
 
   /**
    * Adds a new reward.
    */
-  addReward: async (parentId: string, reward: Omit<Reward, 'id' | 'parent_id'>): Promise<Reward | null> => {
-    const { data, error } = await supabase
-      .from('rewards')
-      .insert({
-        parent_id: parentId,
-        name: reward.name,
-        cost_value: reward.cost_value,
-        category: reward.category,
-        type: reward.type,
-        required_task_id: reward.required_task_id,
-        required_task_count: reward.required_task_count
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error adding reward:', error);
-      return null;
-    }
-    return data as Reward;
+  addReward: async (_parentId: string, reward: Omit<Reward, 'id' | 'parent_id'>): Promise<Reward | null> => {
+    return localStorageService.addReward(reward);
   },
 
   /**
    * Retrieves all child profiles and their current balances for a given parent.
    */
-  fetchChildren: async (parentId: string): Promise<Child[]> => {
-    const { data, error } = await supabase
-      .from('children')
-      .select('*')
-      .eq('parent_id', parentId);
-
-    if (error) {
-      console.error('Error fetching children:', error);
-      return [];
-    }
-
-    return data as Child[];
+  fetchChildren: async (_parentId: string): Promise<Child[]> => {
+    return localStorageService.fetchChildren();
   },
 
   /**
    * Retrieves the list of active task templates for a given parent.
    */
-  fetchActiveTasks: async (parentId: string): Promise<Task[]> => {
-    const { data, error } = await supabase
-      .from('tasks')
-      .select('*')
-      .eq('parent_id', parentId)
-      .eq('is_active', true); // Filter by is_active
-
-    if (error) {
-      console.error('Error fetching tasks:', error);
-      return [];
-    }
-
-    return data as Task[];
+  fetchActiveTasks: async (_parentId: string): Promise<Task[]> => {
+    return localStorageService.fetchActiveTasks();
   },
 
   /**
    * Updates an existing task template.
    */
   updateTask: async (taskId: string, updates: Partial<Task>): Promise<Task | null> => {
-    const { data, error } = await supabase
-      .from('tasks')
-      .update(updates)
-      .eq('id', taskId)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error updating task:', error);
-      return null;
-    }
-    return data as Task;
+    return localStorageService.updateTask(taskId, updates);
   },
 
   /**
    * Updates an existing reward.
    */
   updateReward: async (rewardId: string, updates: Partial<Reward>): Promise<Reward | null> => {
-    const { data, error } = await supabase
-      .from('rewards')
-      .update(updates)
-      .eq('id', rewardId)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error updating reward:', error);
-      return null;
-    }
-    return data as Reward;
+    return localStorageService.updateReward(rewardId, updates);
   },
 
   /**
    * Deletes a reward.
    */
   deleteReward: async (rewardId: string): Promise<boolean> => {
-    const { error } = await supabase
-      .from('rewards')
-      .delete()
-      .eq('id', rewardId);
-    
-    if (error) {
-      console.error('Error deleting reward:', error);
-      return false;
-    }
-    return true;
+    return localStorageService.deleteReward(rewardId);
   },
 
   /**
    * Retrieves the list of rewards for a given parent.
    */
-  fetchRewards: async (parentId: string): Promise<Reward[]> => {
-    const { data, error } = await supabase
-      .from('rewards')
-      .select('*')
-      .eq('parent_id', parentId);
-
-    if (error) {
-      console.error('Error fetching rewards:', error);
-      return [];
-    }
-
-    return data as Reward[];
+  fetchRewards: async (_parentId: string): Promise<Reward[]> => {
+    return localStorageService.fetchRewards();
   },
 
   /**
    * Retrieves transaction history.
    */
-  fetchTransactions: async (parentId: string): Promise<CoinTransaction[]> => {
-    const { data, error } = await supabase
-      .from('coin_transactions')
-      .select('*')
-      .eq('parent_id', parentId)
-      .order('created_at', { ascending: false })
-      .limit(50);
-
-    if (error) {
-      console.error('Error fetching transactions:', error);
-      return [];
-    }
-
-    return data as CoinTransaction[];
+  fetchTransactions: async (_parentId: string): Promise<CoinTransaction[]> => {
+    return localStorageService.fetchTransactions();
   },
 
   /**
    * Retrieves all reward redemption history for the family.
-   * Used to check "One Time" reward status without pagination limits.
    */
-  fetchRedeemedRewards: async (parentId: string): Promise<{ child_id: string; reward_id: string }[]> => {
-    const { data, error } = await supabase
-      .from('coin_transactions')
-      .select('child_id, reference_id')
-      .eq('parent_id', parentId)
-      .eq('type', 'REWARD_REDEEMED');
-
-    if (error) {
-      console.error('Error fetching redemptions:', error);
-      return [];
-    }
-
-    // Filter out any invalid records where reference_id might be null
-    return (data || [])
-      .filter((t: any) => t.reference_id && t.child_id)
-      .map((t: any) => ({ 
-        child_id: t.child_id, 
-        reward_id: t.reference_id 
-      }));
+  fetchRedeemedRewards: async (_parentId: string): Promise<{ child_id: string; reward_id: string }[]> => {
+    return localStorageService.fetchRedeemedRewards();
   },
 
   /**
-   * Marks a task as completed by the child (creates a log entry with PENDING status).
+   * Marks a task as completed by the child.
    */
-  completeTask: async (parentId: string, childId: string, taskId: string): Promise<ChildTaskLog | null> => {
-    const { data, error } = await supabase
-      .from('child_tasks_log')
-      .insert({
-        parent_id: parentId,
-        child_id: childId,
-        task_id: taskId,
-        status: 'PENDING',
-        completed_at: new Date().toISOString()
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error completing task:', error);
-      return null;
-    }
-    return data as ChildTaskLog;
+  completeTask: async (_parentId: string, childId: string, taskId: string): Promise<ChildTaskLog | null> => {
+    return localStorageService.completeTask(childId, taskId);
   },
 
   /**
-   * Retrieves logs for all children of a parent (typically for today or recent history).
-   * Simplified to fetch last 50 logs for now to check status.
+   * Retrieves logs for all children of a parent.
    */
-  fetchChildLogs: async (parentId: string): Promise<ChildTaskLog[]> => {
-    const { data, error } = await supabase
-      .from('child_tasks_log')
-      .select('*')
-      .eq('parent_id', parentId)
-      .order('completed_at', { ascending: false })
-      .limit(100);
-
-    if (error) {
-      console.error('Error fetching logs:', error);
-      return [];
-    }
-    return data as ChildTaskLog[];
+  fetchChildLogs: async (_parentId: string): Promise<ChildTaskLog[]> => {
+    return localStorageService.fetchChildLogs();
   },
 
   /**
-   * Retrieves pending verifications (child_tasks_log where status = PENDING).
-   * Joins with 'tasks' and 'children' to get friendly names.
+   * Retrieves pending verifications.
    */
-  fetchPendingVerifications: async (parentId: string): Promise<VerificationRequest[]> => {
-    // Note: Supabase Join syntax might vary based on Foreign Key setup.
-    // Assuming standard FKs: child_tasks_log.task_id -> tasks.id, child_tasks_log.child_id -> children.id
-    const { data, error } = await supabase
-      .from('child_tasks_log')
-      .select(`
-        *,
-        task:tasks(name, reward_value),
-        child:children(name)
-      `)
-      .eq('parent_id', parentId)
-      .eq('status', 'PENDING');
-
-    if (error) {
-      console.error('Error fetching verifications:', error);
-      return [];
-    }
-
-    return (data || []).map((item: any) => ({
-      ...item,
-      task_title: item.task?.name || 'Unknown Task',
-      reward_value: item.task?.reward_value || 0,
-      child_name: item.child?.name || 'Unknown Child',
-    }));
+  fetchPendingVerifications: async (_parentId: string): Promise<VerificationRequest[]> => {
+    return localStorageService.fetchPendingVerifications();
   },
 
   /**
-   * Verifies a task: Updates log status and increments child balance.
-   * Ideally done via RPC or Database Transaction for safety.
-   * Here we implement a client-side flow (optimistic) for now or calls a robust RPC.
+   * Verifies a task.
    */
   verifyTask: async (logId: string, childId: string, rewardValue: number): Promise<boolean> => {
-    // 1. Update Log Status
-    const { error: logError } = await supabase
-      .from('child_tasks_log')
-      .update({ status: 'VERIFIED' })
-      .eq('id', logId);
-
-    if (logError) {
-      console.error('Error updating log:', logError);
-      return false;
-    }
-
-    // 2. Increment Balance (Fetch current first to be safe, or use RPC increment)
-    // Using RPC is best practice: supabase.rpc('verify_task', { log_id: ... })
-    // Fallback manual update:
-    const { data: child } = await supabase
-      .from('children')
-      .select('current_balance, parent_id')
-      .eq('id', childId)
-      .single();
-
-    if (child) {
-      const newBalance = (child.current_balance || 0) + rewardValue;
-      await supabase
-        .from('children')
-        .update({ current_balance: newBalance })
-        .eq('id', childId);
-        
-      // 3. Insert Transaction Record
-      const { error: txError } = await supabase
-        .from('coin_transactions')
-        .insert({
-          parent_id: child.parent_id, // Explicitly passed
-          child_id: childId,
-          amount: rewardValue,
-          type: 'TASK_VERIFIED',
-          reference_id: logId,
-        });
-
-      if (txError) console.error('Error inserting transaction:', txError);
-    }
-
-    return true;
+    return localStorageService.verifyTask(logId, childId, rewardValue);
   },
 
   /**
    * Rejects a task verification.
    */
   rejectTask: async (logId: string, reason: string): Promise<boolean> => {
-    const { error } = await supabase
-      .from('child_tasks_log')
-      .update({ 
-        status: 'REJECTED',
-        rejection_reason: reason
-      })
-      .eq('id', logId);
-      
-    return !error;
+    return localStorageService.rejectTask(logId, reason);
   },
 
   /**
-   * Redeems a reward: Decrements balance.
+   * Redeems a reward.
    */
   redeemReward: async (childId: string, cost: number, rewardId?: string): Promise<boolean> => {
-    const { data: child } = await supabase
-      .from('children')
-      .select('current_balance, parent_id')
-      .eq('id', childId)
-      .single();
-
-    if (!child || child.current_balance < cost) return false;
-
-    const newBalance = child.current_balance - cost;
-
-    const { error } = await supabase
-      .from('children')
-      .update({ current_balance: newBalance })
-      .eq('id', childId);
-
-    if (!error) {
-      const { error: txError } = await supabase
-        .from('coin_transactions')
-        .insert({
-          parent_id: child.parent_id, // Explicitly passed
-          child_id: childId,
-          amount: -cost, // Negative for spending
-          type: rewardId ? 'REWARD_REDEEMED' : 'MANUAL_ADJ',
-          reference_id: rewardId,
-        });
-      
-      if (txError) console.error('Error inserting transaction:', txError);
-      
-      return true;
-    }
-    return false;
+    return localStorageService.redeemReward(childId, cost, rewardId);
   },
 
   /**
-   * Manually adjusts a child's balance (add or deduct).
+   * Manually adjusts a child's balance.
    */
-  manualAdjustment: async (parentId: string, childId: string, amount: number, reason?: string): Promise<boolean> => {
-    // 1. Fetch current balance
-    const { data: child } = await supabase
-      .from('children')
-      .select('current_balance')
-      .eq('id', childId)
-      .single();
-
-    if (!child) return false;
-
-    const newBalance = (child.current_balance || 0) + amount;
-
-    // 2. Update Balance
-    const { error } = await supabase
-      .from('children')
-      .update({ current_balance: newBalance })
-      .eq('id', childId);
-
-    if (!error) {
-      // 3. Insert Transaction Record
-      const { error: txError } = await supabase
-        .from('coin_transactions')
-        .insert({
-          parent_id: parentId,
-          child_id: childId,
-          amount: amount,
-          type: 'MANUAL_ADJ',
-          reference_id: null, 
-          description: reason // Store the reason
-        });
-      
-      if (txError) console.error('Error inserting transaction:', txError);
-      
-      return true;
-    }
-    return false;
+  manualAdjustment: async (_parentId: string, childId: string, amount: number, reason?: string): Promise<boolean> => {
+    return localStorageService.manualAdjustment(childId, amount, reason);
   },
 
   /**
-   * Verifies the entered PIN against the profiles table for the parent.
+   * Verifies the entered PIN.
    */
-  checkAdminPin: async (parentId: string, pin: string): Promise<boolean> => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('pin_admin')
-      .eq('id', parentId)
-      .single();
-
-    if (error || !data) {
-      console.error('Error checking PIN:', error);
-      return false;
-    }
-
-    return data.pin_admin === pin;
+  checkAdminPin: async (_parentId: string, pin: string): Promise<boolean> => {
+    return localStorageService.checkAdminPin(pin);
   },
+
+  /**
+   * Restores data from backup.
+   */
+  restoreBackup: async (_userId: string, data: any): Promise<{ success: boolean; error?: any }> => {
+    const success = await localStorageService.restoreBackup(data);
+    if (success) {
+      return { success: true };
+    }
+    return { success: false, error: 'Invalid backup data' };
+  }
 };

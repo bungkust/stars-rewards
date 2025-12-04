@@ -5,8 +5,9 @@ import { PrimaryButton } from '../../components/design-system/PrimaryButton';
 
 const FamilySetup = () => {
   const navigate = useNavigate();
-  const { setFamilyName, setOnboardingStep, updateAdminPin, setAdminName } = useAppStore();
-  const [name, setName] = useState('');
+  const { createFamily, setOnboardingStep } = useAppStore();
+  const [familyName, setFamilyNameInput] = useState('');
+  const [parentName, setParentNameInput] = useState('');
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [error, setError] = useState('');
@@ -27,8 +28,12 @@ const FamilySetup = () => {
     e.preventDefault();
     setError('');
 
-    if (!name.trim()) {
+    if (!familyName.trim()) {
       setError('Please enter a family name.');
+      return;
+    }
+    if (!parentName.trim()) {
+      setError('Please enter your name.');
       return;
     }
     if (pin.length !== 4) {
@@ -40,17 +45,13 @@ const FamilySetup = () => {
       return;
     }
 
-    // Update Profile with Name and PIN
-    const { error: updateError } = await updateAdminPin(name.trim(), pin);
-    
-    if (updateError) {
-      setError('Failed to save profile. Please try again.');
+    // Create Family (Local Storage)
+    const { error: createError } = await createFamily(familyName.trim(), pin, parentName.trim());
+
+    if (createError) {
+      setError('Failed to create family. Please try again.');
       return;
     }
-
-    setFamilyName(name.trim());
-    // Usually we setAdminName too if that's what the store uses
-    setAdminName(name.trim()); 
 
     setOnboardingStep('add-child');
     navigate('/onboarding/add-child');
@@ -69,8 +70,8 @@ const FamilySetup = () => {
             </label>
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={familyName}
+              onChange={(e) => setFamilyNameInput(e.target.value)}
               className="input input-bordered w-full rounded-xl text-center text-xl"
               placeholder="e.g. The Smiths"
               autoFocus
@@ -78,7 +79,20 @@ const FamilySetup = () => {
             />
           </div>
 
-          {/* PIN Section moved here */}
+          <div className="form-control w-full">
+            <label className="label">
+              <span className="label-text font-bold">Your Name (Admin)</span>
+            </label>
+            <input
+              type="text"
+              value={parentName}
+              onChange={(e) => setParentNameInput(e.target.value)}
+              className="input input-bordered w-full rounded-xl text-center text-xl"
+              placeholder="e.g. Mom or Dad"
+              required
+            />
+          </div>
+
           <div className="flex gap-4">
             <div className="form-control w-1/2">
               <label className="label">
@@ -112,10 +126,10 @@ const FamilySetup = () => {
 
           {error && <p className="text-error text-sm">{error}</p>}
 
-          <PrimaryButton 
-            type="submit" 
+          <PrimaryButton
+            type="submit"
             className="rounded-xl mt-4 shadow-md text-lg font-bold"
-            disabled={!name.trim() || pin.length < 4 || confirmPin.length < 4}
+            disabled={!familyName.trim() || !parentName.trim() || pin.length < 4 || confirmPin.length < 4}
           >
             Save & Continue
           </PrimaryButton>

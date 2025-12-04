@@ -1,88 +1,31 @@
 import { useEffect, useState } from 'react';
-import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
-import { StatusBar, Style } from '@capacitor/status-bar';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
 import { useAppStore } from './store/useAppStore';
-import { supabase } from './utils/supabase';
-import MobileLayout from './components/layout/MobileLayout';
-import ChildSelectorModal from './components/modals/ChildSelectorModal';
+
+// Pages
+import Dashboard from './pages/Dashboard';
+import Tasks from './pages/Tasks';
+import Rewards from './pages/Rewards';
+import Stats from './pages/Stats'; // Wrapper page
 import Settings from './pages/settings/Settings';
-import ChildDashboard from './pages/child/ChildDashboard';
-import ChildTasks from './pages/child/ChildTasks';
-import ChildRewards from './pages/child/ChildRewards';
-import ChildStats from './pages/child/ChildStats';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminTasks from './pages/admin/AdminTasks';
-import AdminTaskForm from './pages/admin/AdminTaskForm';
-import AdminRewards from './pages/admin/AdminRewards';
-import AdminRewardForm from './pages/admin/AdminRewardForm';
-import AdminStats from './pages/admin/AdminStats'; 
-import Welcome from './pages/Welcome';
-import Login from './pages/auth/Login';
-import FamilySetup from './pages/onboarding/FamilySetup'; 
-import ParentSetup from './pages/onboarding/ParentSetup'; 
-import AddParent from './pages/onboarding/AddParent'; 
 import AddChild from './pages/onboarding/AddChild';
+import FamilySetup from './pages/onboarding/FamilySetup';
 import FirstTask from './pages/onboarding/FirstTask';
 import FirstReward from './pages/onboarding/FirstReward';
-import { PageTransition } from './components/design-system/Animations';
+import Welcome from './pages/Welcome';
 
-// Wrapper to handle route transitions
-const AnimatedRoutes = ({ isAdminMode, activeChildId }: { isAdminMode: boolean, activeChildId: string | null }) => {
-  const location = useLocation();
-  const { refreshData, session } = useAppStore();
-
-  useEffect(() => {
-    if (session) {
-      refreshData();
-    }
-  }, [location.pathname, session, refreshData]);
-
-  return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        {isAdminMode ? (
-          // ADMIN ROUTES
-          <>
-            <Route path="/admin/dashboard" element={<PageTransition><AdminDashboard /></PageTransition>} />
-            <Route path="/admin/tasks" element={<PageTransition><AdminTasks /></PageTransition>} />
-            <Route path="/admin/tasks/new" element={<PageTransition><AdminTaskForm /></PageTransition>} />
-            <Route path="/admin/tasks/:id/edit" element={<PageTransition><AdminTaskForm /></PageTransition>} />
-            <Route path="/admin/rewards" element={<PageTransition><AdminRewards /></PageTransition>} />
-            <Route path="/admin/rewards/new" element={<PageTransition><AdminRewardForm /></PageTransition>} />
-            <Route path="/admin/rewards/:id/edit" element={<PageTransition><AdminRewardForm /></PageTransition>} />
-            <Route path="/admin/stats" element={<PageTransition><AdminStats /></PageTransition>} />
-            <Route path="/settings" element={<PageTransition><Settings /></PageTransition>} />
-            
-            {/* Redirect root to admin dashboard if in admin mode */}
-            <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
-            <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
-          </>
-        ) : (
-          // CHILD ROUTES
-          <>
-            <Route path="/" element={activeChildId ? <PageTransition><ChildDashboard /></PageTransition> : <div />} />
-            <Route path="/tasks" element={<PageTransition><ChildTasks /></PageTransition>} />
-            <Route path="/rewards" element={<PageTransition><ChildRewards /></PageTransition>} />
-            <Route path="/stats" element={<PageTransition><ChildStats /></PageTransition>} />
-            <Route path="/settings" element={<PageTransition><Settings /></PageTransition>} />
-            
-            {/* Protect admin routes from non-admin users */}
-            <Route path="/admin/*" element={<Navigate to="/" replace />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </>
-        )}
-      </Routes>
-    </AnimatePresence>
-  );
-};
+// Components
+import Layout from './components/layout/Layout';
+import ChildSelector from './components/ChildSelector';
 
 function App() {
-  const { activeChildId, setActiveChild, isAdminMode, onboardingStep, session, refreshData } = useAppStore();
+  const { activeChildId, setActiveChild, isAdminMode, onboardingStep, userProfile, refreshData } = useAppStore();
   const [isChildSelectorOpen, setIsChildSelectorOpen] = useState(false);
 
-  const isAuthenticated = !!session;
+  // Simplified Auth Check: Just check if we have a local user profile
+  const isAuthenticated = !!userProfile;
   const needsOnboarding = isAuthenticated && onboardingStep !== 'completed';
 
   // Check for active child on mount
@@ -95,9 +38,9 @@ function App() {
 
     // Configure StatusBar
     if (Capacitor.isNativePlatform()) {
-      StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
-      StatusBar.setBackgroundColor({ color: '#F0F9FF' }).catch(() => {}); // Light blue to match app theme
-      StatusBar.setStyle({ style: Style.Light }).catch(() => {}); // Dark icons for light background
+      StatusBar.setOverlaysWebView({ overlay: false }).catch(() => { });
+      StatusBar.setBackgroundColor({ color: '#F0F9FF' }).catch(() => { }); // Light blue to match app theme
+      StatusBar.setStyle({ style: Style.Light }).catch(() => { }); // Dark icons for light background
     }
   }, [activeChildId, isAdminMode, needsOnboarding, isAuthenticated]);
 
@@ -107,45 +50,6 @@ function App() {
       refreshData();
     }
   }, [isAuthenticated, refreshData]);
-
-  // Realtime Subscription
-  useEffect(() => {
-    if (!isAuthenticated || !session?.user) return;
-
-    const userId = session.user.id;
-
-    // Subscribe to all relevant tables for the current user (parent)
-    const channels = [
-      supabase
-        .channel('public:tasks')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks', filter: `parent_id=eq.${userId}` }, () => refreshData())
-        .subscribe(),
-      
-      supabase
-        .channel('public:rewards')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'rewards', filter: `parent_id=eq.${userId}` }, () => refreshData())
-        .subscribe(),
-
-      supabase
-        .channel('public:children')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'children', filter: `parent_id=eq.${userId}` }, () => refreshData())
-        .subscribe(),
-
-      supabase
-        .channel('public:child_tasks_log')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'child_tasks_log', filter: `parent_id=eq.${userId}` }, () => refreshData())
-        .subscribe(),
-
-      supabase
-        .channel('public:coin_transactions')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'coin_transactions', filter: `parent_id=eq.${userId}` }, () => refreshData())
-        .subscribe()
-    ];
-
-    return () => {
-      channels.forEach(channel => supabase.removeChannel(channel));
-    };
-  }, [isAuthenticated, session?.user?.id, refreshData]);
 
   const handleChildSelect = (childId: string) => {
     setActiveChild(childId);
@@ -158,62 +62,49 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Welcome />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/onboarding/parent-setup" element={<ParentSetup />} /> 
+          <Route path="/onboarding/family-setup" element={<FamilySetup />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
     );
   }
 
-  // Authenticated but incomplete onboarding
+  // Onboarding Router
   if (needsOnboarding) {
     return (
       <Router>
         <Routes>
-          <Route path="/onboarding/family-setup" element={<FamilySetup />} />
-          <Route path="/onboarding/add-parent" element={<AddParent />} />
           <Route path="/onboarding/add-child" element={<AddChild />} />
           <Route path="/onboarding/first-task" element={<FirstTask />} />
           <Route path="/onboarding/first-reward" element={<FirstReward />} />
-          
-          {/* Explicit redirects for flow enforcement */}
-          <Route path="/onboarding/parent-setup" element={<Navigate to="/onboarding/family-setup" replace />} />
-          
-          {/* Fallback logic based on current step in store */}
-          <Route path="*" element={<OnboardingRedirect step={onboardingStep} />} />
+          <Route path="*" element={<Navigate to="/onboarding/add-child" replace />} />
         </Routes>
       </Router>
     );
   }
 
-  // Fully Authenticated App
+  // Authenticated App Router
   return (
     <Router>
-      <MobileLayout>
-        <AnimatedRoutes isAdminMode={isAdminMode} activeChildId={activeChildId} />
-      </MobileLayout>
-      
-      {/* Child Selector Modal (Global Guard) */}
-      <ChildSelectorModal 
-        isOpen={isChildSelectorOpen && !isAdminMode} 
-        onSelect={handleChildSelect} 
-      />
+      <Layout onChildSelect={() => setIsChildSelectorOpen(true)}>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/tasks" element={<Tasks />} />
+          <Route path="/rewards" element={<Rewards />} />
+          <Route path="/stats" element={<Stats />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+
+        {isChildSelectorOpen && (
+          <ChildSelector
+            onSelect={handleChildSelect}
+            onClose={() => !activeChildId && setIsChildSelectorOpen(false)}
+          />
+        )}
+      </Layout>
     </Router>
   );
 }
-
-// Helper component to redirect based on step
-const OnboardingRedirect = ({ step }: { step: string }) => {
-  switch (step) {
-    case 'family-setup': return <Navigate to="/onboarding/family-setup" replace />;
-    case 'parent-setup': return <Navigate to="/onboarding/add-parent" replace />; // Map old step name if legacy
-    case 'add-parent': return <Navigate to="/onboarding/add-parent" replace />; // New Step
-    case 'add-child': return <Navigate to="/onboarding/add-child" replace />;
-    case 'first-task': return <Navigate to="/onboarding/first-task" replace />;
-    case 'first-reward': return <Navigate to="/onboarding/first-reward" replace />;
-    default: return <Navigate to="/onboarding/family-setup" replace />;
-  }
-};
 
 export default App;

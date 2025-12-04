@@ -6,9 +6,10 @@ import AdminPinModal from '../modals/AdminPinModal';
 
 interface LayoutProps {
   children: ReactNode;
+  onChildSelect?: () => void;
 }
 
-const Layout = ({ children }: LayoutProps) => {
+const Layout = ({ children, onChildSelect }: LayoutProps) => {
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -17,17 +18,18 @@ const Layout = ({ children }: LayoutProps) => {
       <Header
         onParentLoginClick={() => setIsPinModalOpen(true)}
         onSettingsClick={() => navigate('/settings')}
+        onChildSelectClick={onChildSelect}
       />
-      
-      <main className="flex-1 p-4 pb-24 overflow-y-auto">
+
+      <main className="flex-1 p-4 pt-28 pb-24 overflow-y-auto">
         {children}
       </main>
 
       <BottomNav />
 
-      <AdminPinModal 
-        isOpen={isPinModalOpen} 
-        onClose={() => setIsPinModalOpen(false)} 
+      <AdminPinModal
+        isOpen={isPinModalOpen}
+        onClose={() => setIsPinModalOpen(false)}
       />
     </div>
   );
