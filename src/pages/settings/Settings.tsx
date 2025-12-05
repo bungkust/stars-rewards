@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
-import { FaUsers, FaBell, FaShieldAlt, FaDatabase, FaCloudDownloadAlt, FaFileUpload, FaChevronRight } from 'react-icons/fa';
+import { FaUsers, FaBell, FaShieldAlt, FaDatabase, FaCloudDownloadAlt, FaFileUpload, FaChevronRight, FaExclamationTriangle } from 'react-icons/fa';
 import { useAppStore } from '../../store/useAppStore';
 import { AppCard } from '../../components/design-system/AppCard';
 import { H1Header } from '../../components/design-system/H1Header';
 import { IconWrapper } from '../../components/design-system/IconWrapper';
 import RestoreConfirmationModal from '../../components/modals/RestoreConfirmationModal';
 import BackupConfirmationModal from '../../components/modals/BackupConfirmationModal';
+import ResetConfirmationModal from '../../components/modals/ResetConfirmationModal';
 
 const Settings = () => {
   const {
@@ -19,6 +20,7 @@ const Settings = () => {
 
   const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [restoreData, setRestoreData] = useState<any>(null);
   const [restoreFilename, setRestoreFilename] = useState('');
 
@@ -52,7 +54,7 @@ const Settings = () => {
     childCount: user.childCount,
   };
 
-  const appVersion = '1.0.1';
+  const appVersion = '1.0.2';
 
   return (
     <div className="flex flex-col gap-6 pb-24">
@@ -209,6 +211,25 @@ const Settings = () => {
         </div>
       </AppCard>
 
+      {/* Danger Zone */}
+      <AppCard className="border-red-100 bg-red-50/50">
+        <div className="flex items-center gap-3 mb-4">
+          <IconWrapper icon={FaExclamationTriangle} className="bg-red-100 text-red-600" />
+          <h3 className="font-bold text-lg text-red-700">Danger Zone</h3>
+        </div>
+        <div className="flex flex-col gap-2">
+          <p className="text-sm text-gray-600 mb-2">
+            Resetting the app will delete all data permanently. This cannot be undone.
+          </p>
+          <button
+            className="btn btn-error btn-outline btn-sm w-full sm:w-auto"
+            onClick={() => setIsResetModalOpen(true)}
+          >
+            Reset App Data
+          </button>
+        </div>
+      </AppCard>
+
       {/* App Version */}
       <div className="text-center pb-4">
         <p className="text-xs text-gray-400 font-medium">App Version {appVersion}</p>
@@ -260,6 +281,15 @@ const Settings = () => {
             .replace(/\s+/g, '_'); // Replace spaces with underscores
 
           downloadBackupFile(backup, filename);
+        }}
+      />
+
+      {/* Reset Confirmation Modal */}
+      <ResetConfirmationModal
+        isOpen={isResetModalOpen}
+        onClose={() => setIsResetModalOpen(false)}
+        onConfirm={() => {
+          useAppStore.getState().resetApp();
         }}
       />
     </div>

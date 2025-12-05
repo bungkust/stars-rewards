@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FaChartLine, FaCheckCircle, FaGift, FaSlidersH, FaTimesCircle } from 'react-icons/fa';
 import { AppCard, H1Header, IconWrapper, ToggleButton } from '../../components/design-system';
 import { useAppStore } from '../../store/useAppStore';
+import { parseRRule, isDateValid } from '../../utils/recurrence';
 
 const AdminStats = () => {
   const { children, transactions, childLogs, tasks } = useAppStore();
@@ -136,13 +137,59 @@ const AdminStats = () => {
             <h3 className="font-bold text-gray-700">Completion Rate</h3>
           </div>
           {(() => {
-            const completed = filteredHistory.filter(i => i.type === 'transaction' && i.data.type === 'TASK_VERIFIED').length;
-            const failed = filteredHistory.filter(i => i.type === 'rejected_mission').length;
-            const total = completed + failed;
-            const rate = total === 0 ? 0 : Math.round((completed / total) * 100);
+            const completedCount = filteredHistory.filter(i => i.type === 'transaction' && i.data.type === 'TASK_VERIFIED').length;
+
+            // Calculate Total Expected Tasks
+            let expectedCount = 0;
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            let startDate = new Date(today);
+            let endDate = new Date(today);
+
+            if (timeFilter === 'week') {
+              startDate.setDate(today.getDate() - 6);
+            } else if (timeFilter === 'month') {
+              startDate.setDate(today.getDate() - 29);
+            }
+
+            const activeTasks = tasks.filter(t => t.is_active !== false);
+
+            // Iterate through each day in the range
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+              const currentDate = new Date(d);
+
+              activeTasks.forEach(task => {
+                // Determine which children are relevant for this task AND the current filter
+                const relevantChildren = (task.assigned_to || []).filter(childId => {
+                  if (selectedChildId !== 'all' && childId !== selectedChildId) return false;
+                  return children.some(c => c.id === childId);
+                });
+
+                if (relevantChildren.length === 0) return;
+
+                // Check if task is valid for this day
+                if (task.recurrence_rule) {
+                  const options = parseRRule(task.recurrence_rule);
+                  const baseDate = new Date(task.created_at || new Date()); // Fallback to now if missing
+
+                  if (isDateValid(currentDate, options, baseDate)) {
+                    // If valid, it counts for EACH assigned child
+                    expectedCount += relevantChildren.length;
+                  }
+                }
+              });
+            }
+
+            // Fallback: If expected is 0 (e.g. no tasks), prevent division by zero
+            // Also, if completed > expected (e.g. bonus tasks or logic drift), cap at 100%? 
+            // No, let's show >100% if they did extra, or just clamp. 
+            // Usually expected >= completed.
+            if (expectedCount < completedCount) expectedCount = completedCount;
+
+            const rate = expectedCount === 0 ? 0 : Math.round((completedCount / expectedCount) * 100);
 
             let colorClass = 'text-gray-400';
-            if (total > 0) {
+            if (expectedCount > 0) {
               if (rate >= 80) colorClass = 'text-green-500';
               else if (rate >= 50) colorClass = 'text-yellow-500';
               else colorClass = 'text-red-500';
@@ -155,7 +202,7 @@ const AdminStats = () => {
                   <span className="text-xs text-gray-500 mb-1">success rate</span>
                 </div>
                 <p className="text-xs text-gray-400 mt-2">
-                  {completed} completed vs {failed} missed
+                  {completedCount} completed / {expectedCount} expected
                 </p>
               </div>
             );

@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { Profile, Child, Task, Reward, VerificationRequest, CoinTransaction, ChildTaskLog } from '../types';
 import { dataService } from '../services/dataService';
 import { localStorageService } from '../services/localStorageService';
+import { parseRRule, isDateValid } from '../utils/recurrence';
 
 export type OnboardingStep = 'family-setup' | 'parent-setup' | 'add-child' | 'first-task' | 'first-reward' | 'completed';
 
@@ -14,6 +15,7 @@ export interface AppState {
   adminName?: string;
   familyName?: string;
   notificationsEnabled: boolean;
+  lastMissedCheckDate?: string; // ISO Date string (YYYY-MM-DD)
 
   childLogs: ChildTaskLog[]; // Store logs for the active child
 
@@ -62,9 +64,10 @@ export interface AppState {
   rejectTask: (logId: string, reason: string) => Promise<{ error: any }>;
   redeemReward: (childId: string, cost: number, rewardId: string) => Promise<{ error: any }>;
   manualAdjustment: (childId: string, amount: number, reason?: string) => Promise<{ error: any }>;
-  checkDailyFailures: () => Promise<void>;
+  checkMissedMissions: () => Promise<void>;
   importData: (data: Partial<AppState>) => Promise<{ error: any }>;
   logout: () => Promise<void>;
+  resetApp: () => Promise<void>;
   setNotificationsEnabled: (value: boolean) => void;
 }
 
@@ -144,7 +147,7 @@ export const useAppStore = create<AppState>()(
           }
 
           // Check for failed daily missions
-          await get().checkDailyFailures();
+          await get().checkMissedMissions();
         } catch (error) {
           console.error('Error refreshing data:', error);
         } finally {
@@ -563,33 +566,80 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      checkDailyFailures: async () => {
-        const { children, tasks, childLogs } = get();
+      checkMissedMissions: async () => {
+        const { children, tasks, childLogs, lastMissedCheckDate } = get();
         const userId = 'local-user';
         const now = new Date();
-        const yesterday = new Date(now);
-        yesterday.setDate(yesterday.getDate() - 1);
-        yesterday.setHours(23, 59, 59, 999); // End of yesterday
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        // Determine start date: last check date or yesterday
+        let startDate: Date;
+        if (lastMissedCheckDate) {
+          startDate = new Date(lastMissedCheckDate);
+          startDate.setDate(startDate.getDate() + 1); // Start from the day AFTER last check
+        } else {
+          // Default to yesterday if no history
+          startDate = new Date(today);
+          startDate.setDate(startDate.getDate() - 1);
+        }
 
-        const dailyTasks = tasks.filter(t => t.recurrence_rule === 'Daily' && t.is_active !== false);
+        // End date is yesterday (we don't fail today's tasks until tomorrow)
+        const endDate = new Date(today);
+        endDate.setDate(endDate.getDate() - 1);
+
+        if (startDate > endDate) {
+          // Already up to date
+          return;
+        }
+
         const newLogs: ChildTaskLog[] = [];
+        const activeTasks = tasks.filter(t => t.is_active !== false);
 
-        for (const child of children) {
-          for (const task of dailyTasks) {
-            // Check if there is ANY log for this task on yesterday's date
-            const hasLog = childLogs.some(log => {
-              if (log.child_id !== child.id || log.task_id !== task.id) return false;
-              const logDate = new Date(log.completed_at).toISOString().split('T')[0];
-              return logDate === yesterdayStr;
-            });
+        // Iterate through each day from startDate to endDate
+        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+          const checkDate = new Date(d);
+          const checkDateStr = checkDate.toISOString().split('T')[0];
+          const checkDateIso = checkDate.toISOString(); // Use a valid ISO string for the log
 
-            if (!hasLog) {
-              // Create FAILED log
-              const newLog = await dataService.logFailedTask(userId, child.id, task.id, yesterday.toISOString());
-              if (newLog) {
-                newLogs.push(newLog);
+          for (const task of activeTasks) {
+            // Check if task was scheduled for this day
+            if (!task.recurrence_rule) continue;
+
+            const options = parseRRule(task.recurrence_rule);
+            const baseDate = new Date(task.created_at || new Date());
+
+            if (isDateValid(checkDate, options, baseDate)) {
+              // Task was scheduled. Check if it was completed by ANY assigned child.
+              // Actually, we need to check per assigned child.
+
+              const assignedChildren = task.assigned_to.filter((id: string) => children.some(c => c.id === id));
+
+              for (const childId of assignedChildren) {
+                // Check if THIS child completed it on THIS day
+                const hasLog = childLogs.some(log => {
+                  if (log.child_id !== childId || log.task_id !== task.id) return false;
+                  const logDate = new Date(log.completed_at).toISOString().split('T')[0];
+                  return logDate === checkDateStr;
+                });
+
+                if (!hasLog) {
+                  // No log found -> FAILED
+                  // Check if we already logged a failure for this (idempotency check)
+                  // This prevents duplicate failure logs if we re-run logic
+                  const alreadyFailed = childLogs.some(log => {
+                    if (log.child_id !== childId || log.task_id !== task.id) return false;
+                    if (log.status !== 'FAILED') return false;
+                    const logDate = new Date(log.completed_at).toISOString().split('T')[0];
+                    return logDate === checkDateStr;
+                  });
+
+                  if (!alreadyFailed) {
+                    const newLog = await dataService.logFailedTask(userId, childId, task.id, checkDateIso);
+                    if (newLog) {
+                      newLogs.push(newLog);
+                    }
+                  }
+                }
               }
             }
           }
@@ -600,18 +650,39 @@ export const useAppStore = create<AppState>()(
             childLogs: [...state.childLogs, ...newLogs].sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime())
           }));
         }
+
+        // Update last check date to yesterday (since we covered up to yesterday)
+        set({ lastMissedCheckDate: endDate.toISOString().split('T')[0] });
       },
 
       logout: async () => {
-        localStorage.removeItem('stars-rewards-storage'); // Clear persisted state
+        // Non-destructive logout: Just clear active session state
+        set({
+          activeChildId: null,
+          isAdminMode: false
+        });
+        // We do NOT reload or clear storage here anymore
+      },
+
+      resetApp: async () => {
+        // Destructive reset: Clear everything
+        localStorage.removeItem('stars-rewards-storage');
 
         set({
           userProfile: null,
           activeChildId: null,
           children: [],
-          isAdminMode: false
+          isAdminMode: false,
+          tasks: [],
+          rewards: [],
+          childLogs: [],
+          transactions: [],
+          pendingVerifications: [],
+          redeemedHistory: [],
+          onboardingStep: 'family-setup'
         });
-        window.location.reload(); // Force reload to clear any in-memory state
+
+        window.location.reload();
       },
 
       importData: async (data) => {
@@ -647,6 +718,7 @@ export const useAppStore = create<AppState>()(
         adminName: state.adminName,
         familyName: state.familyName,
         onboardingStep: state.onboardingStep,
+        lastMissedCheckDate: state.lastMissedCheckDate,
         // Persist important data
         children: state.children,
         activeChildId: state.activeChildId,

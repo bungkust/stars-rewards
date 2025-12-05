@@ -123,7 +123,7 @@ export const getNextDueDate = (rrule: string, lastCompletedDate?: string): strin
     return ''; // Should not happen usually
 };
 
-const isDateValid = (date: Date, options: RecurrenceOptions, baseDate: Date): boolean => {
+export const isDateValid = (date: Date, options: RecurrenceOptions, baseDate: Date): boolean => {
     const dayName = WEEKDAYS[date.getDay() === 0 ? 6 : date.getDay() - 1].value; // MO, TU...
     const dayOfMonth = date.getDate();
 

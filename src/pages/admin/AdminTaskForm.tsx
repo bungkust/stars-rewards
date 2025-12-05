@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
-import { FaArrowLeft, FaTrash, FaLightbulb } from 'react-icons/fa';
+import { FaArrowLeft, FaTrash } from 'react-icons/fa';
 import { AlertModal, AppCard, ToggleButton } from '../../components/design-system';
 import { generateRRule, parseRRule, WEEKDAYS } from '../../utils/recurrence';
 import type { RecurrenceOptions } from '../../utils/recurrence';
@@ -43,6 +43,9 @@ const AdminTaskForm = () => {
         setTitle(taskToEdit.name);
         setReward(taskToEdit.reward_value);
         setIsActive(taskToEdit.is_active !== false);
+        if (taskToEdit.assigned_to && taskToEdit.assigned_to.length > 0) {
+          setSelectedChildId(taskToEdit.assigned_to[0]);
+        }
 
         const rule = taskToEdit.recurrence_rule || 'Once';
         if (['Once', 'Daily', 'Weekly', 'Monthly'].includes(rule)) {
@@ -79,7 +82,8 @@ const AdminTaskForm = () => {
       reward_value: Number(reward),
       type: (finalRule === 'Once' ? 'ONE_TIME' : 'RECURRING') as "ONE_TIME" | "RECURRING",
       recurrence_rule: finalRule,
-      is_active: isActive
+      is_active: isActive,
+      assigned_to: [selectedChildId]
     };
 
     if (id) {

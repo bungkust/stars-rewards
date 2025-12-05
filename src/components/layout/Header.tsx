@@ -103,13 +103,13 @@ const Header = ({ onParentLoginClick, onSettingsClick, onChildSelectClick }: Hea
                 </li>
                 <li>
                   <button
-                    className="justify-between text-sm font-medium text-error"
+                    className="justify-between text-sm font-medium"
                     onClick={() => {
                       closeMenu();
                       logout().catch(() => { });
                     }}
                   >
-                    Logout
+                    Switch Profile
                   </button>
                 </li>
               </>

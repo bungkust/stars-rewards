@@ -24,6 +24,7 @@ export interface Task {
   recurrence_rule?: string;
   is_active?: boolean;
   created_at?: string;
+  assigned_to: string[];
 }
 
 export interface Reward {
