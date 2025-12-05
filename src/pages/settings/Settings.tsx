@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { FaUsers, FaBell, FaShieldAlt, FaDatabase, FaCloudDownloadAlt, FaFileUpload } from 'react-icons/fa';
+import { FaUsers, FaBell, FaShieldAlt, FaDatabase, FaCloudDownloadAlt, FaFileUpload, FaChevronRight } from 'react-icons/fa';
 import { useAppStore } from '../../store/useAppStore';
 import { AppCard } from '../../components/design-system/AppCard';
 import { H1Header } from '../../components/design-system/H1Header';
@@ -52,6 +52,8 @@ const Settings = () => {
     childCount: user.childCount,
   };
 
+  const appVersion = '1.0.0';
+
   return (
     <div className="flex flex-col gap-6 pb-24">
       <H1Header>Settings</H1Header>
@@ -60,23 +62,23 @@ const Settings = () => {
       <AppCard>
         <div className="flex items-center gap-3 mb-4">
           <IconWrapper icon={FaUsers} />
-          <h3 className="font-bold text-lg">Family Information</h3>
+          <h3 className="font-bold text-lg text-gray-800">Family Information</h3>
         </div>
-        <div className="flex flex-col gap-4">
-          <div className="flex justify-between items-center border-b border-base-200 pb-3 last:border-0 last:pb-0">
-            <span className="text-gray-500">Family Name</span>
+        <div className="flex flex-col gap-1">
+          <div className="flex justify-between items-center p-3 hover:bg-base-100 rounded-lg transition-colors">
+            <span className="text-gray-500 font-medium">Family Name</span>
             <span className="font-bold text-gray-800">{familySummary.familyLabel}</span>
           </div>
-          <div className="flex justify-between items-center border-b border-base-200 pb-3 last:border-0 last:pb-0">
-            <span className="text-gray-500">Primary Parent</span>
+          <div className="flex justify-between items-center p-3 hover:bg-base-100 rounded-lg transition-colors">
+            <span className="text-gray-500 font-medium">Primary Parent</span>
             <span className="font-bold text-gray-800">{familySummary.parentLabel}</span>
           </div>
-          <div className="flex justify-between items-center border-b border-base-200 pb-3 last:border-0 last:pb-0">
-            <span className="text-gray-500">Parent Email</span>
+          <div className="flex justify-between items-center p-3 hover:bg-base-100 rounded-lg transition-colors">
+            <span className="text-gray-500 font-medium">Parent Email</span>
             <span className="font-bold text-gray-800">{familySummary.parentEmail}</span>
           </div>
-          <div className="flex justify-between items-center border-b border-base-200 pb-3 last:border-0 last:pb-0">
-            <span className="text-gray-500">Children Linked</span>
+          <div className="flex justify-between items-center p-3 hover:bg-base-100 rounded-lg transition-colors">
+            <span className="text-gray-500 font-medium">Children Linked</span>
             <span className="font-bold text-gray-800">{familySummary.childCount}</span>
           </div>
         </div>
@@ -86,35 +88,39 @@ const Settings = () => {
       <AppCard>
         <div className="flex items-center gap-3 mb-4">
           <IconWrapper icon={FaBell} />
-          <h3 className="font-bold text-lg">Notifications</h3>
+          <h3 className="font-bold text-lg text-gray-800">Notifications</h3>
         </div>
-        <label className="flex items-start justify-between gap-4 cursor-pointer">
-          <div>
-            <p className="font-bold text-gray-800">Parent reminders</p>
-            <p className="text-sm text-gray-500 mt-1">
-              Receive alerts for mission approvals, reward redemptions, and weekly summaries.
-            </p>
-          </div>
-          <input
-            type="checkbox"
-            className="toggle toggle-primary"
-            checked={notificationsEnabled}
-            onChange={(event) => setNotificationsEnabled(event.target.checked)}
-          />
-        </label>
-        <p className="text-xs text-gray-400 mt-4 bg-base-100 p-3 rounded-lg">
-          Push notifications require permissions on your device. You can change this anytime.
-        </p>
+        <div className="p-3 hover:bg-base-100 rounded-lg transition-colors">
+          <label className="flex items-start justify-between gap-4 cursor-pointer">
+            <div>
+              <p className="font-bold text-gray-800">Parent reminders</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Receive alerts for mission approvals, reward redemptions, and weekly summaries.
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              className="toggle toggle-primary"
+              checked={notificationsEnabled}
+              onChange={(event) => setNotificationsEnabled(event.target.checked)}
+            />
+          </label>
+        </div>
+        <div className="px-3 mt-2">
+          <p className="text-xs text-gray-400 bg-gray-50 p-3 rounded-lg border border-gray-100">
+            Push notifications require permissions on your device. You can change this anytime.
+          </p>
+        </div>
       </AppCard>
 
       {/* Data Management */}
       <AppCard>
         <div className="flex items-center gap-3 mb-4">
           <IconWrapper icon={FaDatabase} />
-          <h3 className="font-bold text-lg">Data Management</h3>
+          <h3 className="font-bold text-lg text-gray-800">Data Management</h3>
         </div>
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between p-4 rounded-xl bg-base-100 border border-base-200">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between p-3 hover:bg-base-100 rounded-lg transition-colors cursor-pointer" onClick={() => setIsBackupModalOpen(true)}>
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 text-blue-600 rounded-full">
                 <FaCloudDownloadAlt />
@@ -124,15 +130,12 @@ const Settings = () => {
                 <p className="text-xs text-gray-500">Download a copy of your data</p>
               </div>
             </div>
-            <button
-              onClick={() => setIsBackupModalOpen(true)}
-              className="btn btn-primary btn-sm"
-            >
+            <button className="btn btn-ghost btn-sm text-primary">
               Download
             </button>
           </div>
 
-          <div className="flex items-center justify-between p-4 rounded-xl bg-base-100 border border-base-200">
+          <div className="relative flex items-center justify-between p-3 hover:bg-base-100 rounded-lg transition-colors cursor-pointer">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-orange-100 text-orange-600 rounded-full">
                 <FaFileUpload />
@@ -146,7 +149,7 @@ const Settings = () => {
               <input
                 type="file"
                 accept=".json"
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 value="" // Always reset to allow selecting same file again
                 onChange={(e) => {
                   const file = e.target.files?.[0];
@@ -173,7 +176,7 @@ const Settings = () => {
                   reader.readAsText(file);
                 }}
               />
-              <button className="btn btn-outline btn-sm pointer-events-none">
+              <button className="btn btn-ghost btn-sm text-primary pointer-events-none">
                 Restore
               </button>
             </div>
@@ -185,9 +188,9 @@ const Settings = () => {
       <AppCard>
         <div className="flex items-center gap-3 mb-4">
           <IconWrapper icon={FaShieldAlt} />
-          <h3 className="font-bold text-lg">Legal & Policy</h3>
+          <h3 className="font-bold text-lg text-gray-800">Legal & Policy</h3>
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1">
           {policyLinks.map((link) => (
             <a
               key={link.label}
@@ -200,11 +203,16 @@ const Settings = () => {
                 <p className="font-medium text-gray-800 group-hover:text-primary transition-colors">{link.label}</p>
                 <p className="text-xs text-gray-500">{link.description}</p>
               </div>
-              <span className="text-xs font-bold text-gray-400 group-hover:text-primary">View</span>
+              <FaChevronRight className="text-gray-300 group-hover:text-primary w-3 h-3" />
             </a>
           ))}
         </div>
       </AppCard>
+
+      {/* App Version */}
+      <div className="text-center pb-4">
+        <p className="text-xs text-gray-400 font-medium">App Version {appVersion}</p>
+      </div>
 
       {/* Restore Confirmation Modal */}
       {isRestoreModalOpen && restoreData && (

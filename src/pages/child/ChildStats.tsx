@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { H1Header } from '../../components/design-system/H1Header';
-import { FaStar, FaTrophy, FaChartPie } from 'react-icons/fa';
+import { H1Header, ToggleButton } from '../../components/design-system';
+import { FaStar, FaTrophy, FaChartPie, FaCheckCircle, FaGift, FaSlidersH, FaTimesCircle } from 'react-icons/fa';
 import {
   CartesianGrid,
   Line,
@@ -43,7 +43,7 @@ const ChildStats = () => {
 
   // Get rejected mission logs for history display
   const rejectedMissions = useMemo(
-    () => childLogs.filter(log => log.child_id === child?.id && log.status === 'REJECTED'),
+    () => childLogs.filter(log => log.child_id === child?.id && (log.status === 'REJECTED' || log.status === 'FAILED')),
     [childLogs, child?.id]
   );
 
@@ -161,8 +161,8 @@ const ChildStats = () => {
       name = reward?.name || 'Reward Redeemed';
       description = 'Spent Stars';
     } else {
-      name = t.description || 'Manual Adjustment';
-      description = t.amount > 0 ? 'Bonus' : 'Penalty';
+      name = 'Manual Adjustment';
+      description = t.description || (t.amount > 0 ? 'Bonus' : 'Penalty');
     }
 
     return { name, description };
@@ -206,16 +206,14 @@ const ChildStats = () => {
             <h3 className="text-lg font-bold text-gray-800">Progress Tracker</h3>
             <p className="text-xs text-gray-500">{timeframeDescriptions[timeframe]}</p>
           </div>
-          <div className="btn-group">
+          <div className="flex gap-2">
             {timeframeOptions.map(option => (
-              <button
+              <ToggleButton
                 key={option.value}
-                className={`btn btn-sm ${option.value === timeframe ? 'btn-primary text-white' : 'btn-ghost text-gray-500'
-                  }`}
+                label={option.label}
+                isActive={option.value === timeframe}
                 onClick={() => setTimeframe(option.value)}
-              >
-                {option.label}
-              </button>
+              />
             ))}
           </div>
         </div>
@@ -316,25 +314,22 @@ const ChildStats = () => {
           <h3 className="text-lg font-bold text-gray-700">Recent History</h3>
 
           {/* History Filter Tabs */}
-          <div className="tabs tabs-boxed bg-base-200 p-1 rounded-lg w-fit">
-            <a
-              className={`tab tab-xs rounded-md transition-all ${historyFilter === 'today' ? 'bg-primary text-white shadow-md' : 'text-gray-600 hover:bg-base-300'}`}
+          <div className="flex gap-2">
+            <ToggleButton
+              label="Today"
+              isActive={historyFilter === 'today'}
               onClick={() => handleHistoryFilterChange('today')}
-            >
-              Today
-            </a>
-            <a
-              className={`tab tab-xs rounded-md transition-all ${historyFilter === 'week' ? 'bg-primary text-white shadow-md' : 'text-gray-600 hover:bg-base-300'}`}
+            />
+            <ToggleButton
+              label="Week"
+              isActive={historyFilter === 'week'}
               onClick={() => handleHistoryFilterChange('week')}
-            >
-              Week
-            </a>
-            <a
-              className={`tab tab-xs rounded-md transition-all ${historyFilter === 'month' ? 'bg-primary text-white shadow-md' : 'text-gray-600 hover:bg-base-300'}`}
+            />
+            <ToggleButton
+              label="Month"
+              isActive={historyFilter === 'month'}
               onClick={() => handleHistoryFilterChange('month')}
-            >
-              Month
-            </a>
+            />
           </div>
         </div>
 
@@ -343,11 +338,36 @@ const ChildStats = () => {
             if (item.type === 'transaction') {
               const transaction = item.data;
               const details = getTransactionDetails(transaction);
+
+              let Icon = FaCheckCircle;
+              let iconBg = 'bg-green-100';
+              let iconColor = 'text-green-600';
+
+              if (transaction.type === 'REWARD_REDEEMED') {
+                Icon = FaGift;
+                iconBg = 'bg-orange-100';
+                iconColor = 'text-orange-600';
+              } else if (transaction.type === 'MANUAL_ADJ') {
+                Icon = FaSlidersH;
+                iconBg = 'bg-blue-100';
+                iconColor = 'text-blue-600';
+              }
+
               return (
                 <div key={item.id} className="flex justify-between items-center border-b border-gray-100 pb-3 last:border-none last:pb-0">
-                  <div className="flex flex-col">
-                    <span className="font-bold text-gray-700 text-sm">{details.name}</span>
-                    <span className="text-xs text-gray-400">{formatDate(transaction.created_at)}</span>
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-full ${iconBg} ${iconColor}`}>
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-bold text-gray-700 text-sm">{details.name}</span>
+                      <span className="text-xs text-gray-400">{formatDate(transaction.created_at)}</span>
+                      {details.description && (
+                        <span className="text-xs text-gray-500 italic mt-0.5">
+                          {details.description}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <span className={`font-bold ${transaction.amount > 0 ? 'text-green-500' : transaction.amount < 0 ? 'text-red-500' : 'text-gray-500'}`}>
                     {transaction.amount !== 0 ? (
@@ -363,19 +383,26 @@ const ChildStats = () => {
             } else if (item.type === 'rejected_mission') {
               const log = item.data;
               const details = getRejectedMissionDetails(log);
+              const isFailed = log.status === 'FAILED';
+
               return (
                 <div key={item.id} className="flex justify-between items-center border-b border-gray-100 pb-3 last:border-none last:pb-0">
-                  <div className="flex flex-col">
-                    <span className="font-bold text-gray-700 text-sm">{details.name}</span>
-                    <span className="text-xs text-gray-400">{formatDate(log.completed_at)}</span>
-                    {log.rejection_reason && (
-                      <span className="text-xs text-red-500 italic mt-1">
-                        Reason: {log.rejection_reason}
-                      </span>
-                    )}
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-full ${isFailed ? 'bg-gray-100 text-gray-500' : 'bg-red-100 text-red-600'}`}>
+                      {isFailed ? <FaTimesCircle className="w-4 h-4" /> : <FaTimesCircle className="w-4 h-4" />}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-bold text-gray-700 text-sm">{details.name}</span>
+                      <span className="text-xs text-gray-400">{formatDate(log.completed_at)}</span>
+                      {log.rejection_reason && (
+                        <span className={`text-xs italic mt-0.5 ${isFailed ? 'text-gray-500' : 'text-red-500'}`}>
+                          {isFailed ? 'Missed Deadline' : `Reason: ${log.rejection_reason}`}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <span className="font-bold text-red-500">
-                    <span className="text-xs uppercase">Rejected</span>
+                  <span className={`font-bold ${isFailed ? 'text-gray-400' : 'text-red-500'}`}>
+                    <span className="text-xs uppercase">{isFailed ? 'Failed' : 'Rejected'}</span>
                   </span>
                 </div>
               );
@@ -434,7 +461,12 @@ const getStartOfWeek = (date: Date) => {
   return result;
 };
 
-const getLocalDateKey = (date: Date) => date.toLocaleDateString('en-CA');
+const getLocalDateKey = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 const buildChartData = (transactions: CoinTransaction[], timeframe: Timeframe): ChartPoint[] => {
   const today = getStartOfDay(new Date());

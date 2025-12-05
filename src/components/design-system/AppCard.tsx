@@ -7,7 +7,7 @@ interface AppCardProps {
 
 export const AppCard: React.FC<AppCardProps> = ({ children, className = '' }) => {
   return (
-    <div className={`bg-base-100 rounded-xl shadow-md p-4 md:p-6 ${className}`}>
+    <div className={`bg-white rounded-xl shadow-md p-4 md:p-6 ${className}`}>
       {children}
     </div>
   );

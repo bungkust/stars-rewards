@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { FaStar, FaCheckCircle, FaCamera, FaTimesCircle, FaHourglassHalf } from 'react-icons/fa';
+import { FaStar, FaClock, FaRedo, FaCamera, FaBolt, FaCalendarWeek, FaCalendarAlt } from 'react-icons/fa';
+import { ToggleButton } from '../../components/design-system';
 import AvatarSelectionModal from '../../components/modals/AvatarSelectionModal';
 import TaskCompletionModal from '../../components/modals/TaskCompletionModal';
 import TaskRejectionDetailsModal from '../../components/modals/TaskRejectionDetailsModal';
@@ -10,13 +11,25 @@ const ChildDashboard = () => {
   const child = children.find(c => c.id === activeChildId);
   const allTasks = activeChildId ? getTasksByChildId(activeChildId) : [];
 
-  const [filter, setFilter] = useState<'today' | 'once' | 'all'>('today');
+  const [filter, setFilter] = useState<'daily' | 'once' | 'all'>('all');
   const [visibleCount, setVisibleCount] = useState(20);
 
   // Reset visible count when filter changes
-  const handleFilterChange = (newFilter: 'today' | 'once' | 'all') => {
+  const handleFilterChange = (newFilter: 'daily' | 'once' | 'all') => {
     setFilter(newFilter);
     setVisibleCount(20);
+  };
+
+  // Helper to find log status for today
+  const getTodayLog = (taskId: string) => {
+    if (!activeChildId) return null;
+    const today = new Date().toISOString().split('T')[0];
+
+    return childLogs.find(log =>
+      log.child_id === activeChildId &&
+      log.task_id === taskId &&
+      log.completed_at.startsWith(today)
+    );
   };
 
   // Filter and Sort Tasks
@@ -30,33 +43,32 @@ const ChildDashboard = () => {
         return task.recurrence_rule === 'Once';
       }
 
-      // Default: 'today' logic
-      // Always show Daily tasks
-      if (task.recurrence_rule === 'Daily') return true;
-
-      // Check recurrence date logic
-      if (!task.created_at) return true; // Fallback
-      const created = new Date(task.created_at);
-      const today = new Date();
-
-      if (task.recurrence_rule === 'Weekly') {
-        return created.getDay() === today.getDay();
+      if (filter === 'daily') {
+        // Show Daily tasks (and maybe others that recur often? User said "Daily")
+        // Let's include anything that is NOT 'Once' for now, or strictly 'Daily'?
+        // User request: "daily, once, all".
+        // Strict interpretation: recurrence_rule === 'Daily'
+        // But we have Weekly/Monthly/Custom.
+        // Let's assume 'Daily' filter is for Habits (Recurring).
+        // Actually, let's stick to strict 'Daily' first, or maybe 'Recurring' is better?
+        // User said "Daily". Let's try to match 'Daily' or 'Custom' with frequency DAILY?
+        // Simplest: recurrence_rule !== 'Once' (i.e. Recurring)
+        // But the label is "Daily".
+        // Let's use: recurrence_rule !== 'Once' to show all recurring habits.
+        return task.recurrence_rule !== 'Once';
       }
 
-      if (task.recurrence_rule === 'Monthly') {
-        return created.getDate() === today.getDate();
-      }
-
-      // 'Once' tasks show up in 'Today' only if created today
-      return created.toDateString() === today.toDateString();
+      return true;
     }).sort((a, b) => {
-      // Sort by status (Pending/Rejected first, then incomplete, then Verified)
-      // This is complex, so for now keep simple date sort or refine later
+      // Sort: Pending/Due first, then Completed/Verified
+      // But we also have "due today" logic.
+      // For "All" view, we might want to see everything.
+      // Let's keep simple date sort for now.
       const dateA = new Date(a.created_at || 0).getTime();
       const dateB = new Date(b.created_at || 0).getTime();
-      return dateB - dateA; // Descending
+      return dateB - dateA;
     });
-  }, [allTasks, filter]);
+  }, [allTasks, filter, childLogs, activeChildId]);
 
   const visibleTasks = filteredTasks.slice(0, visibleCount);
   const hasMore = visibleTasks.length < filteredTasks.length;
@@ -68,21 +80,6 @@ const ChildDashboard = () => {
   const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
   const [selectedRejection, setSelectedRejection] = useState<{ taskName: string, reason: string } | null>(null);
 
-  // Helper to find log status for today
-  const getTaskStatus = (taskId: string) => {
-    if (!activeChildId) return null;
-    // Filter logs for this child and this task, created today
-    // For simplicity, just check if ANY log exists for today. 
-    // In real app, we should handle timezones properly.
-    const today = new Date().toISOString().split('T')[0];
-
-    return childLogs.find(log =>
-      log.child_id === activeChildId &&
-      log.task_id === taskId &&
-      log.completed_at.startsWith(today)
-    );
-  };
-
   const handleAvatarSave = async (newAvatar: string) => {
     if (child) {
       await updateChildAvatar(child.id, newAvatar);
@@ -91,7 +88,7 @@ const ChildDashboard = () => {
 
   const handleTaskComplete = async (task: { id: string, name: string, reward_value: number }) => {
     // Check if already done today handled by UI state, but double check
-    if (getTaskStatus(task.id)) return;
+    if (getTodayLog(task.id)) return;
 
     const { error } = await completeTask(task.id);
     if (!error) {
@@ -105,6 +102,16 @@ const ChildDashboard = () => {
   const handleViewRejection = (taskName: string, reason?: string) => {
     setSelectedRejection({ taskName, reason: reason || '' });
     setIsRejectionModalOpen(true);
+  };
+
+  const getBadgeStyle = (rule: string) => {
+    switch (rule) {
+      case 'Once': return 'bg-amber-100 text-amber-800';
+      case 'Daily': return 'bg-blue-100 text-blue-800';
+      case 'Weekly': return 'bg-purple-100 text-purple-800';
+      case 'Monthly': return 'bg-rose-100 text-rose-800';
+      default: return 'bg-indigo-100 text-indigo-800';
+    }
   };
 
   if (!child) return <div>Loading...</div>;
@@ -159,25 +166,23 @@ const ChildDashboard = () => {
           <h3 className="text-xl font-bold text-gray-700">Missions</h3>
 
           {/* Filter Tabs */}
-          <div className="tabs tabs-boxed bg-base-200 p-1 rounded-lg w-fit">
-            <a
-              className={`tab tab-sm rounded-md transition-all ${filter === 'today' ? 'bg-primary text-white shadow-md' : 'text-gray-600 hover:bg-base-300'}`}
-              onClick={() => handleFilterChange('today')}
-            >
-              Today
-            </a>
-            <a
-              className={`tab tab-sm rounded-md transition-all ${filter === 'once' ? 'bg-primary text-white shadow-md' : 'text-gray-600 hover:bg-base-300'}`}
+          {/* Filter Tabs */}
+          <div className="flex gap-2">
+            <ToggleButton
+              label="Daily"
+              isActive={filter === 'daily'}
+              onClick={() => handleFilterChange('daily')}
+            />
+            <ToggleButton
+              label="Once"
+              isActive={filter === 'once'}
               onClick={() => handleFilterChange('once')}
-            >
-              Once
-            </a>
-            <a
-              className={`tab tab-sm rounded-md transition-all ${filter === 'all' ? 'bg-primary text-white shadow-md' : 'text-gray-600 hover:bg-base-300'}`}
+            />
+            <ToggleButton
+              label="All"
+              isActive={filter === 'all'}
               onClick={() => handleFilterChange('all')}
-            >
-              All
-            </a>
+            />
           </div>
         </div>
 
@@ -188,7 +193,7 @@ const ChildDashboard = () => {
         ) : (
           <>
             {visibleTasks.map((task) => {
-              const log = getTaskStatus(task.id);
+              const log = getTodayLog(task.id);
               const status = log?.status; // PENDING, VERIFIED, REJECTED
 
               return (
@@ -201,10 +206,11 @@ const ChildDashboard = () => {
                       status === 'REJECTED' ? 'bg-error/10 text-error' :
                         status === 'PENDING' ? 'bg-warning/10 text-warning' : 'bg-blue-50 text-primary'
                       }`}>
-                      {status === 'VERIFIED' ? <FaCheckCircle className="w-6 h-6" /> :
-                        status === 'REJECTED' ? <FaTimesCircle className="w-6 h-6" /> :
-                          status === 'PENDING' ? <FaHourglassHalf className="w-6 h-6" /> :
-                            <FaCheckCircle className="w-6 h-6" />}
+                      {task.recurrence_rule === 'Once' ? <FaBolt className="w-6 h-6" /> :
+                        task.recurrence_rule === 'Daily' ? <FaRedo className="w-6 h-6" /> :
+                          task.recurrence_rule === 'Weekly' ? <FaCalendarWeek className="w-6 h-6" /> :
+                            task.recurrence_rule === 'Monthly' ? <FaCalendarAlt className="w-6 h-6" /> :
+                              <FaClock className="w-6 h-6" />}
                     </div>
                     <div>
                       <h4 className="font-bold text-gray-800">{task.name}</h4>
@@ -214,9 +220,9 @@ const ChildDashboard = () => {
                             <FaStar className="w-3 h-3" /> {task.reward_value}
                           </span>
                         )}
-                        {filter !== 'today' && (
-                          <span className="badge badge-ghost badge-xs">{task.recurrence_rule}</span>
-                        )}
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getBadgeStyle(task.recurrence_rule || '')}`}>
+                          {task.recurrence_rule}
+                        </span>
                       </div>
                     </div>
                   </div>

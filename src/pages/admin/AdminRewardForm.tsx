@@ -16,7 +16,7 @@ const AdminRewardForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { addReward, updateReward, tasks, rewards } = useAppStore();
-  
+
   const [name, setName] = useState('');
   const [cost, setCost] = useState(10);
   const [selectedIcon, setSelectedIcon] = useState(ICONS[0].id);
@@ -46,7 +46,7 @@ const AdminRewardForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const rewardData = {
       name,
       cost_value: Number(cost),
@@ -61,8 +61,8 @@ const AdminRewardForm = () => {
     } else {
       await addReward(rewardData);
     }
-    
-    navigate('/admin/rewards');
+
+    navigate('/rewards');
   };
 
   const handleDelete = async () => {
@@ -88,10 +88,10 @@ const AdminRewardForm = () => {
           <label className="label">
             <span className="label-text font-bold">Reward Name</span>
           </label>
-          <input 
-            type="text" 
-            placeholder="e.g. 30 min iPad" 
-            className="input input-bordered w-full rounded-xl" 
+          <input
+            type="text"
+            placeholder="e.g. 30 min iPad"
+            className="input input-bordered w-full rounded-xl"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -103,9 +103,9 @@ const AdminRewardForm = () => {
             <span className="label-text font-bold">Cost (Stars)</span>
           </label>
           <div className="flex items-center gap-4">
-            <input 
-              type="number" 
-              className="input input-bordered flex-1 rounded-xl text-center font-bold text-lg" 
+            <input
+              type="number"
+              className="input input-bordered flex-1 rounded-xl text-center font-bold text-lg"
               value={cost}
               onChange={(e) => setCost(Number(e.target.value))}
               min={0}
@@ -114,7 +114,7 @@ const AdminRewardForm = () => {
             <button type="button" onClick={() => handleCostAdjust(10)} className="btn btn-circle btn-sm bg-base-200">+10</button>
           </div>
           <label className="label">
-             <span className="label-text-alt text-gray-500">Set to 0 for Milestone Rewards (Claimable for free once unlocked)</span>
+            <span className="label-text-alt text-gray-500">Set to 0 for Milestone Rewards (Claimable for free once unlocked)</span>
           </label>
         </div>
 
@@ -125,12 +125,12 @@ const AdminRewardForm = () => {
           <div className="flex flex-col gap-3">
             <div className="flex gap-4">
               <label className="label cursor-pointer justify-start gap-2 border rounded-xl p-3 flex-1 hover:bg-base-200 transition-colors">
-                <input 
-                  type="radio" 
-                  name="type" 
-                  className="radio radio-primary" 
+                <input
+                  type="radio"
+                  name="type"
+                  className="radio radio-primary"
                   checked={type === 'UNLIMITED'}
-                  onChange={() => setType('UNLIMITED')} 
+                  onChange={() => setType('UNLIMITED')}
                 />
                 <div className="flex flex-col">
                   <span className="label-text font-bold">Unlimited</span>
@@ -138,12 +138,12 @@ const AdminRewardForm = () => {
                 </div>
               </label>
               <label className="label cursor-pointer justify-start gap-2 border rounded-xl p-3 flex-1 hover:bg-base-200 transition-colors">
-                <input 
-                  type="radio" 
-                  name="type" 
-                  className="radio radio-primary" 
+                <input
+                  type="radio"
+                  name="type"
+                  className="radio radio-primary"
                   checked={type === 'ONE_TIME'}
-                  onChange={() => setType('ONE_TIME')} 
+                  onChange={() => setType('ONE_TIME')}
                 />
                 <div className="flex flex-col">
                   <span className="label-text font-bold">One-time</span>
@@ -153,12 +153,12 @@ const AdminRewardForm = () => {
             </div>
 
             <label className="label cursor-pointer justify-start gap-2 border rounded-xl p-3 hover:bg-base-200 transition-colors">
-              <input 
-                type="radio" 
-                name="type" 
-                className="radio radio-primary" 
+              <input
+                type="radio"
+                name="type"
+                className="radio radio-primary"
                 checked={type === 'ACCUMULATIVE'}
-                onChange={() => setType('ACCUMULATIVE')} 
+                onChange={() => setType('ACCUMULATIVE')}
               />
               <div className="flex flex-col">
                 <span className="label-text font-bold">Milestone / Accumulative</span>
@@ -171,12 +171,12 @@ const AdminRewardForm = () => {
         {type === 'ACCUMULATIVE' && (
           <div className="card bg-base-200 p-4 rounded-xl animate-fade-in">
             <h3 className="font-bold text-gray-700 mb-3">Unlock Requirements</h3>
-            
+
             <div className="form-control w-full mb-4">
               <label className="label">
                 <span className="label-text font-bold">Required Mission</span>
               </label>
-              
+
               <Listbox value={requiredTaskId} onChange={setRequiredTaskId}>
                 <div className="relative">
                   <ListboxButton className="relative w-full cursor-pointer rounded-xl bg-white py-3 pl-4 pr-10 text-left border border-gray-300 focus:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 sm:text-sm min-h-[3rem] text-base">
@@ -192,8 +192,7 @@ const AdminRewardForm = () => {
                       <ListboxOption
                         key={task.id}
                         className={({ active }) =>
-                          `relative cursor-pointer select-none py-2 pl-10 pr-4 ${
-                            active ? 'bg-blue-50 text-primary' : 'text-gray-900'
+                          `relative cursor-pointer select-none py-2 pl-10 pr-4 ${active ? 'bg-blue-50 text-primary' : 'text-gray-900'
                           }`
                         }
                         value={task.id}
@@ -221,8 +220,8 @@ const AdminRewardForm = () => {
               <label className="label">
                 <span className="label-text font-bold">Required Completions</span>
               </label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 className="input input-bordered w-full rounded-xl"
                 value={requiredTaskCount}
                 onChange={(e) => setRequiredTaskCount(Number(e.target.value))}
@@ -230,7 +229,7 @@ const AdminRewardForm = () => {
                 required={type === 'ACCUMULATIVE'}
               />
               <label className="label">
-                 <span className="label-text-alt text-gray-500">How many times must the mission be completed?</span>
+                <span className="label-text-alt text-gray-500">How many times must the mission be completed?</span>
               </label>
             </div>
           </div>

@@ -267,6 +267,22 @@ export const localStorageService = {
         return true;
     },
 
+    logFailedTask: async (childId: string, taskId: string, date: string): Promise<ChildTaskLog> => {
+        const db = getDB();
+        const newLog: ChildTaskLog = {
+            id: generateId(),
+            parent_id: 'local-user',
+            child_id: childId,
+            task_id: taskId,
+            status: 'FAILED',
+            rejection_reason: 'Missed daily deadline',
+            completed_at: date // Should be end of the missed day
+        };
+        db.logs.push(newLog);
+        saveDB(db);
+        return newLog;
+    },
+
     // --- Transactions / Redemption ---
 
     redeemReward: async (childId: string, cost: number, rewardId?: string): Promise<boolean> => {

@@ -115,6 +115,13 @@ export const dataService = {
   },
 
   /**
+   * Logs a failed task (missed deadline).
+   */
+  logFailedTask: async (_parentId: string, childId: string, taskId: string, date: string): Promise<ChildTaskLog | null> => {
+    return localStorageService.logFailedTask(childId, taskId, date);
+  },
+
+  /**
    * Redeems a reward.
    */
   redeemReward: async (childId: string, cost: number, rewardId?: string): Promise<boolean> => {

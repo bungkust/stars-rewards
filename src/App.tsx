@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+// Main App Component
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
@@ -15,6 +16,8 @@ import FamilySetup from './pages/onboarding/FamilySetup';
 import FirstTask from './pages/onboarding/FirstTask';
 import FirstReward from './pages/onboarding/FirstReward';
 import Welcome from './pages/Welcome';
+import AdminTaskForm from './pages/admin/AdminTaskForm';
+import AdminRewardForm from './pages/admin/AdminRewardForm';
 
 // Components
 import Layout from './components/layout/Layout';
@@ -108,7 +111,13 @@ function App() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/tasks" element={<Tasks />} />
+          <Route path="/admin/tasks/new" element={<AdminTaskForm />} />
+          <Route path="/admin/tasks/:id/edit" element={<AdminTaskForm />} />
+
           <Route path="/rewards" element={<Rewards />} />
+          <Route path="/admin/rewards/new" element={<AdminRewardForm />} />
+          <Route path="/admin/rewards/:id/edit" element={<AdminRewardForm />} />
+
           <Route path="/stats" element={<Stats />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />

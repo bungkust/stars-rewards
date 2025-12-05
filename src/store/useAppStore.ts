@@ -62,6 +62,7 @@ export interface AppState {
   rejectTask: (logId: string, reason: string) => Promise<{ error: any }>;
   redeemReward: (childId: string, cost: number, rewardId: string) => Promise<{ error: any }>;
   manualAdjustment: (childId: string, amount: number, reason?: string) => Promise<{ error: any }>;
+  checkDailyFailures: () => Promise<void>;
   importData: (data: Partial<AppState>) => Promise<{ error: any }>;
   logout: () => Promise<void>;
   setNotificationsEnabled: (value: boolean) => void;
@@ -141,6 +142,9 @@ export const useAppStore = create<AppState>()(
           if (children.length > 0 || tasks.length > 0 || rewards.length > 0) {
             set({ onboardingStep: 'completed' });
           }
+
+          // Check for failed daily missions
+          await get().checkDailyFailures();
         } catch (error) {
           console.error('Error refreshing data:', error);
         } finally {
@@ -391,8 +395,21 @@ export const useAppStore = create<AppState>()(
 
           if (!newLog) throw new Error('Failed to complete task');
 
+          const { tasks, children } = get();
+          const task = tasks.find(t => t.id === taskId);
+          const child = children.find(c => c.id === activeChildId);
+
           set((state) => ({
-            childLogs: [newLog, ...state.childLogs]
+            childLogs: [newLog, ...state.childLogs],
+            pendingVerifications: [
+              ...state.pendingVerifications,
+              {
+                ...newLog,
+                task_title: task?.name || 'Unknown Task',
+                reward_value: task?.reward_value || 0,
+                child_name: child?.name || 'Unknown Child'
+              }
+            ]
           }));
 
           return { error: null };
@@ -421,7 +438,20 @@ export const useAppStore = create<AppState>()(
             // Update the specific log in childLogs
             childLogs: state.childLogs.map(log =>
               log.id === logId ? { ...log, status: 'VERIFIED' } : log
-            )
+            ),
+            // Add to transactions
+            transactions: [
+              {
+                id: crypto.randomUUID(),
+                parent_id: 'local-user',
+                child_id: childId,
+                amount: rewardValue,
+                type: 'TASK_VERIFIED',
+                reference_id: logId,
+                created_at: new Date().toISOString()
+              },
+              ...state.transactions
+            ]
           }));
 
           return { error: null };
@@ -472,7 +502,20 @@ export const useAppStore = create<AppState>()(
             // Update local redemption history immediately
             redeemedHistory: rewardId
               ? [...state.redeemedHistory, { child_id: childId, reward_id: rewardId }]
-              : state.redeemedHistory
+              : state.redeemedHistory,
+            // Add to transactions
+            transactions: [
+              {
+                id: crypto.randomUUID(),
+                parent_id: 'local-user',
+                child_id: childId,
+                amount: -cost,
+                type: rewardId ? 'REWARD_REDEEMED' : 'MANUAL_ADJ',
+                reference_id: rewardId,
+                created_at: new Date().toISOString()
+              },
+              ...state.transactions
+            ]
           }));
 
           return { error: null };
@@ -496,6 +539,19 @@ export const useAppStore = create<AppState>()(
             children: state.children.map(c =>
               c.id === childId ? { ...c, current_balance: (c.current_balance || 0) + amount } : c
             ),
+            // Add to transactions
+            transactions: [
+              {
+                id: crypto.randomUUID(),
+                parent_id: 'local-user',
+                child_id: childId,
+                amount: amount,
+                type: 'MANUAL_ADJ',
+                description: reason,
+                created_at: new Date().toISOString()
+              },
+              ...state.transactions
+            ]
           }));
 
           return { error: null };
@@ -504,6 +560,45 @@ export const useAppStore = create<AppState>()(
           return { error };
         } finally {
           set({ isLoading: false });
+        }
+      },
+
+      checkDailyFailures: async () => {
+        const { children, tasks, childLogs } = get();
+        const userId = 'local-user';
+        const now = new Date();
+        const yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+        yesterday.setHours(23, 59, 59, 999); // End of yesterday
+
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+        const dailyTasks = tasks.filter(t => t.recurrence_rule === 'Daily' && t.is_active !== false);
+        const newLogs: ChildTaskLog[] = [];
+
+        for (const child of children) {
+          for (const task of dailyTasks) {
+            // Check if there is ANY log for this task on yesterday's date
+            const hasLog = childLogs.some(log => {
+              if (log.child_id !== child.id || log.task_id !== task.id) return false;
+              const logDate = new Date(log.completed_at).toISOString().split('T')[0];
+              return logDate === yesterdayStr;
+            });
+
+            if (!hasLog) {
+              // Create FAILED log
+              const newLog = await dataService.logFailedTask(userId, child.id, task.id, yesterday.toISOString());
+              if (newLog) {
+                newLogs.push(newLog);
+              }
+            }
+          }
+        }
+
+        if (newLogs.length > 0) {
+          set(state => ({
+            childLogs: [...state.childLogs, ...newLogs].sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime())
+          }));
         }
       },
 
@@ -559,6 +654,7 @@ export const useAppStore = create<AppState>()(
         rewards: state.rewards,
         childLogs: state.childLogs,
         redeemedHistory: state.redeemedHistory,
+        transactions: state.transactions,
       }),
     }
   )

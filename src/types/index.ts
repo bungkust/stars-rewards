@@ -42,7 +42,7 @@ export interface ChildTaskLog {
   parent_id: string;
   child_id: string;
   task_id: string;
-  status: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  status: 'PENDING' | 'VERIFIED' | 'REJECTED' | 'FAILED';
   rejection_reason?: string;
   completed_at: string;
 }
