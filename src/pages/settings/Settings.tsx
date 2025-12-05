@@ -52,7 +52,7 @@ const Settings = () => {
     childCount: user.childCount,
   };
 
-  const appVersion = '1.0.0';
+  const appVersion = '1.0.1';
 
   return (
     <div className="flex flex-col gap-6 pb-24">

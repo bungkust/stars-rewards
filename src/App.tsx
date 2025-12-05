@@ -108,20 +108,7 @@ function App() {
   return (
     <Router>
       <Layout onChildSelect={() => setIsChildSelectorOpen(true)}>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/tasks" element={<Tasks />} />
-          <Route path="/admin/tasks/new" element={<AdminTaskForm />} />
-          <Route path="/admin/tasks/:id/edit" element={<AdminTaskForm />} />
-
-          <Route path="/rewards" element={<Rewards />} />
-          <Route path="/admin/rewards/new" element={<AdminRewardForm />} />
-          <Route path="/admin/rewards/:id/edit" element={<AdminRewardForm />} />
-
-          <Route path="/stats" element={<Stats />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <AnimatedRoutes />
 
         {isChildSelectorOpen && (
           <ChildSelector
@@ -133,5 +120,69 @@ function App() {
     </Router>
   );
 }
+
+// Separate component to use useLocation hook
+import { useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
+import PageTransition from './components/layout/PageTransition';
+
+const AnimatedRoutes = () => {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={
+          <PageTransition>
+            <Dashboard />
+          </PageTransition>
+        } />
+        <Route path="/tasks" element={
+          <PageTransition>
+            <Tasks />
+          </PageTransition>
+        } />
+        <Route path="/admin/tasks/new" element={
+          <PageTransition>
+            <AdminTaskForm />
+          </PageTransition>
+        } />
+        <Route path="/admin/tasks/:id/edit" element={
+          <PageTransition>
+            <AdminTaskForm />
+          </PageTransition>
+        } />
+
+        <Route path="/rewards" element={
+          <PageTransition>
+            <Rewards />
+          </PageTransition>
+        } />
+        <Route path="/admin/rewards/new" element={
+          <PageTransition>
+            <AdminRewardForm />
+          </PageTransition>
+        } />
+        <Route path="/admin/rewards/:id/edit" element={
+          <PageTransition>
+            <AdminRewardForm />
+          </PageTransition>
+        } />
+
+        <Route path="/stats" element={
+          <PageTransition>
+            <Stats />
+          </PageTransition>
+        } />
+        <Route path="/settings" element={
+          <PageTransition>
+            <Settings />
+          </PageTransition>
+        } />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AnimatePresence>
+  );
+};
 
 export default App;

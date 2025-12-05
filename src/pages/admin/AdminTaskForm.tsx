@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
-import { FaArrowLeft, FaTrash } from 'react-icons/fa';
+import { FaArrowLeft, FaTrash, FaLightbulb } from 'react-icons/fa';
 import { AlertModal, AppCard, ToggleButton } from '../../components/design-system';
 import { generateRRule, parseRRule, WEEKDAYS } from '../../utils/recurrence';
 import type { RecurrenceOptions } from '../../utils/recurrence';
 
-const REPETITION_OPTIONS = ['Once', 'Daily', 'Weekly', 'Monthly'];
+
 
 const DIFFICULTY_PRESETS = [
   { label: 'MILESTONE', value: 0, desc: 'No Star Reward (Trigger for Milestone)', color: 'bg-gradient-to-br from-gray-50 to-gray-100 text-gray-600 border-gray-200' },
