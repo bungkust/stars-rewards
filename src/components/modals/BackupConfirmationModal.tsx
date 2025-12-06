@@ -105,7 +105,12 @@ const BackupConfirmationModal = ({ isOpen, onClose, onConfirm }: BackupConfirmat
                                     <FaCheckCircle className="text-3xl text-success" />
                                 </div>
                                 <h3 className="text-xl font-bold text-gray-900">Backup Ready!</h3>
-                                <p className="text-gray-600">Your backup file has been downloaded.</p>
+                                <div className="text-gray-600 space-y-2">
+                                    <p>Your backup file has been saved.</p>
+                                    <p className="text-sm bg-base-200 p-2 rounded-lg">
+                                        Check your device's <b>Documents</b> folder.
+                                    </p>
+                                </div>
                                 <button
                                     onClick={handleClose}
                                     className="btn btn-primary w-full mt-4"

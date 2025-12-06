@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { App } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import { Link } from 'react-router-dom';
 import { FaUsers, FaBell, FaShieldAlt, FaDatabase, FaCloudDownloadAlt, FaFileUpload, FaChevronRight, FaExclamationTriangle } from 'react-icons/fa';
 import { useAppStore } from '../../store/useAppStore';
@@ -24,6 +26,21 @@ const Settings = () => {
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [restoreData, setRestoreData] = useState<any>(null);
   const [restoreFilename, setRestoreFilename] = useState('');
+  const [appVersion, setAppVersion] = useState('1.0.3'); // Default/Fallback
+
+  useEffect(() => {
+    const fetchVersion = async () => {
+      try {
+        if (Capacitor.isNativePlatform()) {
+          const info = await App.getInfo();
+          setAppVersion(`${info.version} (${info.build})`);
+        }
+      } catch (error) {
+        console.error('Failed to get app info:', error);
+      }
+    };
+    fetchVersion();
+  }, []);
 
   const policyLinks = useMemo(
     () => [
@@ -54,8 +71,6 @@ const Settings = () => {
     parentEmail: user.email,
     childCount: user.childCount,
   };
-
-  const appVersion = '1.0.2';
 
   return (
     <div className="flex flex-col gap-6 pb-24">
@@ -279,7 +294,12 @@ const Settings = () => {
           const filename = `StarsRewards_${familyPart}_${childrenPart}_${datePart}_${timePart}.json`
             .replace(/\s+/g, '_'); // Replace spaces with underscores
 
-          downloadBackupFile(backup, filename);
+          try {
+            await downloadBackupFile(backup, filename);
+          } catch (error) {
+            console.error('Backup failed:', error);
+            alert('Failed to save backup file. Please check permissions.');
+          }
         }}
       />
 

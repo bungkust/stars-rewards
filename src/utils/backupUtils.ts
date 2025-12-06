@@ -1,3 +1,5 @@
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Capacitor } from '@capacitor/core';
 import type { AppState } from '../store/useAppStore';
 
 export interface BackupData {
@@ -50,14 +52,79 @@ export const validateBackupData = (data: any): boolean => {
     return true;
 };
 
-export const downloadBackupFile = (data: string, filename: string = 'stars-rewards-backup.json') => {
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+export const downloadBackupFile = async (data: string, filename: string = 'stars-rewards-backup.json') => {
+    if (Capacitor.isNativePlatform()) {
+        try {
+            // Explicitly request permissions as requested by the user.
+            // Note: On Android 13+ (API 33), WRITE_EXTERNAL_STORAGE is deprecated and may not show a popup,
+            // or it may be automatically granted/denied based on scoped storage rules.
+            // We request it anyway to satisfy the requirement for older versions and compliance checks.
+            try {
+                const check = await Filesystem.checkPermissions();
+                if (check.publicStorage !== 'granted') {
+                    const request = await Filesystem.requestPermissions();
+                    if (request.publicStorage !== 'granted') {
+                        // On Android 11+, this might be denied but we can still write to public folders via MediaStore/Scoped Storage
+                        console.warn('[Backup] Storage permission denied by user or system. Attempting scoped storage write...');
+                    }
+                }
+            } catch (permError) {
+                console.warn('[Backup] Error requesting permissions:', permError);
+            }
+
+            // Try writing to Documents folder (Standard Public Location)
+            try {
+                await Filesystem.writeFile({
+                    path: filename,
+                    data: data,
+                    directory: Directory.Documents,
+                    encoding: Encoding.UTF8,
+                    recursive: true
+                });
+
+                // Log the actual URI to confirm location
+                try {
+                    await Filesystem.getUri({
+                        path: filename,
+                        directory: Directory.Documents
+                    });
+                } catch (uriError) {
+                    console.warn('[Backup] Failed to get URI:', uriError);
+                }
+
+                return true;
+            } catch (docError) {
+                console.warn('[Backup] Failed to write to Documents, trying External/Download...', docError);
+
+                // Fallback to Download folder in External storage (Private/App-specific usually)
+                try {
+                    await Filesystem.writeFile({
+                        path: `Download/${filename}`,
+                        data: data,
+                        directory: Directory.External,
+                        encoding: Encoding.UTF8,
+                        recursive: true
+                    });
+                    return true;
+                } catch (extError) {
+                    console.error('[Backup] Failed to write to Directory.External', extError);
+                    throw extError;
+                }
+            }
+        } catch (e) {
+            console.error('[Backup] Filesystem write failed completely', e);
+            throw e;
+        }
+    } else {
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        return true;
+    }
 };

@@ -13,17 +13,35 @@ interface LocalDB {
 
 const getDB = (): LocalDB => {
     const stored = localStorage.getItem(STORAGE_KEY);
+    const defaults: LocalDB = {
+        profile: null,
+        children: [],
+        tasks: [],
+        rewards: [],
+        logs: [],
+        transactions: []
+    };
+
     if (!stored) {
-        return {
-            profile: null,
-            children: [],
-            tasks: [],
-            rewards: [],
-            logs: [],
-            transactions: []
-        };
+        return defaults;
     }
-    return JSON.parse(stored);
+
+    try {
+        const parsed = JSON.parse(stored);
+        // Ensure arrays are actually arrays (handle case where stored JSON has null/undefined for these keys)
+        return {
+            ...defaults,
+            ...parsed,
+            children: Array.isArray(parsed.children) ? parsed.children : defaults.children,
+            tasks: Array.isArray(parsed.tasks) ? parsed.tasks : defaults.tasks,
+            rewards: Array.isArray(parsed.rewards) ? parsed.rewards : defaults.rewards,
+            logs: Array.isArray(parsed.logs) ? parsed.logs : defaults.logs,
+            transactions: Array.isArray(parsed.transactions) ? parsed.transactions : defaults.transactions
+        };
+    } catch (e) {
+        console.error('Failed to parse local storage', e);
+        return defaults;
+    }
 };
 
 const saveDB = (db: LocalDB) => {
