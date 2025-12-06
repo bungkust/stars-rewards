@@ -18,6 +18,8 @@ import FirstReward from './pages/onboarding/FirstReward';
 import Welcome from './pages/Welcome';
 import AdminTaskForm from './pages/admin/AdminTaskForm';
 import AdminRewardForm from './pages/admin/AdminRewardForm';
+import Privacy from './pages/legal/Privacy';
+import Terms from './pages/legal/Terms';
 
 // Components
 import Layout from './components/layout/Layout';
@@ -84,6 +86,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Welcome />} />
           <Route path="/onboarding/family-setup" element={<FamilySetup />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
@@ -177,6 +181,16 @@ const AnimatedRoutes = () => {
         <Route path="/settings" element={
           <PageTransition>
             <Settings />
+          </PageTransition>
+        } />
+        <Route path="/privacy" element={
+          <PageTransition>
+            <Privacy />
+          </PageTransition>
+        } />
+        <Route path="/terms" element={
+          <PageTransition>
+            <Terms />
           </PageTransition>
         } />
         <Route path="*" element={<Navigate to="/" replace />} />

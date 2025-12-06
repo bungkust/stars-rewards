@@ -22,6 +22,7 @@ const FirstTask = () => {
       reward_value: rewardValue,
       type: 'RECURRING', // Default to recurring for simplicity
       is_active: true,
+      assigned_to: [],
     });
 
     if (taskError) {

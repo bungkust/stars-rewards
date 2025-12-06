@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { FaUsers, FaBell, FaShieldAlt, FaDatabase, FaCloudDownloadAlt, FaFileUpload, FaChevronRight, FaExclamationTriangle } from 'react-icons/fa';
 import { useAppStore } from '../../store/useAppStore';
 import { AppCard } from '../../components/design-system/AppCard';
@@ -29,12 +30,12 @@ const Settings = () => {
       {
         label: 'Privacy Policy',
         description: 'Learn how we protect your family data and account information.',
-        href: 'https://starsrewards.app/privacy',
+        href: '/privacy',
       },
       {
         label: 'Terms & Conditions',
-        description: 'Understand the rules for using Stars Rewards as a parent or child.',
-        href: 'https://starsrewards.app/terms',
+        description: 'Understand the rules for using Star Habit as a parent or child.',
+        href: '/terms',
       },
     ],
     []
@@ -194,19 +195,17 @@ const Settings = () => {
         </div>
         <div className="flex flex-col gap-1">
           {policyLinks.map((link) => (
-            <a
+            <Link
               key={link.label}
               className="flex items-center justify-between p-3 hover:bg-base-100 rounded-lg transition-colors group"
-              href={link.href}
-              target="_blank"
-              rel="noreferrer"
+              to={link.href}
             >
               <div>
                 <p className="font-medium text-gray-800 group-hover:text-primary transition-colors">{link.label}</p>
                 <p className="text-xs text-gray-500">{link.description}</p>
               </div>
               <FaChevronRight className="text-gray-300 group-hover:text-primary w-3 h-3" />
-            </a>
+            </Link>
           ))}
         </div>
       </AppCard>
