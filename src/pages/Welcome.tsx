@@ -5,9 +5,27 @@ import { LandingHero } from '../components/landing/LandingHero';
 import { LandingFeatures } from '../components/landing/LandingFeatures';
 import { LandingFooter } from '../components/landing/LandingFooter';
 
+import { Capacitor } from '@capacitor/core';
+import { AppWelcome } from '../components/landing/AppWelcome';
+
 const Welcome = () => {
   const navigate = useNavigate();
   const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
+
+  const isNative = Capacitor.isNativePlatform();
+
+  if (isNative) {
+    return (
+      <>
+        <AppWelcome onRestore={() => setIsRestoreModalOpen(true)} />
+        <RestoreDataModal
+          isOpen={isRestoreModalOpen}
+          onClose={() => setIsRestoreModalOpen(false)}
+          onSuccess={() => navigate('/')}
+        />
+      </>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-base-100 flex flex-col">
