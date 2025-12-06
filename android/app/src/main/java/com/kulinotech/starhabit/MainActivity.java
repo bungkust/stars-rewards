@@ -1,4 +1,4 @@
-package com.myfamily.starsrewards;
+package com.kulinotech.starhabit;
 
 import com.getcapacitor.BridgeActivity;
 

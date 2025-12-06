@@ -1,6 +1,6 @@
 {
-  "appId": "com.myfamily.starsrewards",
-  "appName": "Stars Rewards",
+  "appId": "com.kulinotech.starhabit",
+  "appName": "Star Habit",
   "webDir": "dist",
   "plugins": {
     "StatusBar": {
