@@ -6,7 +6,7 @@ import { AppCard } from '../../components/design-system/AppCard';
 import { H1Header } from '../../components/design-system/H1Header';
 import { IconWrapper } from '../../components/design-system/IconWrapper';
 import { useAppStore } from '../../store/useAppStore';
-import { AlertModal } from '../../components/design-system';
+import { AlertModal, ToggleButton } from '../../components/design-system';
 
 const AdminTasks = () => {
   const navigate = useNavigate();
@@ -15,6 +15,16 @@ const AdminTasks = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
+  const [filter, setFilter] = useState<'daily' | 'once' | 'all'>('all');
+
+  const filteredTasks = tasks
+    .filter(task => task.is_active !== false)
+    .filter(task => {
+      if (filter === 'all') return true;
+      if (filter === 'once') return task.recurrence_rule === 'Once';
+      if (filter === 'daily') return task.recurrence_rule !== 'Once';
+      return true;
+    });
 
   const handleEditClick = (taskId: string) => {
     setSelectedTask(taskId);
@@ -57,13 +67,32 @@ const AdminTasks = () => {
         <H1Header>Manage Missions</H1Header>
       </div>
 
+      {/* Filter Tabs */}
+      <div className="flex gap-2">
+        <ToggleButton
+          label="Daily"
+          isActive={filter === 'daily'}
+          onClick={() => setFilter('daily')}
+        />
+        <ToggleButton
+          label="Once"
+          isActive={filter === 'once'}
+          onClick={() => setFilter('once')}
+        />
+        <ToggleButton
+          label="All"
+          isActive={filter === 'all'}
+          onClick={() => setFilter('all')}
+        />
+      </div>
+
       <div className="grid gap-4">
-        {tasks.filter(task => task.is_active !== false).length === 0 ? (
+        {filteredTasks.length === 0 ? (
           <div className="text-center py-10 text-gray-500">
             No missions created yet. Click below to add one!
           </div>
         ) : (
-          tasks.filter(task => task.is_active !== false).map((task) => (
+          filteredTasks.map((task) => (
             <AppCard key={task.id} className="flex flex-row items-center gap-4 !p-4">
               <div className="bg-base-200 p-3 rounded-lg">
                 <IconWrapper icon={FaTasks} className="text-gray-500" />
