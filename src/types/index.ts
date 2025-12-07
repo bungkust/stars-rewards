@@ -43,8 +43,9 @@ export interface ChildTaskLog {
   parent_id: string;
   child_id: string;
   task_id: string;
-  status: 'PENDING' | 'VERIFIED' | 'REJECTED' | 'FAILED';
+  status: 'PENDING' | 'VERIFIED' | 'REJECTED' | 'FAILED' | 'PENDING_EXCUSE' | 'EXCUSED';
   rejection_reason?: string;
+  notes?: string; // For excuse reasons
   completed_at: string;
 }
 

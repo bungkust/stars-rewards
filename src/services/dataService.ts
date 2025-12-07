@@ -115,6 +115,20 @@ export const dataService = {
   },
 
   /**
+   * Requests an exception for a task.
+   */
+  requestTaskException: async (_parentId: string, childId: string, taskId: string, reason: string): Promise<ChildTaskLog | null> => {
+    return localStorageService.requestTaskException(childId, taskId, reason);
+  },
+
+  /**
+   * Approves a task exception.
+   */
+  approveTaskException: async (logId: string): Promise<boolean> => {
+    return localStorageService.approveTaskException(logId);
+  },
+
+  /**
    * Logs a failed task (missed deadline).
    */
   logFailedTask: async (_parentId: string, childId: string, taskId: string, date: string): Promise<ChildTaskLog | null> => {

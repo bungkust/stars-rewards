@@ -1,45 +1,87 @@
 import { useAppStore } from '../../store/useAppStore';
-import { FaTasks, FaStar, FaBolt, FaRedo, FaCalendarWeek, FaCalendarAlt, FaClock } from 'react-icons/fa';
+import { FaTasks } from 'react-icons/fa';
 import { ToggleButton } from '../../components/design-system';
 import { useState, useMemo } from 'react';
+import { TaskCard } from '../../components/TaskCard';
+import { TaskExceptionModal } from '../../components/modals/TaskExceptionModal';
 
 const ChildTasks = () => {
-  const { activeChildId, getTasksByChildId } = useAppStore();
+  const { activeChildId, getTasksByChildId, completeTask, requestTaskException, childLogs } = useAppStore();
   const allTasks = activeChildId ? getTasksByChildId(activeChildId) : [];
 
   const [filter, setFilter] = useState<'daily' | 'once' | 'all'>('all');
   const [visibleCount, setVisibleCount] = useState(20);
+
+  // Exception Modal State
+  const [isExceptionModalOpen, setIsExceptionModalOpen] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   const handleFilterChange = (newFilter: 'daily' | 'once' | 'all') => {
     setFilter(newFilter);
     setVisibleCount(20);
   };
 
+  const getTaskStatusToday = (taskId: string) => {
+    if (!activeChildId) return null;
+    const today = new Date().toISOString().split('T')[0];
+
+    // Find the latest log for this task today
+    const log = childLogs.find(l =>
+      l.task_id === taskId &&
+      l.child_id === activeChildId &&
+      l.completed_at.startsWith(today)
+    );
+
+    return log ? log.status : null;
+  };
+
   const filteredTasks = useMemo(() => {
     return allTasks.filter(task => {
       if (!task.is_active) return false;
-      if (filter === 'all') return true;
-      if (filter === 'once') return task.recurrence_rule === 'Once';
-      if (filter === 'daily') return task.recurrence_rule !== 'Once';
+
+      // Filter by type
+      if (filter === 'once' && task.recurrence_rule !== 'Once') return false;
+      if (filter === 'daily' && task.recurrence_rule === 'Once') return false;
+
+      // Check status
+      const status = getTaskStatusToday(task.id);
+
+      // Hide if Verified, Rejected (maybe?), Failed, or Excused?
+      // User requirement: "Tombol berubah menjadi 'Menunggu Verifikasi ⏳'" -> So PENDING stays visible.
+      // If VERIFIED, usually we hide it or move it to "Completed" section. 
+      // For now let's hide VERIFIED and EXCUSED to keep the list clean for "To Do".
+      if (status === 'VERIFIED' || status === 'EXCUSED') return false;
+
       return true;
     }).sort((a, b) => {
       const dateA = new Date(a.created_at || 0).getTime();
       const dateB = new Date(b.created_at || 0).getTime();
       return dateB - dateA;
     });
-  }, [allTasks, filter]);
+  }, [allTasks, filter, childLogs, activeChildId]);
 
   const visibleTasks = filteredTasks.slice(0, visibleCount);
   const hasMore = visibleTasks.length < filteredTasks.length;
 
-  const getBadgeStyle = (rule: string) => {
-    switch (rule) {
-      case 'Once': return 'bg-amber-100 text-amber-800';
-      case 'Daily': return 'bg-blue-100 text-blue-800';
-      case 'Weekly': return 'bg-purple-100 text-purple-800';
-      case 'Monthly': return 'bg-rose-100 text-rose-800';
-      default: return 'bg-indigo-100 text-indigo-800';
+  const handleComplete = async (taskId: string) => {
+    await completeTask(taskId);
+  };
+
+  const handleExceptionTrigger = (taskId: string) => {
+    setSelectedTaskId(taskId);
+    setIsExceptionModalOpen(true);
+  };
+
+  const handleSubmitException = async (reason: string) => {
+    if (selectedTaskId) {
+      await requestTaskException(selectedTaskId, reason);
+      setIsExceptionModalOpen(false);
+      setSelectedTaskId(null);
     }
+  };
+
+  const getSelectedTaskName = () => {
+    return allTasks.find(t => t.id === selectedTaskId)?.name || 'Task';
   };
 
   return (
@@ -75,32 +117,20 @@ const ChildTasks = () => {
       ) : (
         <>
           <div className="grid gap-4">
-            {visibleTasks.map((task) => (
-              <div key={task.id} className="card bg-white shadow-sm rounded-xl p-4 flex flex-row items-center gap-4">
-                <div className="bg-blue-50 p-3 rounded-full text-primary">
-                  {task.recurrence_rule === 'Once' ? <FaBolt className="w-6 h-6" /> :
-                    task.recurrence_rule === 'Daily' ? <FaRedo className="w-6 h-6" /> :
-                      task.recurrence_rule === 'Weekly' ? <FaCalendarWeek className="w-6 h-6" /> :
-                        task.recurrence_rule === 'Monthly' ? <FaCalendarAlt className="w-6 h-6" /> :
-                          <FaClock className="w-6 h-6" />}
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-gray-800">{task.name}</h3>
-                  <div className="flex gap-4 text-sm text-gray-500">
-                    {task.reward_value > 0 && (
-                      <span className="flex items-center gap-1 text-warning font-bold">
-                        <FaStar /> {task.reward_value}
-                      </span>
-                    )}
-                    {task.recurrence_rule && (
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getBadgeStyle(task.recurrence_rule)}`}>
-                        {task.recurrence_rule}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
+            {visibleTasks.map((task) => {
+              const status = getTaskStatusToday(task.id);
+              const isPending = status === 'PENDING' || status === 'PENDING_EXCUSE';
+
+              return (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  onComplete={handleComplete}
+                  onException={handleExceptionTrigger}
+                  isPending={isPending}
+                />
+              );
+            })}
           </div>
 
           {hasMore && (
@@ -113,6 +143,13 @@ const ChildTasks = () => {
           )}
         </>
       )}
+
+      <TaskExceptionModal
+        isOpen={isExceptionModalOpen}
+        onClose={() => setIsExceptionModalOpen(false)}
+        onSubmit={handleSubmitException}
+        taskName={getSelectedTaskName()}
+      />
     </div>
   );
 };

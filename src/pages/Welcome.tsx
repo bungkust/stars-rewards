@@ -13,8 +13,9 @@ const Welcome = () => {
   const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
 
   const isNative = Capacitor.isNativePlatform();
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
-  if (isNative) {
+  if (isNative || isLocal) {
     return (
       <>
         <AppWelcome onRestore={() => setIsRestoreModalOpen(true)} />
