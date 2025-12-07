@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 // Main App Component
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
@@ -132,15 +133,40 @@ import PageTransition from './components/layout/PageTransition';
 
 const AnimatedRoutes = () => {
   const location = useLocation();
+  const { isAdminMode } = useAppStore();
+
+  // Root Redirect Component
+  const RootRedirect = () => {
+    return <Navigate to={isAdminMode ? "/parent" : "/child"} replace />;
+  };
+
+  // Protected Route for Parent
+  const ParentRoute = ({ children }: { children: ReactNode }) => {
+    if (!isAdminMode) {
+      return <Navigate to="/child" replace />;
+    }
+    return children;
+  };
 
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        <Route path="/" element={
+        <Route path="/" element={<RootRedirect />} />
+
+        <Route path="/parent" element={
+          <ParentRoute>
+            <PageTransition>
+              <Dashboard />
+            </PageTransition>
+          </ParentRoute>
+        } />
+
+        <Route path="/child" element={
           <PageTransition>
             <Dashboard />
           </PageTransition>
         } />
+
         <Route path="/tasks" element={
           <PageTransition>
             <Tasks />

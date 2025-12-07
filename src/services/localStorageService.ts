@@ -286,32 +286,6 @@ export const localStorageService = {
         return true;
     },
 
-    requestTaskException: async (childId: string, taskId: string, reason: string): Promise<ChildTaskLog> => {
-        const db = getDB();
-        const newLog: ChildTaskLog = {
-            id: generateId(),
-            parent_id: 'local-user',
-            child_id: childId,
-            task_id: taskId,
-            status: 'PENDING_EXCUSE',
-            notes: reason,
-            completed_at: new Date().toISOString()
-        };
-        db.logs.push(newLog);
-        saveDB(db);
-        return newLog;
-    },
-
-    approveTaskException: async (logId: string): Promise<boolean> => {
-        const db = getDB();
-        const logIndex = db.logs.findIndex(l => l.id === logId);
-        if (logIndex === -1) return false;
-
-        db.logs[logIndex].status = 'EXCUSED';
-        saveDB(db);
-        return true;
-    },
-
     logFailedTask: async (childId: string, taskId: string, date: string): Promise<ChildTaskLog> => {
         const db = getDB();
         const newLog: ChildTaskLog = {

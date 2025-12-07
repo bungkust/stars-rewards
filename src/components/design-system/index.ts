@@ -7,5 +7,4 @@ export { WarningCTAButton } from './WarningCTAButton';
 export { default as AlertModal } from './AlertModal';
 export { ToggleButton } from './ToggleButton';
 export { PageTransition, StaggerContainer, StaggerItem, ScaleButton } from './Animations';
-export { Modal } from './Modal';
 

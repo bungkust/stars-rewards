@@ -110,7 +110,8 @@ const ChildDashboard = () => {
       case 'Daily': return 'bg-blue-100 text-blue-800';
       case 'Weekly': return 'bg-purple-100 text-purple-800';
       case 'Monthly': return 'bg-rose-100 text-rose-800';
-      default: return 'bg-indigo-100 text-indigo-800';
+      case 'Custom': return 'bg-teal-100 text-teal-800';
+      default: return 'bg-teal-100 text-teal-800'; // Default to Custom style for complex rules
     }
   };
 
@@ -163,7 +164,9 @@ const ChildDashboard = () => {
       {/* Today's Tasks Section */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 px-1">
-          <h3 className="text-xl font-bold text-gray-700">Missions</h3>
+          <h3 className="text-xl font-bold text-gray-700">
+            Daily Mission <span className="text-black">{new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+          </h3>
 
           {/* Filter Tabs */}
           {/* Filter Tabs */}
@@ -221,7 +224,7 @@ const ChildDashboard = () => {
                           </span>
                         )}
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getBadgeStyle(task.recurrence_rule || '')}`}>
-                          {task.recurrence_rule}
+                          {['Once', 'Daily', 'Weekly', 'Monthly'].includes(task.recurrence_rule || '') ? task.recurrence_rule : 'Custom'}
                         </span>
                       </div>
                     </div>

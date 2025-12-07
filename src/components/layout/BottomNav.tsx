@@ -9,7 +9,7 @@ const BottomNav = () => {
   const { isAdminMode } = useAppStore();
 
   const navItems = [
-    { id: 'home', icon: FaHome, label: 'Home', path: '/' },
+    { id: 'home', icon: FaHome, label: 'Home', path: isAdminMode ? '/parent' : '/child' },
     { id: 'tasks', icon: FaTasks, label: 'Missions', path: '/tasks' },
     { id: 'rewards', icon: IoGiftOutline, label: 'Rewards', path: '/rewards' },
     { id: 'stats', icon: FaChartLine, label: 'Stats', path: '/stats' },

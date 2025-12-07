@@ -8,7 +8,7 @@ import VerificationSuccessModal from '../../components/modals/VerificationSucces
 import StarAdjustmentModal from '../../components/modals/StarAdjustmentModal';
 
 const AdminDashboard = () => {
-  const { pendingVerifications, verifyTask, rejectTask, approveTaskException, manualAdjustment, children, isLoading } = useAppStore();
+  const { pendingVerifications, verifyTask, rejectTask, manualAdjustment, children, isLoading } = useAppStore();
 
   const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
   const [successModalOpen, setSuccessModalOpen] = useState(false);
@@ -22,14 +22,6 @@ const AdminDashboard = () => {
 
   const handleApprove = async (logId: string, childId: string, rewardValue: number) => {
     const { error } = await verifyTask(logId, childId, rewardValue);
-    if (!error) {
-      setSuccessType('approve');
-      setSuccessModalOpen(true);
-    }
-  };
-
-  const handleApproveException = async (logId: string) => {
-    const { error } = await approveTaskException(logId);
     if (!error) {
       setSuccessType('approve');
       setSuccessModalOpen(true);
@@ -153,57 +145,39 @@ const AdminDashboard = () => {
           </AppCard>
         ) : (
           <div className="flex flex-col gap-3">
-            {verifications.map((item) => {
-              const isExcuse = item.status === 'PENDING_EXCUSE';
-
-              return (
-                <AppCard key={item.id} className="flex flex-row items-center justify-between !p-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-3 rounded-full ${isExcuse ? 'bg-orange-100 text-orange-600' : 'bg-warning/10 text-warning'}`}>
-                      <FaClock className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-gray-800">
-                        {item.task_title}
-                        {isExcuse && <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">Exception Request</span>}
-                      </h4>
-                      <p className="text-xs text-gray-500">
-                        {item.child_name} • {isExcuse ? 'No Reward' : `Reward: ${item.reward_value} Stars`}
-                      </p>
-                      {isExcuse && item.notes && (
-                        <p className="text-sm text-gray-700 mt-1 italic">
-                          "{item.notes}"
-                        </p>
-                      )}
-                    </div>
+            {verifications.map((item) => (
+              <AppCard key={item.id} className="flex flex-row items-center justify-between !p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-warning/10 text-warning rounded-full">
+                    <FaClock className="w-5 h-5" />
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      className="btn btn-sm btn-square btn-outline btn-error"
-                      title="Reject"
-                      onClick={() => onRejectClick(item.id)}
-                      disabled={isLoading}
-                    >
-                      <FaTimes />
-                    </button>
-                    <button
-                      className={`btn btn-sm btn-square text-white ${isExcuse ? 'btn-warning' : 'btn-success'}`}
-                      title={isExcuse ? "Approve Exception" : "Approve"}
-                      onClick={() => {
-                        if (isExcuse) {
-                          handleApproveException(item.id);
-                        } else {
-                          handleApprove(item.id, item.child_id, item.reward_value);
-                        }
-                      }}
-                      disabled={isLoading}
-                    >
-                      <FaCheck />
-                    </button>
+                  <div>
+                    <h4 className="font-bold text-gray-800">{item.task_title}</h4>
+                    <p className="text-xs text-gray-500">
+                      {item.child_name} • Reward: {item.reward_value} Stars
+                    </p>
                   </div>
-                </AppCard>
-              );
-            })}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    className="btn btn-sm btn-square btn-outline btn-error"
+                    title="Reject"
+                    onClick={() => onRejectClick(item.id)}
+                    disabled={isLoading}
+                  >
+                    <FaTimes />
+                  </button>
+                  <button
+                    className="btn btn-sm btn-square btn-success text-white"
+                    title="Approve"
+                    onClick={() => handleApprove(item.id, item.child_id, item.reward_value)}
+                    disabled={isLoading}
+                  >
+                    <FaCheck />
+                  </button>
+                </div>
+              </AppCard>
+            ))}
           </div>
         )}
       </section>

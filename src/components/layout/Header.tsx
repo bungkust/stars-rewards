@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { IoEllipsisVertical } from 'react-icons/io5';
 import { useAppStore } from '../../store/useAppStore';
 
@@ -13,6 +14,7 @@ const Header = ({ onParentLoginClick, onSettingsClick, onChildSelectClick }: Hea
   const activeChild = children.find(c => c.id === activeChildId);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -29,6 +31,7 @@ const Header = ({ onParentLoginClick, onSettingsClick, onChildSelectClick }: Hea
 
   const handleExitAdmin = () => {
     toggleAdminMode(false);
+    navigate('/child');
   };
 
   const headerGradient = isAdminMode

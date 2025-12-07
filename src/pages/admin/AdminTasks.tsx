@@ -40,31 +40,16 @@ const AdminTasks = () => {
     setIsDeleteModalOpen(false);
   };
 
-  const [filter, setFilter] = useState<'all' | 'daily' | 'once' | 'custom'>('all');
-
-  const getRecurrenceLabel = (rule: string) => {
+  const getBadgeStyle = (rule: string) => {
     switch (rule) {
-      case 'Once':
-      case 'Daily':
-      case 'Weekly':
-      case 'Monthly':
-        return rule;
-      default:
-        return 'Custom';
+      case 'Once': return 'bg-amber-100 text-amber-800';
+      case 'Daily': return 'bg-blue-100 text-blue-800';
+      case 'Weekly': return 'bg-purple-100 text-purple-800';
+      case 'Monthly': return 'bg-rose-100 text-rose-800';
+      case 'Custom': return 'bg-teal-100 text-teal-800';
+      default: return 'bg-teal-100 text-teal-800'; // Default to Custom style for complex rules
     }
   };
-
-  const filteredTasks = tasks.filter(task => {
-    if (task.is_active === false) return false;
-
-    if (filter === 'all') return true;
-    if (filter === 'once') return task.recurrence_rule === 'Once';
-    if (filter === 'daily') return task.recurrence_rule === 'Daily';
-    if (filter === 'custom') {
-      return !['Once', 'Daily'].includes(task.recurrence_rule || '');
-    }
-    return true;
-  });
 
   return (
     <div className="relative min-h-full pb-20 flex flex-col gap-6">
@@ -72,51 +57,27 @@ const AdminTasks = () => {
         <H1Header>Manage Missions</H1Header>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        <button
-          className={`btn btn-sm rounded-full ${filter === 'all' ? 'btn-primary' : 'btn-ghost'}`}
-          onClick={() => setFilter('all')}
-        >
-          All
-        </button>
-        <button
-          className={`btn btn-sm rounded-full ${filter === 'daily' ? 'btn-primary' : 'btn-ghost'}`}
-          onClick={() => setFilter('daily')}
-        >
-          Daily
-        </button>
-        <button
-          className={`btn btn-sm rounded-full ${filter === 'once' ? 'btn-primary' : 'btn-ghost'}`}
-          onClick={() => setFilter('once')}
-        >
-          Once
-        </button>
-        <button
-          className={`btn btn-sm rounded-full ${filter === 'custom' ? 'btn-primary' : 'btn-ghost'}`}
-          onClick={() => setFilter('custom')}
-        >
-          Custom
-        </button>
-      </div>
-
       <div className="grid gap-4">
-        {filteredTasks.length === 0 ? (
+        {tasks.filter(task => task.is_active !== false).length === 0 ? (
           <div className="text-center py-10 text-gray-500">
-            No missions found.
+            No missions created yet. Click below to add one!
           </div>
         ) : (
-          filteredTasks.map((task) => (
+          tasks.filter(task => task.is_active !== false).map((task) => (
             <AppCard key={task.id} className="flex flex-row items-center gap-4 !p-4">
               <div className="bg-base-200 p-3 rounded-lg">
                 <IconWrapper icon={FaTasks} className="text-gray-500" />
               </div>
               <div className="flex-1">
                 <h3 className="font-bold text-gray-700">{task.name}</h3>
-                <p className="text-sm text-gray-500">
-                  {getRecurrenceLabel(task.recurrence_rule || 'One-time')}
-                  {task.reward_value > 0 && ` • ${task.reward_value} Stars`}
-                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getBadgeStyle(task.recurrence_rule || 'Once')}`}>
+                    {['Once', 'Daily', 'Weekly', 'Monthly'].includes(task.recurrence_rule || 'Once') ? (task.recurrence_rule || 'Once') : 'Custom'}
+                  </span>
+                  {task.reward_value > 0 && (
+                    <span className="text-sm text-gray-500">• {task.reward_value} Stars</span>
+                  )}
+                </div>
               </div>
               <div className="flex gap-2">
                 <button

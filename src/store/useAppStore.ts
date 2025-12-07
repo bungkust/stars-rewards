@@ -62,8 +62,6 @@ export interface AppState {
   completeTask: (taskId: string) => Promise<{ error: any }>;
   verifyTask: (logId: string, childId: string, rewardValue: number) => Promise<{ error: any }>;
   rejectTask: (logId: string, reason: string) => Promise<{ error: any }>;
-  requestTaskException: (taskId: string, reason: string) => Promise<{ error: any }>;
-  approveTaskException: (logId: string) => Promise<{ error: any }>;
   redeemReward: (childId: string, cost: number, rewardId: string) => Promise<{ error: any }>;
   manualAdjustment: (childId: string, amount: number, reason?: string) => Promise<{ error: any }>;
   checkMissedMissions: () => Promise<void>;
@@ -493,68 +491,6 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      requestTaskException: async (taskId: string, reason: string) => {
-        set({ isLoading: true });
-        try {
-          const { activeChildId } = get();
-          if (!activeChildId) throw new Error('Missing child ID');
-
-          const userId = 'local-user';
-          const newLog = await dataService.requestTaskException(userId, activeChildId, taskId, reason);
-
-          if (!newLog) throw new Error('Failed to request exception');
-
-          const { tasks, children } = get();
-          const task = tasks.find(t => t.id === taskId);
-          const child = children.find(c => c.id === activeChildId);
-
-          set((state) => ({
-            childLogs: [newLog, ...state.childLogs],
-            pendingVerifications: [
-              ...state.pendingVerifications,
-              {
-                ...newLog,
-                task_title: task?.name || 'Unknown Task',
-                reward_value: task?.reward_value || 0,
-                child_name: child?.name || 'Unknown Child'
-              }
-            ]
-          }));
-
-          return { error: null };
-        } catch (error) {
-          console.error('Error requesting exception:', error);
-          return { error };
-        } finally {
-          set({ isLoading: false });
-        }
-      },
-
-      approveTaskException: async (logId: string) => {
-        set({ isLoading: true });
-        try {
-          const success = await dataService.approveTaskException(logId);
-
-          if (!success) throw new Error('Failed to approve exception');
-
-          // Remove from local pendingVerifications
-          set((state) => ({
-            pendingVerifications: state.pendingVerifications.filter(v => v.id !== logId),
-            // Update the specific log in childLogs
-            childLogs: state.childLogs.map(log =>
-              log.id === logId ? { ...log, status: 'EXCUSED' } : log
-            )
-          }));
-
-          return { error: null };
-        } catch (error) {
-          console.error('Error approving exception:', error);
-          return { error };
-        } finally {
-          set({ isLoading: false });
-        }
-      },
-
       redeemReward: async (childId: string, cost: number, rewardId: string) => {
         set({ isLoading: true });
         try {
@@ -675,7 +611,6 @@ export const useAppStore = create<AppState>()(
             if (isDateValid(checkDate, options, baseDate)) {
               // Task was scheduled. Check if it was completed by ANY assigned child.
               // Actually, we need to check per assigned child.
-              if (!task.assigned_to) continue;
 
               const assignedChildren = task.assigned_to.filter((id: string) => children.some(c => c.id === id));
 

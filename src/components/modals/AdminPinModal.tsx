@@ -1,4 +1,5 @@
 import { Fragment, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Dialog, Transition } from '@headlessui/react';
 import { useAppStore } from '../../store/useAppStore';
 
@@ -12,12 +13,15 @@ const AdminPinModal = ({ isOpen, onClose }: AdminPinModalProps) => {
   const [error, setError] = useState(false);
   const { verifyPin } = useAppStore();
 
+  const navigate = useNavigate();
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (verifyPin(pin)) {
       setPin('');
       setError(false);
       onClose();
+      navigate('/parent');
     } else {
       setError(true);
       setPin('');
