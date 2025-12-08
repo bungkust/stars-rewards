@@ -34,11 +34,9 @@ const Header = ({ onParentLoginClick, onSettingsClick, onChildSelectClick }: Hea
     navigate('/child');
   };
 
-  const headerGradient = isAdminMode
-    ? 'bg-gradient-to-b from-emerald-100 via-green-50 to-white/90'
-    : 'bg-gradient-to-b from-blue-100 to-white/90';
-  const titleColor = isAdminMode ? 'text-emerald-700' : 'text-primary';
-  const menuButtonColor = isAdminMode ? 'text-emerald-600' : 'text-gray-500';
+  const headerGradient = 'bg-gradient-to-b from-primary/20 to-base-100/90';
+  const titleColor = 'text-neutral';
+  const menuButtonColor = 'text-neutral';
 
   return (
     <div

@@ -6,8 +6,8 @@ interface PrimaryButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 export const PrimaryButton: React.FC<PrimaryButtonProps> = ({ children, className = '', ...props }) => {
   return (
-    <button 
-      className={`btn btn-primary w-full disabled:bg-gray-300 disabled:text-gray-500 disabled:border-none ${className}`}
+    <button
+      className={`btn btn-primary w-full text-white disabled:bg-gray-300 disabled:text-gray-500 disabled:border-none ${className}`}
       {...props}
     >
       {children}

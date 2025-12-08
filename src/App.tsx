@@ -19,8 +19,10 @@ import FirstReward from './pages/onboarding/FirstReward';
 import Welcome from './pages/Welcome';
 import AdminTaskForm from './pages/admin/AdminTaskForm';
 import AdminRewardForm from './pages/admin/AdminRewardForm';
+
 import Privacy from './pages/legal/Privacy';
 import Terms from './pages/legal/Terms';
+import Playground from './pages/Playground'; // Design System Verification
 
 // Components
 import Layout from './components/layout/Layout';
@@ -135,6 +137,15 @@ const AnimatedRoutes = () => {
   const location = useLocation();
   const { isAdminMode } = useAppStore();
 
+  // Apply Global Theme
+  useEffect(() => {
+    // Allow Playground to manage its own theme
+    if (location.pathname === '/playground') return;
+
+    const theme = isAdminMode ? 'parentTheme' : 'childTheme';
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [isAdminMode, location.pathname]);
+
   // Root Redirect Component
   const RootRedirect = () => {
     return <Navigate to={isAdminMode ? "/parent" : "/child"} replace />;
@@ -183,6 +194,7 @@ const AnimatedRoutes = () => {
           </PageTransition>
         } />
 
+
         <Route path="/rewards" element={
           <PageTransition>
             <Rewards />
@@ -217,6 +229,11 @@ const AnimatedRoutes = () => {
         <Route path="/terms" element={
           <PageTransition>
             <Terms />
+          </PageTransition>
+        } />
+        <Route path="/playground" element={
+          <PageTransition>
+            <Playground />
           </PageTransition>
         } />
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -60,6 +60,11 @@ export interface AppState {
   updateParentName: (name: string) => Promise<{ error: any }>;
   updateChildAvatar: (childId: string, avatarUrl: string) => Promise<{ error: any }>;
   completeTask: (taskId: string) => Promise<{ error: any }>;
+  submitExemptionRequest: (taskId: string, reason: string) => Promise<{ error: any }>;
+  getPendingExcuses: () => ChildTaskLog[];
+  approveExcuse: (logId: string) => Promise<{ error: any }>;
+  approveExemption: (logId: string) => Promise<{ error: any }>;
+  rejectExemption: (logId: string) => Promise<{ error: any }>;
   verifyTask: (logId: string, childId: string, rewardValue: number) => Promise<{ error: any }>;
   rejectTask: (logId: string, reason: string) => Promise<{ error: any }>;
   redeemReward: (childId: string, cost: number, rewardId: string) => Promise<{ error: any }>;
@@ -424,6 +429,79 @@ export const useAppStore = create<AppState>()(
         }
       },
 
+      submitExemptionRequest: async (taskId: string, reason: string) => {
+        set({ isLoading: true });
+        try {
+          const { activeChildId } = get();
+          if (!activeChildId) throw new Error('Missing child ID');
+
+          const userId = 'local-user';
+          const newLog = await dataService.submitExemptionRequest(userId, activeChildId, taskId, reason);
+
+          if (!newLog) throw new Error('Failed to submit exemption request');
+
+          set((state) => ({
+            childLogs: [newLog, ...state.childLogs]
+          }));
+
+          return { error: null };
+        } catch (error) {
+          console.error('Error submitting exemption request:', error);
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      getPendingExcuses: () => {
+        const { childLogs } = get();
+        return childLogs.filter(log => log.status === 'PENDING_EXCUSE');
+      },
+
+      approveExcuse: async (logId: string) => {
+        return get().approveExemption(logId);
+      },
+
+      approveExemption: async (logId: string) => {
+        set({ isLoading: true });
+        try {
+          const success = await dataService.approveExemption(logId);
+          if (!success) throw new Error('Failed to approve exemption');
+
+          set((state) => ({
+            childLogs: state.childLogs.map(log =>
+              log.id === logId ? { ...log, status: 'EXCUSED' } : log
+            )
+          }));
+          return { error: null };
+        } catch (error) {
+          console.error('Error approving exemption:', error);
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      rejectExemption: async (logId: string) => {
+        set({ isLoading: true });
+        try {
+          const success = await dataService.rejectExemption(logId);
+          if (!success) throw new Error('Failed to reject exemption');
+
+          set((state) => ({
+            childLogs: state.childLogs.map(log =>
+              log.id === logId ? { ...log, status: 'REJECTED' } : log
+            )
+          }));
+          return { error: null };
+        } catch (error) {
+          console.error('Error rejecting exemption:', error);
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
       verifyTask: async (logId: string, childId: string, rewardValue: number) => {
         set({ isLoading: true });
         try {
@@ -612,7 +690,7 @@ export const useAppStore = create<AppState>()(
               // Task was scheduled. Check if it was completed by ANY assigned child.
               // Actually, we need to check per assigned child.
 
-              const assignedChildren = task.assigned_to.filter((id: string) => children.some(c => c.id === id));
+              const assignedChildren = (task.assigned_to || []).filter((id: string) => children.some(c => c.id === id));
 
               for (const childId of assignedChildren) {
                 // Check if THIS child completed it on THIS day

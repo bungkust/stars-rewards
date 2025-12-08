@@ -1,10 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { FaStar, FaClock, FaRedo, FaCamera, FaBolt, FaCalendarWeek, FaCalendarAlt } from 'react-icons/fa';
+import { motion, type PanInfo } from 'framer-motion';
 import { ToggleButton } from '../../components/design-system';
+import { parseRRule, isDateValid } from '../../utils/recurrence';
 import AvatarSelectionModal from '../../components/modals/AvatarSelectionModal';
 import TaskCompletionModal from '../../components/modals/TaskCompletionModal';
 import TaskRejectionDetailsModal from '../../components/modals/TaskRejectionDetailsModal';
+import ExemptionModal from '../../components/modals/ExemptionModal';
 
 const ChildDashboard = () => {
   const { activeChildId, children, getTasksByChildId, updateChildAvatar, completeTask, isLoading, childLogs } = useAppStore();
@@ -44,18 +47,30 @@ const ChildDashboard = () => {
       }
 
       if (filter === 'daily') {
-        // Show Daily tasks (and maybe others that recur often? User said "Daily")
-        // Let's include anything that is NOT 'Once' for now, or strictly 'Daily'?
-        // User request: "daily, once, all".
-        // Strict interpretation: recurrence_rule === 'Daily'
-        // But we have Weekly/Monthly/Custom.
-        // Let's assume 'Daily' filter is for Habits (Recurring).
-        // Actually, let's stick to strict 'Daily' first, or maybe 'Recurring' is better?
-        // User said "Daily". Let's try to match 'Daily' or 'Custom' with frequency DAILY?
-        // Simplest: recurrence_rule !== 'Once' (i.e. Recurring)
-        // But the label is "Daily".
-        // Let's use: recurrence_rule !== 'Once' to show all recurring habits.
-        return task.recurrence_rule !== 'Once';
+        // Show Recurring tasks that are scheduled for TODAY
+        if (task.recurrence_rule === 'Once') return false;
+
+        if (task.recurrence_rule) {
+          const options = parseRRule(task.recurrence_rule);
+          const baseDate = new Date(task.created_at || new Date());
+          const today = new Date();
+          return isDateValid(today, options, baseDate);
+        }
+        return false;
+      }
+
+      // Filter out tasks that have a pending exemption request for TODAY
+      const todayLog = getTodayLog(task.id);
+      if (todayLog && todayLog.status === 'PENDING_EXCUSE') return false;
+
+      // Filter out tasks that are not due yet (if next_due_date is set and in future)
+      if (task.next_due_date) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const dueDate = new Date(task.next_due_date);
+        dueDate.setHours(0, 0, 0, 0);
+
+        if (dueDate > today) return false;
       }
 
       return true;
@@ -104,14 +119,37 @@ const ChildDashboard = () => {
     setIsRejectionModalOpen(true);
   };
 
+  const { submitExemptionRequest } = useAppStore();
+  const [isExemptionModalOpen, setIsExemptionModalOpen] = useState(false);
+  const [selectedTaskForExemption, setSelectedTaskForExemption] = useState<{ id: string, name: string } | null>(null);
+
+  const handleSwipe = (_: any, info: PanInfo, task: { id: string, name: string }) => {
+    if (info.offset.x > 100) { // Swipe Right threshold
+      setSelectedTaskForExemption(task);
+      setIsExemptionModalOpen(true);
+    }
+  };
+
+  const handleExemptionSubmit = async (reason: string) => {
+    if (selectedTaskForExemption) {
+      const { error } = await submitExemptionRequest(selectedTaskForExemption.id, reason);
+      if (!error) {
+        setIsExemptionModalOpen(false);
+        setSelectedTaskForExemption(null);
+      } else {
+        alert('Failed to submit request');
+      }
+    }
+  };
+
   const getBadgeStyle = (rule: string) => {
     switch (rule) {
-      case 'Once': return 'bg-amber-100 text-amber-800';
-      case 'Daily': return 'bg-blue-100 text-blue-800';
-      case 'Weekly': return 'bg-purple-100 text-purple-800';
-      case 'Monthly': return 'bg-rose-100 text-rose-800';
-      case 'Custom': return 'bg-teal-100 text-teal-800';
-      default: return 'bg-teal-100 text-teal-800'; // Default to Custom style for complex rules
+      case 'Once': return 'badge badge-accent badge-outline';
+      case 'Daily': return 'badge badge-primary badge-outline';
+      case 'Weekly': return 'badge badge-secondary badge-outline';
+      case 'Monthly': return 'badge badge-info badge-outline';
+      case 'Custom': return 'badge badge-neutral badge-outline';
+      default: return 'badge badge-ghost badge-outline';
     }
   };
 
@@ -161,11 +199,19 @@ const ChildDashboard = () => {
         onClose={() => setIsRejectionModalOpen(false)}
       />
 
+      <ExemptionModal
+        isOpen={isExemptionModalOpen}
+        taskName={selectedTaskForExemption?.name || ''}
+        onClose={() => setIsExemptionModalOpen(false)}
+        onSubmit={handleExemptionSubmit}
+        isLoading={isLoading}
+      />
+
       {/* Today's Tasks Section */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 px-1">
           <h3 className="text-xl font-bold text-gray-700">
-            Daily Mission <span className="text-black">{new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+            Daily Mission, <span className="text-black">{new Date().toLocaleDateString('en-US', { weekday: 'long' })}</span>
           </h3>
 
           {/* Filter Tabs */}
@@ -200,56 +246,78 @@ const ChildDashboard = () => {
               const status = log?.status; // PENDING, VERIFIED, REJECTED
 
               return (
-                <div key={task.id} className={`card bg-white shadow-sm rounded-xl p-4 flex flex-row items-center justify-between border-l-4 ${status === 'VERIFIED' ? 'border-success' :
-                  status === 'REJECTED' ? 'border-error' :
-                    status === 'PENDING' ? 'border-warning' : 'border-primary'
-                  }`}>
-                  <div className="flex items-center gap-3">
-                    <div className={`p-3 rounded-full ${status === 'VERIFIED' ? 'bg-success/10 text-success' :
-                      status === 'REJECTED' ? 'bg-error/10 text-error' :
-                        status === 'PENDING' ? 'bg-warning/10 text-warning' : 'bg-blue-50 text-primary'
-                      }`}>
-                      {task.recurrence_rule === 'Once' ? <FaBolt className="w-6 h-6" /> :
-                        task.recurrence_rule === 'Daily' ? <FaRedo className="w-6 h-6" /> :
-                          task.recurrence_rule === 'Weekly' ? <FaCalendarWeek className="w-6 h-6" /> :
-                            task.recurrence_rule === 'Monthly' ? <FaCalendarAlt className="w-6 h-6" /> :
-                              <FaClock className="w-6 h-6" />}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-gray-800">{task.name}</h4>
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        {task.reward_value > 0 && (
-                          <span className="flex items-center gap-1 text-warning font-bold">
-                            <FaStar className="w-3 h-3" /> {task.reward_value}
-                          </span>
-                        )}
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getBadgeStyle(task.recurrence_rule || '')}`}>
-                          {['Once', 'Daily', 'Weekly', 'Monthly'].includes(task.recurrence_rule || '') ? task.recurrence_rule : 'Custom'}
-                        </span>
-                      </div>
-                    </div>
+                <div key={task.id} className="relative">
+                  {/* Background for Swipe Action */}
+                  <div className="absolute inset-0 bg-gray-100 rounded-xl flex items-center justify-start px-6">
+                    <span className="text-gray-400 font-medium text-sm">Swipe to Skip &rarr;</span>
                   </div>
 
-                  {status === 'VERIFIED' ? (
-                    <span className="badge badge-success text-white font-bold p-3">Approved</span>
-                  ) : status === 'REJECTED' ? (
-                    <button
-                      className="btn btn-sm btn-error btn-outline rounded-full"
-                      onClick={() => handleViewRejection(task.name, log?.rejection_reason)}
-                    >
-                      Why?
-                    </button>
-                  ) : status === 'PENDING' ? (
-                    <span className="badge badge-warning text-white font-bold p-3">Pending</span>
-                  ) : (
-                    <button
-                      className="btn btn-sm btn-primary rounded-full"
-                      onClick={() => handleTaskComplete(task)}
-                      disabled={isLoading}
-                    >
-                      Done
-                    </button>
-                  )}
+                  <motion.div
+                    drag="x"
+                    dragConstraints={{ left: 0, right: 0 }}
+                    dragElastic={{ right: 0.2 }} // Allow pulling right
+                    onDragEnd={(e, info) => handleSwipe(e, info, task)}
+                    whileDrag={{ scale: 1.02 }}
+                    className={`relative card bg-white shadow-sm rounded-xl p-4 flex flex-row items-center justify-between border-l-4 ${status === 'VERIFIED' ? 'border-success' :
+                      status === 'REJECTED' ? 'border-error' :
+                        status === 'PENDING' ? 'border-warning' :
+                          status === 'PENDING_EXCUSE' ? 'border-warning' :
+                            status === 'EXCUSED' ? 'border-gray-300' : 'border-primary'
+                      }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`p-3 rounded-full ${status === 'VERIFIED' ? 'bg-success/10 text-success' :
+                        status === 'REJECTED' ? 'bg-error/10 text-error' :
+                          status === 'PENDING' ? 'bg-warning/10 text-warning' :
+                            status === 'PENDING_EXCUSE' ? 'bg-warning/10 text-warning' :
+                              status === 'EXCUSED' ? 'bg-neutral/10 text-neutral' : 'bg-primary/10 text-primary'
+                        }`}>
+                        {task.recurrence_rule === 'Once' ? <FaBolt className="w-6 h-6" /> :
+                          task.recurrence_rule === 'Daily' ? <FaRedo className="w-6 h-6" /> :
+                            task.recurrence_rule === 'Weekly' ? <FaCalendarWeek className="w-6 h-6" /> :
+                              task.recurrence_rule === 'Monthly' ? <FaCalendarAlt className="w-6 h-6" /> :
+                                <FaClock className="w-6 h-6" />}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-gray-800">{task.name}</h4>
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          {task.reward_value > 0 && (
+                            <span className="flex items-center gap-1 text-warning font-bold">
+                              <FaStar className="w-3 h-3" /> {task.reward_value}
+                            </span>
+                          )}
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getBadgeStyle(task.recurrence_rule || '')}`}>
+                            {['Once', 'Daily', 'Weekly', 'Monthly'].includes(task.recurrence_rule || '') ? task.recurrence_rule : 'Custom'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {status === 'VERIFIED' ? (
+                      <span className="badge badge-success text-white font-bold p-3">Approved</span>
+                    ) : status === 'REJECTED' ? (
+                      <button
+                        className="btn btn-sm btn-error btn-outline rounded-full"
+                        onClick={() => handleViewRejection(task.name, log?.rejection_reason)}
+                      >
+                        Why?
+                      </button>
+                    ) : status === 'PENDING' ? (
+                      <span className="badge badge-warning text-white font-bold p-3">Pending</span>
+                    ) : status === 'PENDING_EXCUSE' ? (
+                      <span className="badge badge-warning text-white font-bold p-3">Pending</span>
+                    ) : status === 'EXCUSED' ? (
+                      <span className="badge badge-ghost text-gray-500 font-bold p-3">Skipped</span>
+                    ) : (
+                      <button
+                        className="btn btn-sm btn-primary rounded-full text-white"
+                        onClick={() => handleTaskComplete(task)}
+                        disabled={isLoading}
+                      >
+                        Done
+                      </button>
+                    )}
+                  </motion.div>
                 </div>
               )
             })}

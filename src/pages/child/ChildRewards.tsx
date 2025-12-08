@@ -133,7 +133,7 @@ const ChildRewards = () => {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-800">Rewards Shop</h2>
+        <h2 className="text-2xl font-bold text-neutral">Rewards Shop</h2>
         {child && (
           <div className="badge badge-lg badge-primary font-bold text-white">
             {child.current_balance} Stars
@@ -171,8 +171,8 @@ const ChildRewards = () => {
       />
 
       {visibleRewards.length === 0 ? (
-        <div className="text-center p-12 bg-base-100 rounded-xl border-2 border-dashed border-gray-300">
-          <p className="text-gray-400">No rewards available yet.</p>
+        <div className="text-center p-12 bg-base-100 rounded-xl border-2 border-dashed border-base-300">
+          <p className="text-neutral/40">No rewards available yet.</p>
         </div>
       ) : (
         <>
@@ -189,29 +189,29 @@ const ChildRewards = () => {
               const IconComponent = getIconComponent(reward.category);
 
               return (
-                <div key={reward.id} className={`card bg-white shadow-sm rounded-xl p-4 flex flex-col items-center text-center gap-2 ${isRedeemed ? 'opacity-60' : ''}`}>
-                  <div className={`p-4 rounded-full mb-2 relative ${isRedeemed ? 'bg-gray-100 text-gray-400' : isLocked ? 'bg-gray-100 text-gray-400' : 'bg-blue-50 text-blue-500'}`}>
+                <div key={reward.id} className={`card bg-base-100 shadow-sm rounded-xl p-4 flex flex-col items-center text-center gap-2 ${isRedeemed ? 'opacity-60' : ''}`}>
+                  <div className={`p-4 rounded-full mb-2 relative ${isRedeemed ? 'bg-neutral/10 text-neutral/40' : isLocked ? 'bg-neutral/10 text-neutral/40' : 'bg-primary/10 text-primary'}`}>
                     <IconComponent className="w-8 h-8" />
                     {isLocked && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/10 rounded-full">
-                        <FaLock className="text-gray-600" />
+                        <FaLock className="text-neutral/60" />
                       </div>
                     )}
                   </div>
-                  <h3 className="font-bold text-gray-700 text-sm line-clamp-2 min-h-[2.5rem] flex items-center justify-center">
+                  <h3 className="font-bold text-neutral text-sm line-clamp-2 min-h-[2.5rem] flex items-center justify-center">
                     {reward.name}
                   </h3>
 
                   {isRedeemed ? (
-                    <button className="btn btn-sm btn-disabled w-full rounded-full bg-gray-100 text-gray-400 border-none">
+                    <button className="btn btn-sm btn-disabled w-full rounded-full bg-neutral/10 text-neutral/40 border-none">
                       <FaCheckCircle className="mr-1" /> Redeemed
                     </button>
                   ) : isLocked ? (
                     <div className="w-full flex flex-col gap-1">
-                      <button className="btn btn-sm btn-disabled w-full rounded-full bg-gray-200 text-gray-500 border-none text-xs">
+                      <button className="btn btn-sm btn-disabled w-full rounded-full bg-neutral/20 text-neutral/50 border-none text-xs">
                         <FaLock className="mr-1 text-[10px]" /> Locked
                       </button>
-                      <div className="text-[10px] text-gray-500 leading-tight px-1">
+                      <div className="text-[10px] text-neutral/50 leading-tight px-1">
                         Complete "{progress?.taskName}" {progress?.required! - progress?.current!} more times
                       </div>
                       <progress
@@ -222,7 +222,7 @@ const ChildRewards = () => {
                     </div>
                   ) : (
                     <button
-                      className={`btn btn-sm w-full rounded-full ${reward.cost_value === 0 ? 'btn-success text-white' : 'btn-primary'}`}
+                      className={`btn btn-sm w-full rounded-full ${reward.cost_value === 0 ? 'btn-success text-white' : 'btn-primary text-white'}`}
                       onClick={() => handleBuyClick(reward.id, reward.cost_value, reward.name)}
                       disabled={isLoading || !canAfford}
                     >
@@ -248,7 +248,7 @@ const ChildRewards = () => {
 
           {hasMore && (
             <button
-              className="btn btn-ghost btn-sm w-full text-gray-500 mt-4"
+              className="btn btn-ghost btn-sm w-full text-neutral/60 mt-4"
               onClick={() => setVisibleCount(prev => prev + 20)}
             >
               Load More

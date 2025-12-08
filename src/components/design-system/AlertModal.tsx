@@ -16,25 +16,18 @@ interface AlertModalProps {
   isLoading?: boolean;
 }
 
-const AlertModal: React.FC<AlertModalProps> = ({ 
-  isOpen, 
-  title, 
-  message, 
+const AlertModal: React.FC<AlertModalProps> = ({
+  isOpen,
+  title,
+  message,
   confirmText = 'Yes',
   cancelText = 'Cancel',
   type = 'warning',
-  onClose, 
+  onClose,
   onConfirm,
-  isLoading 
+  isLoading
 }) => {
-  const getColorClass = () => {
-    switch (type) {
-      case 'danger': return 'text-error';
-      case 'success': return 'text-success';
-      case 'info': return 'text-info';
-      default: return 'text-warning';
-    }
-  };
+
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -65,7 +58,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
               <Dialog.Panel className="w-full max-w-xs transform overflow-hidden rounded-2xl bg-white p-6 text-center align-middle shadow-xl transition-all">
                 <Dialog.Title
                   as="h3"
-                  className={`text-xl font-bold mb-2 ${getColorClass()}`}
+                  className="text-xl font-bold mb-2 text-gray-900"
                 >
                   {title}
                 </Dialog.Title>
@@ -74,9 +67,9 @@ const AlertModal: React.FC<AlertModalProps> = ({
                 </div>
 
                 <div className="flex flex-col gap-3">
-                  <PrimaryButton 
-                    onClick={onConfirm} 
-                    disabled={isLoading} 
+                  <PrimaryButton
+                    onClick={onConfirm}
+                    disabled={isLoading}
                     className={`rounded-xl text-lg ${type === 'danger' ? 'bg-error border-error hover:bg-error/90' : ''}`}
                   >
                     {isLoading ? 'Processing...' : confirmText}

@@ -6,7 +6,7 @@ interface SecondaryButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElem
 
 export const SecondaryButton: React.FC<SecondaryButtonProps> = ({ children, className = '', ...props }) => {
   return (
-    <button 
+    <button
       className={`btn btn-outline btn-primary w-full disabled:bg-transparent disabled:text-gray-400 disabled:border-gray-300 ${className}`}
       {...props}
     >

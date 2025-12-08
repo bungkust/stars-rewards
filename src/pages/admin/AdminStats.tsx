@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FaChartLine, FaCheckCircle, FaGift, FaSlidersH, FaTimesCircle } from 'react-icons/fa';
+import { FaChartLine, FaCheckCircle, FaGift, FaSlidersH, FaTimesCircle, FaChild } from 'react-icons/fa';
 import { AppCard, H1Header, IconWrapper, ToggleButton } from '../../components/design-system';
 import { useAppStore } from '../../store/useAppStore';
 import { parseRRule, isDateValid } from '../../utils/recurrence';
@@ -16,7 +16,7 @@ const AdminStats = () => {
   };
 
   // Get rejected mission logs
-  const rejectedMissions = childLogs.filter(log => log.status === 'REJECTED' || log.status === 'FAILED');
+  const rejectedMissions = childLogs.filter(log => log.status === 'REJECTED' || log.status === 'FAILED' || log.status === 'EXCUSED');
 
   // Combine transactions and rejected missions
   const combinedHistory = [
@@ -129,12 +129,12 @@ const AdminStats = () => {
       {/* Key Insights Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Insight 1: Completion Rate */}
-        <AppCard className="bg-gradient-to-br from-indigo-50 to-white border-indigo-100">
+        <AppCard className="bg-gradient-to-br from-info/10 to-base-100 border-info/20">
           <div className="flex items-center gap-2 mb-2">
-            <div className="p-2 bg-indigo-100 text-indigo-600 rounded-full">
+            <div className="p-2 bg-info/10 text-info rounded-full">
               <FaChartLine className="w-4 h-4" />
             </div>
-            <h3 className="font-bold text-gray-700">Completion Rate</h3>
+            <h3 className="font-bold text-neutral">Completion Rate</h3>
           </div>
           {(() => {
             const completedCount = filteredHistory.filter(i => i.type === 'transaction' && i.data.type === 'TASK_VERIFIED').length;
@@ -188,20 +188,20 @@ const AdminStats = () => {
 
             const rate = expectedCount === 0 ? 0 : Math.round((completedCount / expectedCount) * 100);
 
-            let colorClass = 'text-gray-400';
+            let colorClass = 'text-neutral/40';
             if (expectedCount > 0) {
-              if (rate >= 80) colorClass = 'text-green-500';
-              else if (rate >= 50) colorClass = 'text-yellow-500';
-              else colorClass = 'text-red-500';
+              if (rate >= 80) colorClass = 'text-success';
+              else if (rate >= 50) colorClass = 'text-warning';
+              else colorClass = 'text-error';
             }
 
             return (
               <div>
                 <div className="flex items-end gap-2">
                   <span className={`text-3xl font-bold ${colorClass}`}>{rate}%</span>
-                  <span className="text-xs text-gray-500 mb-1">success rate</span>
+                  <span className="text-xs text-neutral/60 mb-1">success rate</span>
                 </div>
-                <p className="text-xs text-gray-400 mt-2">
+                <p className="text-xs text-neutral/40 mt-2">
                   {completedCount} completed / {expectedCount} expected
                 </p>
               </div>
@@ -210,23 +210,25 @@ const AdminStats = () => {
         </AppCard>
 
         {/* Insight 2: Needs Focus */}
-        <AppCard className="bg-gradient-to-br from-orange-50 to-white border-orange-100">
+        <AppCard className="bg-gradient-to-br from-warning/10 to-base-100 border-warning/20">
           <div className="flex items-center gap-2 mb-2">
-            <div className="p-2 bg-orange-100 text-orange-600 rounded-full">
+            <div className="p-2 bg-warning/10 text-warning rounded-full">
               <FaTimesCircle className="w-4 h-4" />
             </div>
-            <h3 className="font-bold text-gray-700">Needs Focus</h3>
+            <h3 className="font-bold text-neutral">Needs Focus</h3>
           </div>
           {(() => {
-            const failures = filteredHistory.filter(i => i.type === 'rejected_mission');
+            const failures = filteredHistory.filter(i => i.type === 'rejected_mission' && i.data.status !== 'EXCUSED');
             if (failures.length === 0) {
-              return <p className="text-sm text-gray-500 italic">No missed missions in this period. Great job!</p>;
+              return <p className="text-sm text-neutral/60 italic">No missed missions in this period. Great job!</p>;
             }
 
             // Count failures by task_id
             const counts: Record<string, number> = {};
             failures.forEach(f => {
-              const taskId = f.data.task_id;
+              // We know f.data is ChildTaskLog because we filtered by 'rejected_mission'
+              const log = f.data as any;
+              const taskId = log.task_id;
               counts[taskId] = (counts[taskId] || 0) + 1;
             });
 
@@ -237,9 +239,9 @@ const AdminStats = () => {
 
             return (
               <div>
-                <p className="font-bold text-gray-800 line-clamp-1" title={taskName}>{taskName}</p>
-                <p className="text-xs text-red-500 font-bold mt-1">{count} misses</p>
-                <p className="text-xs text-gray-400 mt-2">
+                <p className="font-bold text-neutral line-clamp-1" title={taskName}>{taskName}</p>
+                <p className="text-xs text-error font-bold mt-1">{count} misses</p>
+                <p className="text-xs text-neutral/40 mt-2">
                   Consider adjusting difficulty or rewards.
                 </p>
               </div>
@@ -248,12 +250,12 @@ const AdminStats = () => {
         </AppCard>
 
         {/* Insight 3: Star Flow */}
-        <AppCard className="bg-gradient-to-br from-green-50 to-white border-green-100">
+        <AppCard className="bg-gradient-to-br from-success/10 to-base-100 border-success/20">
           <div className="flex items-center gap-2 mb-2">
-            <div className="p-2 bg-green-100 text-green-600 rounded-full">
+            <div className="p-2 bg-success/10 text-success rounded-full">
               <FaGift className="w-4 h-4" />
             </div>
-            <h3 className="font-bold text-gray-700">Star Flow</h3>
+            <h3 className="font-bold text-neutral">Star Flow</h3>
           </div>
           {(() => {
             const txs = filteredHistory.filter(i => i.type === 'transaction').map(i => i.data);
@@ -263,17 +265,17 @@ const AdminStats = () => {
             return (
               <div className="flex flex-col gap-1">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs text-gray-500">Earned</span>
-                  <span className="font-bold text-green-600">+{earned}</span>
+                  <span className="text-xs text-neutral/60">Earned</span>
+                  <span className="font-bold text-success">+{earned}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-xs text-gray-500">Spent</span>
-                  <span className="font-bold text-red-500">-{spent}</span>
+                  <span className="text-xs text-neutral/60">Spent</span>
+                  <span className="font-bold text-error">-{spent}</span>
                 </div>
-                <div className="h-px bg-gray-200 my-1"></div>
+                <div className="h-px bg-base-200 my-1"></div>
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold text-gray-700">Net</span>
-                  <span className={`font-bold ${earned - spent >= 0 ? 'text-blue-600' : 'text-orange-500'}`}>
+                  <span className="text-xs font-bold text-neutral">Net</span>
+                  <span className={`font-bold ${earned - spent >= 0 ? 'text-info' : 'text-warning'}`}>
                     {earned - spent > 0 ? '+' : ''}{earned - spent}
                   </span>
                 </div>
@@ -286,12 +288,12 @@ const AdminStats = () => {
       <AppCard>
         <div className="flex items-center gap-3 mb-4">
           <IconWrapper icon={FaChartLine} />
-          <h3 className="font-bold text-lg">Transaction History</h3>
+          <h3 className="font-bold text-lg text-neutral">Transaction History</h3>
         </div>
 
         <div className="flex flex-col gap-4">
           {visibleHistory.length === 0 ? (
-            <p className="text-center text-gray-500 py-4">No activity found.</p>
+            <p className="text-center text-neutral/50 py-4">No activity found.</p>
           ) : (
             <>
               {visibleHistory.map((item) => {
@@ -299,17 +301,17 @@ const AdminStats = () => {
                   const tx = item.data;
 
                   let Icon = FaCheckCircle;
-                  let iconBg = 'bg-green-100';
-                  let iconColor = 'text-green-600';
+                  let iconBg = 'bg-success/10';
+                  let iconColor = 'text-success';
 
                   if (tx.type === 'REWARD_REDEEMED') {
                     Icon = FaGift;
-                    iconBg = 'bg-orange-100';
-                    iconColor = 'text-orange-600';
+                    iconBg = 'bg-warning/10';
+                    iconColor = 'text-warning';
                   } else if (tx.type === 'MANUAL_ADJ') {
                     Icon = FaSlidersH;
-                    iconBg = 'bg-blue-100';
-                    iconColor = 'text-blue-600';
+                    iconBg = 'bg-info/10';
+                    iconColor = 'text-info';
                   }
 
                   return (
@@ -319,18 +321,18 @@ const AdminStats = () => {
                           <Icon className="w-4 h-4" />
                         </div>
                         <div>
-                          <p className="font-bold text-sm">{getTxDescription(tx)}</p>
-                          <p className="text-xs text-gray-500">
+                          <p className="font-bold text-sm text-neutral">{getTxDescription(tx)}</p>
+                          <p className="text-xs text-neutral/60">
                             {getChildName(tx.child_id)} • {new Date(tx.created_at).toLocaleDateString()}
                           </p>
                           {tx.description && (
-                            <p className="text-xs text-gray-500 italic mt-0.5">
+                            <p className="text-xs text-neutral/50 italic mt-0.5">
                               {tx.description}
                             </p>
                           )}
                         </div>
                       </div>
-                      <span className={`font-bold ${tx.amount > 0 ? 'text-green-600' : tx.amount < 0 ? 'text-red-600' : 'text-gray-500'}`}>
+                      <span className={`font-bold ${tx.amount > 0 ? 'text-success' : tx.amount < 0 ? 'text-error' : 'text-neutral/60'}`}>
                         {tx.amount !== 0 ? (
                           <>{tx.amount > 0 ? '+' : ''}{tx.amount}</>
                         ) : (
@@ -344,27 +346,33 @@ const AdminStats = () => {
                 } else {
                   const log = item.data;
                   const isFailed = log.status === 'FAILED';
+                  const isExcused = log.status === 'EXCUSED';
 
                   return (
                     <div key={item.id} className="flex justify-between items-center border-b border-base-200 pb-3 last:border-0 last:pb-0">
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-full ${isFailed ? 'bg-gray-100 text-gray-500' : 'bg-red-100 text-red-600'}`}>
-                          <FaTimesCircle className="w-4 h-4" />
+                        <div className={`p-2 rounded-full ${isFailed ? 'bg-base-200 text-neutral/60' : isExcused ? 'bg-warning/10 text-warning' : 'bg-error/10 text-error'}`}>
+                          {isExcused ? <FaChild className="w-4 h-4" /> : <FaTimesCircle className="w-4 h-4" />}
                         </div>
                         <div>
-                          <p className="font-bold text-sm">{getRejectedMissionDetails(log)}</p>
-                          <p className="text-xs text-gray-500">
+                          <p className="font-bold text-sm text-neutral">{getRejectedMissionDetails(log)}</p>
+                          <p className="text-xs text-neutral/60">
                             {getChildName(log.child_id)} • {new Date(log.completed_at).toLocaleDateString()}
                           </p>
-                          {log.rejection_reason && (
-                            <p className={`text-xs italic mt-0.5 ${isFailed ? 'text-gray-500' : 'text-red-500'}`}>
+                          {log.rejection_reason && !isExcused && (
+                            <p className={`text-xs italic mt-0.5 ${isFailed ? 'text-neutral/60' : 'text-error'}`}>
                               {isFailed ? 'Missed Deadline' : `Reason: ${log.rejection_reason}`}
+                            </p>
+                          )}
+                          {isExcused && (
+                            <p className="text-xs italic mt-0.5 text-warning">
+                              {log.notes || 'No reason provided'}
                             </p>
                           )}
                         </div>
                       </div>
-                      <span className={`font-bold ${isFailed ? 'text-gray-400' : 'text-red-500'}`}>
-                        <span className="text-xs uppercase">{isFailed ? 'Failed' : 'Rejected'}</span>
+                      <span className={`font-bold ${isFailed ? 'text-neutral/40' : isExcused ? 'text-warning' : 'text-error'}`}>
+                        <span className="text-xs uppercase">{isFailed ? 'Failed' : isExcused ? 'Excused' : 'Rejected'}</span>
                       </span>
                     </div>
                   );
@@ -373,7 +381,7 @@ const AdminStats = () => {
 
               {hasMore && (
                 <button
-                  className="btn btn-ghost btn-sm w-full text-gray-500"
+                  className="btn btn-ghost btn-sm w-full text-neutral/60"
                   onClick={() => setVisibleTxCount(prev => prev + 10)}
                 >
                   Load More

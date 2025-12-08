@@ -87,6 +87,25 @@ export const dataService = {
   },
 
   /**
+   * Submits an exemption request for a task.
+   */
+  submitExemptionRequest: async (_parentId: string, childId: string, taskId: string, reason: string): Promise<ChildTaskLog | null> => {
+    return localStorageService.submitExemptionRequest(childId, taskId, reason);
+  },
+
+  approveExcuse: async (logId: string): Promise<boolean> => {
+    return localStorageService.approveExemption(logId);
+  },
+
+  approveExemption: async (logId: string): Promise<boolean> => {
+    return localStorageService.approveExemption(logId);
+  },
+
+  rejectExemption: async (logId: string): Promise<boolean> => {
+    return localStorageService.rejectExemption(logId);
+  },
+
+  /**
    * Retrieves logs for all children of a parent.
    */
   fetchChildLogs: async (_parentId: string): Promise<ChildTaskLog[]> => {

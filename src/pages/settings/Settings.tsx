@@ -80,24 +80,24 @@ const Settings = () => {
       <AppCard>
         <div className="flex items-center gap-3 mb-4">
           <IconWrapper icon={FaUsers} />
-          <h3 className="font-bold text-lg text-gray-800">Family Information</h3>
+          <h3 className="font-bold text-lg text-neutral">Family Information</h3>
         </div>
         <div className="flex flex-col gap-1">
-          <div className="flex justify-between items-center p-3 hover:bg-base-100 rounded-lg transition-colors">
-            <span className="text-gray-500 font-medium">Family Name</span>
-            <span className="font-bold text-gray-800">{familySummary.familyLabel}</span>
+          <div className="flex justify-between items-center p-3 hover:bg-base-200 rounded-lg transition-colors">
+            <span className="text-neutral/60 font-medium">Family Name</span>
+            <span className="font-bold text-neutral">{familySummary.familyLabel}</span>
           </div>
-          <div className="flex justify-between items-center p-3 hover:bg-base-100 rounded-lg transition-colors">
-            <span className="text-gray-500 font-medium">Primary Parent</span>
-            <span className="font-bold text-gray-800">{familySummary.parentLabel}</span>
+          <div className="flex justify-between items-center p-3 hover:bg-base-200 rounded-lg transition-colors">
+            <span className="text-neutral/60 font-medium">Primary Parent</span>
+            <span className="font-bold text-neutral">{familySummary.parentLabel}</span>
           </div>
-          <div className="flex justify-between items-center p-3 hover:bg-base-100 rounded-lg transition-colors">
-            <span className="text-gray-500 font-medium">Parent Email</span>
-            <span className="font-bold text-gray-800">{familySummary.parentEmail}</span>
+          <div className="flex justify-between items-center p-3 hover:bg-base-200 rounded-lg transition-colors">
+            <span className="text-neutral/60 font-medium">Parent Email</span>
+            <span className="font-bold text-neutral">{familySummary.parentEmail}</span>
           </div>
-          <div className="flex justify-between items-center p-3 hover:bg-base-100 rounded-lg transition-colors">
-            <span className="text-gray-500 font-medium">Children Linked</span>
-            <span className="font-bold text-gray-800">{familySummary.childCount}</span>
+          <div className="flex justify-between items-center p-3 hover:bg-base-200 rounded-lg transition-colors">
+            <span className="text-neutral/60 font-medium">Children Linked</span>
+            <span className="font-bold text-neutral">{familySummary.childCount}</span>
           </div>
         </div>
       </AppCard>
@@ -106,13 +106,13 @@ const Settings = () => {
       <AppCard>
         <div className="flex items-center gap-3 mb-4">
           <IconWrapper icon={FaBell} />
-          <h3 className="font-bold text-lg text-gray-800">Notifications</h3>
+          <h3 className="font-bold text-lg text-neutral">Notifications</h3>
         </div>
-        <div className="p-3 hover:bg-base-100 rounded-lg transition-colors">
+        <div className="p-3 hover:bg-base-200 rounded-lg transition-colors">
           <label className="flex items-start justify-between gap-4 cursor-pointer">
             <div>
-              <p className="font-bold text-gray-800">Parent reminders</p>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="font-bold text-neutral">Parent reminders</p>
+              <p className="text-sm text-neutral/60 mt-1">
                 Receive alerts for mission approvals, reward redemptions, and weekly summaries.
               </p>
             </div>
@@ -125,7 +125,7 @@ const Settings = () => {
           </label>
         </div>
         <div className="px-3 mt-2">
-          <p className="text-xs text-gray-400 bg-gray-50 p-3 rounded-lg border border-gray-100">
+          <p className="text-xs text-neutral/40 bg-base-200 p-3 rounded-lg border border-base-300">
             Push notifications require permissions on your device. You can change this anytime.
           </p>
         </div>
@@ -135,17 +135,17 @@ const Settings = () => {
       <AppCard>
         <div className="flex items-center gap-3 mb-4">
           <IconWrapper icon={FaDatabase} />
-          <h3 className="font-bold text-lg text-gray-800">Data Management</h3>
+          <h3 className="font-bold text-lg text-neutral">Data Management</h3>
         </div>
         <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between p-3 hover:bg-base-100 rounded-lg transition-colors cursor-pointer" onClick={() => setIsBackupModalOpen(true)}>
+          <div className="flex items-center justify-between p-3 hover:bg-base-200 rounded-lg transition-colors cursor-pointer" onClick={() => setIsBackupModalOpen(true)}>
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 text-blue-600 rounded-full">
+              <div className="p-2 bg-info/10 text-info rounded-full">
                 <FaCloudDownloadAlt />
               </div>
               <div>
-                <p className="font-bold text-gray-800">Backup Data</p>
-                <p className="text-xs text-gray-500">Download a copy of your data</p>
+                <p className="font-bold text-neutral">Backup Data</p>
+                <p className="text-xs text-neutral/60">Download a copy of your data</p>
               </div>
             </div>
             <button className="btn btn-ghost btn-sm text-primary">
@@ -153,14 +153,14 @@ const Settings = () => {
             </button>
           </div>
 
-          <div className="relative flex items-center justify-between p-3 hover:bg-base-100 rounded-lg transition-colors cursor-pointer">
+          <div className="relative flex items-center justify-between p-3 hover:bg-base-200 rounded-lg transition-colors cursor-pointer">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-100 text-orange-600 rounded-full">
+              <div className="p-2 bg-warning/10 text-warning rounded-full">
                 <FaFileUpload />
               </div>
               <div>
-                <p className="font-bold text-gray-800">Restore Data</p>
-                <p className="text-xs text-gray-500">Overwrite with backup file</p>
+                <p className="font-bold text-neutral">Restore Data</p>
+                <p className="text-xs text-neutral/60">Overwrite with backup file</p>
               </div>
             </div>
             <div className="relative">
@@ -206,33 +206,33 @@ const Settings = () => {
       <AppCard>
         <div className="flex items-center gap-3 mb-4">
           <IconWrapper icon={FaShieldAlt} />
-          <h3 className="font-bold text-lg text-gray-800">Legal & Policy</h3>
+          <h3 className="font-bold text-lg text-neutral">Legal & Policy</h3>
         </div>
         <div className="flex flex-col gap-1">
           {policyLinks.map((link) => (
             <Link
               key={link.label}
-              className="flex items-center justify-between p-3 hover:bg-base-100 rounded-lg transition-colors group"
+              className="flex items-center justify-between p-3 hover:bg-base-200 rounded-lg transition-colors group"
               to={link.href}
             >
               <div>
-                <p className="font-medium text-gray-800 group-hover:text-primary transition-colors">{link.label}</p>
-                <p className="text-xs text-gray-500">{link.description}</p>
+                <p className="font-medium text-neutral group-hover:text-primary transition-colors">{link.label}</p>
+                <p className="text-xs text-neutral/60">{link.description}</p>
               </div>
-              <FaChevronRight className="text-gray-300 group-hover:text-primary w-3 h-3" />
+              <FaChevronRight className="text-neutral/20 group-hover:text-primary w-3 h-3" />
             </Link>
           ))}
         </div>
       </AppCard>
 
       {/* Danger Zone */}
-      <AppCard className="border-red-100 bg-red-50/50">
+      <AppCard className="border-error/20 bg-error/5">
         <div className="flex items-center gap-3 mb-4">
-          <IconWrapper icon={FaExclamationTriangle} className="bg-red-100 text-red-600" />
-          <h3 className="font-bold text-lg text-red-700">Danger Zone</h3>
+          <IconWrapper icon={FaExclamationTriangle} className="bg-error/10 text-error" />
+          <h3 className="font-bold text-lg text-error">Danger Zone</h3>
         </div>
         <div className="flex flex-col gap-2">
-          <p className="text-sm text-gray-600 mb-2">
+          <p className="text-sm text-neutral/60 mb-2">
             Resetting the app will delete all data permanently. This cannot be undone.
           </p>
           <button
@@ -246,7 +246,7 @@ const Settings = () => {
 
       {/* App Version */}
       <div className="text-center pb-4">
-        <p className="text-xs text-gray-400 font-medium">App Version {appVersion}</p>
+        <p className="text-xs text-neutral/40 font-medium">App Version {appVersion}</p>
       </div>
 
       {/* Restore Confirmation Modal */}

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { H1Header, ToggleButton } from '../../components/design-system';
-import { FaStar, FaTrophy, FaChartPie, FaCheckCircle, FaGift, FaSlidersH, FaTimesCircle } from 'react-icons/fa';
+import { FaStar, FaTrophy, FaChartPie, FaCheckCircle, FaGift, FaSlidersH, FaTimesCircle, FaChild } from 'react-icons/fa';
 import {
   CartesianGrid,
   Line,
@@ -43,7 +43,7 @@ const ChildStats = () => {
 
   // Get rejected mission logs for history display
   const rejectedMissions = useMemo(
-    () => childLogs.filter(log => log.child_id === child?.id && (log.status === 'REJECTED' || log.status === 'FAILED')),
+    () => childLogs.filter(log => log.child_id === child?.id && (log.status === 'REJECTED' || log.status === 'FAILED' || log.status === 'EXCUSED')),
     [childLogs, child?.id]
   );
 
@@ -182,29 +182,29 @@ const ChildStats = () => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="card bg-white shadow-md rounded-xl p-4 flex flex-col items-center text-center">
-          <div className="p-3 bg-yellow-100 text-warning rounded-full mb-2">
+        <div className="card bg-base-100 shadow-md rounded-xl p-4 flex flex-col items-center text-center">
+          <div className="p-3 bg-warning/10 text-warning rounded-full mb-2">
             <FaStar className="w-6 h-6" />
           </div>
-          <span className="text-2xl font-bold text-gray-800">{earned}</span>
-          <span className="text-xs text-gray-500 uppercase font-bold">Earned</span>
+          <span className="text-2xl font-bold text-neutral">{earned}</span>
+          <span className="text-xs text-neutral/60 uppercase font-bold">Earned</span>
         </div>
 
-        <div className="card bg-white shadow-md rounded-xl p-4 flex flex-col items-center text-center">
-          <div className="p-3 bg-blue-100 text-primary rounded-full mb-2">
+        <div className="card bg-base-100 shadow-md rounded-xl p-4 flex flex-col items-center text-center">
+          <div className="p-3 bg-primary/10 text-primary rounded-full mb-2">
             <FaTrophy className="w-6 h-6" />
           </div>
-          <span className="text-2xl font-bold text-gray-800">{spent}</span>
-          <span className="text-xs text-gray-500 uppercase font-bold">Spent</span>
+          <span className="text-2xl font-bold text-neutral">{spent}</span>
+          <span className="text-xs text-neutral/60 uppercase font-bold">Spent</span>
         </div>
       </div>
 
       {/* Progress Tracker */}
-      <div className="card bg-white shadow-md rounded-xl p-6">
+      <div className="card bg-base-100 shadow-md rounded-xl p-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h3 className="text-lg font-bold text-gray-800">Progress Tracker</h3>
-            <p className="text-xs text-gray-500">{timeframeDescriptions[timeframe]}</p>
+            <h3 className="text-lg font-bold text-neutral">Progress Tracker</h3>
+            <p className="text-xs text-neutral/60">{timeframeDescriptions[timeframe]}</p>
           </div>
           <div className="flex gap-2">
             {timeframeOptions.map(option => (
@@ -219,7 +219,7 @@ const ChildStats = () => {
         </div>
 
         <div className="mt-4 flex items-center gap-2">
-          <span className="text-sm text-gray-500">Net change</span>
+          <span className="text-sm text-neutral/60">Net change</span>
           <span
             className={`text-xl font-bold ${chartNetTotal >= 0 ? 'text-primary' : 'text-error'
               }`}
@@ -253,9 +253,9 @@ const ChildStats = () => {
                   <Line
                     type="monotone"
                     dataKey="value"
-                    stroke="#2563eb"
+                    stroke="#38BDF8"
                     strokeWidth={3}
-                    dot={{ r: 4, fill: '#2563eb', stroke: '#ffffff', strokeWidth: 1 }}
+                    dot={{ r: 4, fill: '#38BDF8', stroke: '#ffffff', strokeWidth: 1 }}
                     activeDot={{ r: 6 }}
                     isAnimationActive={false}
                   />
@@ -263,7 +263,7 @@ const ChildStats = () => {
               </ResponsiveContainer>
             </div>
           ) : (
-            <p className="text-center text-sm text-gray-400 py-6">
+            <p className="text-center text-sm text-neutral/40 py-6">
               No activity recorded in this range yet.
             </p>
           )}
@@ -271,20 +271,20 @@ const ChildStats = () => {
       </div>
 
       {/* Balance Chart Representation */}
-      <div className="card bg-white shadow-md rounded-xl p-6">
+      <div className="card bg-base-100 shadow-md rounded-xl p-6">
         <div className="flex items-center gap-2 mb-6">
-          <FaChartPie className="text-gray-400" />
-          <h3 className="text-lg font-bold text-gray-700">Balance Breakdown</h3>
+          <FaChartPie className="text-neutral/40" />
+          <h3 className="text-lg font-bold text-neutral">Balance Breakdown</h3>
         </div>
 
         <div className="flex flex-col gap-4">
           {/* Current Balance Bar */}
           <div>
             <div className="flex justify-between text-sm mb-1">
-              <span className="text-gray-600">Current Balance</span>
+              <span className="text-neutral/60">Current Balance</span>
               <span className="font-bold text-primary">{child.current_balance} Stars</span>
             </div>
-            <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden">
+            <div className="w-full bg-base-200 rounded-full h-4 overflow-hidden">
               <div
                 className="bg-primary h-4 rounded-full transition-all duration-500"
                 style={{ width: `${Math.min((child.current_balance / (earned || 1)) * 100, 100)}%` }}
@@ -295,10 +295,10 @@ const ChildStats = () => {
           {/* Spending Bar */}
           <div>
             <div className="flex justify-between text-sm mb-1">
-              <span className="text-gray-600">Total Spent</span>
+              <span className="text-neutral/60">Total Spent</span>
               <span className="font-bold text-error">{spent} Stars</span>
             </div>
-            <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden">
+            <div className="w-full bg-base-200 rounded-full h-4 overflow-hidden">
               <div
                 className="bg-error h-4 rounded-full transition-all duration-500"
                 style={{ width: `${Math.min((spent / (earned || 1)) * 100, 100)}%` }}
@@ -309,9 +309,9 @@ const ChildStats = () => {
       </div>
 
       {/* Recent History (Simple List) */}
-      <div className="card bg-white shadow-md rounded-xl p-6">
+      <div className="card bg-base-100 shadow-md rounded-xl p-6">
         <div className="flex flex-col gap-3 mb-4">
-          <h3 className="text-lg font-bold text-gray-700">Recent History</h3>
+          <h3 className="text-lg font-bold text-neutral">Recent History</h3>
 
           {/* History Filter Tabs */}
           <div className="flex gap-2">
@@ -340,36 +340,36 @@ const ChildStats = () => {
               const details = getTransactionDetails(transaction);
 
               let Icon = FaCheckCircle;
-              let iconBg = 'bg-green-100';
-              let iconColor = 'text-green-600';
+              let iconBg = 'bg-success/10';
+              let iconColor = 'text-success';
 
               if (transaction.type === 'REWARD_REDEEMED') {
                 Icon = FaGift;
-                iconBg = 'bg-orange-100';
-                iconColor = 'text-orange-600';
+                iconBg = 'bg-warning/10';
+                iconColor = 'text-warning';
               } else if (transaction.type === 'MANUAL_ADJ') {
                 Icon = FaSlidersH;
-                iconBg = 'bg-blue-100';
-                iconColor = 'text-blue-600';
+                iconBg = 'bg-info/10';
+                iconColor = 'text-info';
               }
 
               return (
-                <div key={item.id} className="flex justify-between items-center border-b border-gray-100 pb-3 last:border-none last:pb-0">
+                <div key={item.id} className="flex justify-between items-center border-b border-base-200 pb-3 last:border-none last:pb-0">
                   <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-full ${iconBg} ${iconColor}`}>
                       <Icon className="w-4 h-4" />
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-bold text-gray-700 text-sm">{details.name}</span>
-                      <span className="text-xs text-gray-400">{formatDate(transaction.created_at)}</span>
+                      <span className="font-bold text-neutral text-sm">{details.name}</span>
+                      <span className="text-xs text-neutral/40">{formatDate(transaction.created_at)}</span>
                       {details.description && (
-                        <span className="text-xs text-gray-500 italic mt-0.5">
+                        <span className="text-xs text-neutral/50 italic mt-0.5">
                           {details.description}
                         </span>
                       )}
                     </div>
                   </div>
-                  <span className={`font-bold ${transaction.amount > 0 ? 'text-green-500' : transaction.amount < 0 ? 'text-red-500' : 'text-gray-500'}`}>
+                  <span className={`font-bold ${transaction.amount > 0 ? 'text-success' : transaction.amount < 0 ? 'text-error' : 'text-neutral/60'}`}>
                     {transaction.amount !== 0 ? (
                       <>{transaction.amount > 0 ? '+' : ''}{transaction.amount}</>
                     ) : (
@@ -384,39 +384,46 @@ const ChildStats = () => {
               const log = item.data;
               const details = getRejectedMissionDetails(log);
               const isFailed = log.status === 'FAILED';
+              const isExcused = log.status === 'EXCUSED';
 
               return (
-                <div key={item.id} className="flex justify-between items-center border-b border-gray-100 pb-3 last:border-none last:pb-0">
+                <div key={item.id} className="flex justify-between items-center border-b border-base-200 pb-3 last:border-none last:pb-0">
                   <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-full ${isFailed ? 'bg-gray-100 text-gray-500' : 'bg-red-100 text-red-600'}`}>
-                      {isFailed ? <FaTimesCircle className="w-4 h-4" /> : <FaTimesCircle className="w-4 h-4" />}
+                    <div className={`p-2 rounded-full ${isFailed ? 'bg-base-200 text-neutral/60' : isExcused ? 'bg-warning/10 text-warning' : 'bg-error/10 text-error'}`}>
+                      {isExcused ? <FaChild className="w-4 h-4" /> : <FaTimesCircle className="w-4 h-4" />}
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-bold text-gray-700 text-sm">{details.name}</span>
-                      <span className="text-xs text-gray-400">{formatDate(log.completed_at)}</span>
-                      {log.rejection_reason && (
-                        <span className={`text-xs italic mt-0.5 ${isFailed ? 'text-gray-500' : 'text-red-500'}`}>
+                      <span className="font-bold text-neutral text-sm">{details.name}</span>
+                      <span className="text-xs text-neutral/40">{formatDate(log.completed_at)}</span>
+                      {log.rejection_reason && !isExcused && (
+                        <span className={`text-xs italic mt-0.5 ${isFailed ? 'text-neutral/60' : 'text-error'}`}>
                           {isFailed ? 'Missed Deadline' : `Reason: ${log.rejection_reason}`}
+                        </span>
+                      )}
+                      {isExcused && (
+                        <span className="text-xs italic mt-0.5 text-warning">
+                          {log.notes || 'No reason provided'}
                         </span>
                       )}
                     </div>
                   </div>
-                  <span className={`font-bold ${isFailed ? 'text-gray-400' : 'text-red-500'}`}>
-                    <span className="text-xs uppercase">{isFailed ? 'Failed' : 'Rejected'}</span>
+                  <span className={`font-bold ${isFailed ? 'text-neutral/40' : isExcused ? 'text-warning' : 'text-error'}`}>
+                    <span className="text-xs uppercase">{isFailed ? 'Failed' : isExcused ? 'Excused' : 'Rejected'}</span>
                   </span>
                 </div>
               );
+
             }
             return null;
           })}
 
           {visibleHistory.length === 0 && (
-            <p className="text-gray-400 text-center text-sm py-4">No activity in this period.</p>
+            <p className="text-neutral/40 text-center text-sm py-4">No activity in this period.</p>
           )}
 
           {hasMoreHistory && (
             <button
-              className="btn btn-ghost btn-sm w-full text-gray-500 mt-2"
+              className="btn btn-ghost btn-sm w-full text-neutral/60 mt-2"
               onClick={() => setVisibleHistoryCount(prev => prev + 10)}
             >
               Load More
@@ -436,8 +443,8 @@ const ChartTooltip = (props: TooltipContentProps<number, string>) => {
   const value = payload[0].value as number;
 
   return (
-    <div className="rounded-lg border border-base-200 bg-white px-3 py-2 shadow-md">
-      <p className="text-xs text-gray-400">{label}</p>
+    <div className="rounded-lg border border-base-200 bg-base-100 px-3 py-2 shadow-md">
+      <p className="text-xs text-neutral/40">{label}</p>
       <p className={`text-sm font-semibold ${value >= 0 ? 'text-primary' : 'text-error'}`}>
         {value >= 0 ? '+' : '-'}
         {Math.abs(value)} Stars

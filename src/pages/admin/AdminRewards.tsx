@@ -14,7 +14,7 @@ const getIconComponent = (iconId: string | undefined) => {
     case 'game': return FaGamepad;
     case 'treat': return FaIceCream;
     case 'event': return FaTicketAlt;
-    case 'gift': 
+    case 'gift':
     default: return FaGift;
   }
 };
@@ -59,37 +59,38 @@ const AdminRewards = () => {
 
       <div className="grid gap-4">
         {rewards.length === 0 ? (
-           <div className="text-center py-10 text-gray-500">
-             No rewards created yet. Click below to add one!
-           </div>
+          <div className="text-center py-10 text-neutral/50">
+            No rewards created yet. Click below to add one!
+          </div>
         ) : (
           rewards.map((reward) => {
             const IconComponent = getIconComponent(reward.category);
             return (
-            <AppCard key={reward.id} className="flex flex-row items-center gap-4 !p-4">
-              <div className="p-3 bg-blue-50 text-blue-500 rounded-lg">
-                <IconWrapper icon={IconComponent} className="text-blue-500" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-gray-700">{reward.name}</h3>
-                <p className="text-sm text-gray-500">{reward.cost_value} Stars</p>
-              </div>
-              <div className="flex gap-2">
-                <button 
-                  className="btn btn-ghost btn-sm btn-circle text-gray-400"
-                  onClick={() => handleEditClick(reward.id)}
-                >
-                  <FaPencilAlt />
-                </button>
-                <button 
-                  className="btn btn-ghost btn-sm btn-circle text-error"
-                  onClick={() => handleDeleteClick(reward.id)}
-                >
-                  <FaTrash />
-                </button>
-              </div>
-            </AppCard>
-          )})
+              <AppCard key={reward.id} className="flex flex-row items-center gap-4 !p-4">
+                <div className="p-3 bg-primary/10 text-primary rounded-lg">
+                  <IconWrapper icon={IconComponent} className="text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-neutral">{reward.name}</h3>
+                  <p className="text-sm text-neutral/60">{reward.cost_value} Stars</p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    className="btn btn-ghost btn-sm btn-circle text-neutral/40"
+                    onClick={() => handleEditClick(reward.id)}
+                  >
+                    <FaPencilAlt />
+                  </button>
+                  <button
+                    className="btn btn-ghost btn-sm btn-circle text-error"
+                    onClick={() => handleDeleteClick(reward.id)}
+                  >
+                    <FaTrash />
+                  </button>
+                </div>
+              </AppCard>
+            )
+          })
         )}
       </div>
 

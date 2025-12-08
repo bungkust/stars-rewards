@@ -52,12 +52,12 @@ const AdminTasks = () => {
 
   const getBadgeStyle = (rule: string) => {
     switch (rule) {
-      case 'Once': return 'bg-amber-100 text-amber-800';
-      case 'Daily': return 'bg-blue-100 text-blue-800';
-      case 'Weekly': return 'bg-purple-100 text-purple-800';
-      case 'Monthly': return 'bg-rose-100 text-rose-800';
-      case 'Custom': return 'bg-teal-100 text-teal-800';
-      default: return 'bg-teal-100 text-teal-800'; // Default to Custom style for complex rules
+      case 'Once': return 'badge badge-accent badge-outline';
+      case 'Daily': return 'badge badge-primary badge-outline';
+      case 'Weekly': return 'badge badge-secondary badge-outline';
+      case 'Monthly': return 'badge badge-info badge-outline';
+      case 'Custom': return 'badge badge-neutral badge-outline';
+      default: return 'badge badge-ghost badge-outline';
     }
   };
 
@@ -88,29 +88,29 @@ const AdminTasks = () => {
 
       <div className="grid gap-4">
         {filteredTasks.length === 0 ? (
-          <div className="text-center py-10 text-gray-500">
+          <div className="text-center py-10 text-neutral/50">
             No missions created yet. Click below to add one!
           </div>
         ) : (
           filteredTasks.map((task) => (
             <AppCard key={task.id} className="flex flex-row items-center gap-4 !p-4">
               <div className="bg-base-200 p-3 rounded-lg">
-                <IconWrapper icon={FaTasks} className="text-gray-500" />
+                <IconWrapper icon={FaTasks} className="text-neutral/50" />
               </div>
               <div className="flex-1">
-                <h3 className="font-bold text-gray-700">{task.name}</h3>
+                <h3 className="font-bold text-neutral">{task.name}</h3>
                 <div className="flex items-center gap-2 mt-1">
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getBadgeStyle(task.recurrence_rule || 'Once')}`}>
                     {['Once', 'Daily', 'Weekly', 'Monthly'].includes(task.recurrence_rule || 'Once') ? (task.recurrence_rule || 'Once') : 'Custom'}
                   </span>
                   {task.reward_value > 0 && (
-                    <span className="text-sm text-gray-500">• {task.reward_value} Stars</span>
+                    <span className="text-sm text-neutral/60">• {task.reward_value} Stars</span>
                   )}
                 </div>
               </div>
               <div className="flex gap-2">
                 <button
-                  className="btn btn-ghost btn-sm btn-circle text-gray-400"
+                  className="btn btn-ghost btn-sm btn-circle text-neutral/40"
                   onClick={() => handleEditClick(task.id)}
                 >
                   <FaPencilAlt />

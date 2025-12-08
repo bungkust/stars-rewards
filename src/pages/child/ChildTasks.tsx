@@ -34,19 +34,19 @@ const ChildTasks = () => {
 
   const getBadgeStyle = (rule: string) => {
     switch (rule) {
-      case 'Once': return 'bg-amber-100 text-amber-800';
-      case 'Daily': return 'bg-blue-100 text-blue-800';
-      case 'Weekly': return 'bg-purple-100 text-purple-800';
-      case 'Monthly': return 'bg-rose-100 text-rose-800';
-      case 'Custom': return 'bg-teal-100 text-teal-800';
-      default: return 'bg-teal-100 text-teal-800'; // Default to Custom style for complex rules
+      case 'Once': return 'badge badge-accent badge-outline';
+      case 'Daily': return 'badge badge-primary badge-outline';
+      case 'Weekly': return 'badge badge-secondary badge-outline';
+      case 'Monthly': return 'badge badge-info badge-outline';
+      case 'Custom': return 'badge badge-neutral badge-outline';
+      default: return 'badge badge-ghost badge-outline';
     }
   };
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-800">My Missions</h2>
+        <h2 className="text-2xl font-bold text-neutral">My Missions</h2>
       </div>
 
       {/* Filter Tabs */}
@@ -69,7 +69,7 @@ const ChildTasks = () => {
       </div>
 
       {visibleTasks.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+        <div className="flex flex-col items-center justify-center h-64 text-neutral/40">
           <FaTasks className="w-16 h-16 mb-4 opacity-20" />
           <p>No missions found.</p>
         </div>
@@ -77,8 +77,8 @@ const ChildTasks = () => {
         <>
           <div className="grid gap-4">
             {visibleTasks.map((task) => (
-              <div key={task.id} className="card bg-white shadow-sm rounded-xl p-4 flex flex-row items-center gap-4">
-                <div className="bg-blue-50 p-3 rounded-full text-primary">
+              <div key={task.id} className="card bg-base-100 shadow-sm rounded-xl p-4 flex flex-row items-center gap-4">
+                <div className="bg-primary/10 p-3 rounded-full text-primary">
                   {task.recurrence_rule === 'Once' ? <FaBolt className="w-6 h-6" /> :
                     task.recurrence_rule === 'Daily' ? <FaRedo className="w-6 h-6" /> :
                       task.recurrence_rule === 'Weekly' ? <FaCalendarWeek className="w-6 h-6" /> :
@@ -86,8 +86,8 @@ const ChildTasks = () => {
                           <FaClock className="w-6 h-6" />}
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-bold text-gray-800">{task.name}</h3>
-                  <div className="flex gap-4 text-sm text-gray-500">
+                  <h3 className="font-bold text-neutral">{task.name}</h3>
+                  <div className="flex gap-4 text-sm text-neutral/60">
                     {task.reward_value > 0 && (
                       <span className="flex items-center gap-1 text-warning font-bold">
                         <FaStar /> {task.reward_value}
@@ -106,7 +106,7 @@ const ChildTasks = () => {
 
           {hasMore && (
             <button
-              className="btn btn-ghost btn-sm w-full text-gray-500 mt-2"
+              className="btn btn-ghost btn-sm w-full text-neutral/60 mt-2"
               onClick={() => setVisibleCount(prev => prev + 20)}
             >
               Load More
