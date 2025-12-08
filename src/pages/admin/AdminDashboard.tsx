@@ -6,6 +6,7 @@ import { H1Header } from '../../components/design-system/H1Header';
 import RejectionReasonModal from '../../components/modals/RejectionReasonModal';
 import VerificationSuccessModal from '../../components/modals/VerificationSuccessModal';
 import StarAdjustmentModal from '../../components/modals/StarAdjustmentModal';
+import { getLocalDateString } from '../../utils/timeUtils';
 
 
 
@@ -22,13 +23,20 @@ const AdminDashboard = () => {
 
   const verifications = pendingVerifications || [];
   const excuses = getPendingExcuses() || [];
+  const todayStr = getLocalDateString();
 
   // Combine and sort items if needed. For now, just concat.
-  // We need a unified structure or just render conditionally.
-  // Let's create a unified list with a type discriminator.
+  // Filter to show only items from TODAY (Local Time)
   const allItems = [
-    ...verifications.map(v => ({ ...v, type: 'verification' as const })),
-    ...excuses.map(e => {
+    ...verifications.filter(v => {
+      const date = new Date(v.completed_at); // or created_at? verification request usually has completed_at of the task
+      return getLocalDateString(date) === todayStr;
+    }).map(v => ({ ...v, type: 'verification' as const })),
+
+    ...excuses.filter(e => {
+      const date = new Date(e.completed_at); // excuse log timestamp
+      return getLocalDateString(date) === todayStr;
+    }).map(e => {
       const task = tasks.find(t => t.id === e.task_id);
       const child = children.find(c => c.id === e.child_id);
       return {

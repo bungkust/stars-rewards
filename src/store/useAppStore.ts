@@ -3,7 +3,8 @@ import { persist } from 'zustand/middleware';
 import type { Profile, Child, Task, Reward, VerificationRequest, CoinTransaction, ChildTaskLog } from '../types';
 import { dataService } from '../services/dataService';
 import { localStorageService } from '../services/localStorageService';
-import { parseRRule, isDateValid } from '../utils/recurrence';
+import { parseRRule, isDateValid, getNextDueDate } from '../utils/recurrence';
+import { getLocalDateString, getTodayLocalStart, getLocalStartOfDay, isResetNeeded } from '../utils/timeUtils';
 
 export type OnboardingStep = 'family-setup' | 'parent-setup' | 'add-child' | 'first-task' | 'first-reward' | 'completed';
 
@@ -189,7 +190,30 @@ export const useAppStore = create<AppState>()(
         set({ isLoading: true });
         try {
           const userId = 'local-user';
-          const newTask = await dataService.addTask(userId, task);
+
+          // Calculate initial next_due_date based on recurrence rule
+          // This ensures the task appears on the correct day immediately
+          let nextDueDate = undefined;
+          if (task.recurrence_rule && task.recurrence_rule !== 'Once') {
+            // For new tasks, we want the first occurrence. 
+            // getNextDueDate(rule) defaults to today if no last completion.
+            // But we should verify if "Today" is valid for this rule.
+            // getNextDueDate handles this: it checks if today is valid, if not finds next.
+            // However, getNextDueDate signature is (rrule, lastCompleted).
+            // Passing undefined for lastCompleted means "start checking from today".
+
+            // We need to import getNextDueDate.
+            // Note: We need to ensure getNextDueDate is imported.
+            nextDueDate = getNextDueDate(task.recurrence_rule);
+          } else if (task.recurrence_rule === 'Once') {
+            // For Once tasks, maybe set it to today? Or leave undefined?
+            // Usually 'Once' tasks are due immediately until done.
+            // Let's leave it undefined or set to today.
+            // If we set it, it might help with sorting.
+            nextDueDate = getLocalDateString();
+          }
+
+          const newTask = await dataService.addTask(userId, { ...task, next_due_date: nextDueDate });
 
           if (!newTask) throw new Error('Failed to add task');
 
@@ -465,6 +489,11 @@ export const useAppStore = create<AppState>()(
       approveExemption: async (logId: string) => {
         set({ isLoading: true });
         try {
+          // When approving an excuse, we mark the log as 'EXCUSED'.
+          // This effectively "completes" the task for today without reward.
+          // The recurrence logic (getNextDueDate) will see this log and calculate the NEXT due date from this date.
+          // So we just need to ensure the log is updated correctly.
+
           const success = await dataService.approveExemption(logId);
           if (!success) throw new Error('Failed to approve exemption');
 
@@ -646,27 +675,45 @@ export const useAppStore = create<AppState>()(
 
       checkMissedMissions: async () => {
         const { children, tasks, childLogs, lastMissedCheckDate } = get();
+
+        // 1. Check if reset is needed
+        if (!isResetNeeded(lastMissedCheckDate)) {
+          return;
+        }
+
         const userId = 'local-user';
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const todayStr = getLocalDateString();
 
         // Determine start date: last check date or yesterday
+        // We want to check from (lastCheckDate + 1 day) up to (today - 1 day)
+        // If lastCheckDate is undefined, we check yesterday only? Or maybe last few days?
+        // Let's default to checking "Yesterday" if no history, to avoid flooding with old missed tasks on first install.
+
         let startDate: Date;
+        const todayDate = getTodayLocalStart();
+
         if (lastMissedCheckDate) {
           startDate = new Date(lastMissedCheckDate);
-          startDate.setDate(startDate.getDate() + 1); // Start from the day AFTER last check
+          // Fix: Ensure startDate is treated as local 00:00
+          startDate = getLocalStartOfDay(startDate);
+          startDate.setDate(startDate.getDate() + 1); // Start from day AFTER last check
         } else {
-          // Default to yesterday if no history
-          startDate = new Date(today);
+          startDate = new Date(todayDate);
           startDate.setDate(startDate.getDate() - 1);
         }
 
         // End date is yesterday (we don't fail today's tasks until tomorrow)
-        const endDate = new Date(today);
+        const endDate = new Date(todayDate);
         endDate.setDate(endDate.getDate() - 1);
 
         if (startDate > endDate) {
-          // Already up to date
+          // Already up to date (e.g. last check was yesterday, so next check is tomorrow)
+          // Update last check date to today to avoid re-running? 
+          // Actually, if we checked yesterday, and today is today, we don't need to check anything.
+          // But we should update lastMissedCheckDate to today ONLY if we successfully ran checks?
+          // Or should we leave it as yesterday?
+          // If we return here, we haven't checked "today" yet (because today isn't over).
+          // So lastMissedCheckDate remains "yesterday".
           return;
         }
 
@@ -676,8 +723,8 @@ export const useAppStore = create<AppState>()(
         // Iterate through each day from startDate to endDate
         for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
           const checkDate = new Date(d);
-          const checkDateStr = checkDate.toISOString().split('T')[0];
-          const checkDateIso = checkDate.toISOString(); // Use a valid ISO string for the log
+          const checkDateStr = getLocalDateString(checkDate);
+          const checkDateIso = checkDate.toISOString();
 
           for (const task of activeTasks) {
             // Check if task was scheduled for this day
@@ -687,28 +734,27 @@ export const useAppStore = create<AppState>()(
             const baseDate = new Date(task.created_at || new Date());
 
             if (isDateValid(checkDate, options, baseDate)) {
-              // Task was scheduled. Check if it was completed by ANY assigned child.
-              // Actually, we need to check per assigned child.
-
               const assignedChildren = (task.assigned_to || []).filter((id: string) => children.some(c => c.id === id));
 
               for (const childId of assignedChildren) {
                 // Check if THIS child completed it on THIS day
                 const hasLog = childLogs.some(log => {
                   if (log.child_id !== childId || log.task_id !== task.id) return false;
-                  const logDate = new Date(log.completed_at).toISOString().split('T')[0];
-                  return logDate === checkDateStr;
+                  // Compare local dates
+                  const logDate = new Date(log.completed_at);
+                  const logDateStr = getLocalDateString(logDate);
+                  return logDateStr === checkDateStr;
                 });
 
                 if (!hasLog) {
                   // No log found -> FAILED
-                  // Check if we already logged a failure for this (idempotency check)
-                  // This prevents duplicate failure logs if we re-run logic
+                  // Idempotency check
                   const alreadyFailed = childLogs.some(log => {
                     if (log.child_id !== childId || log.task_id !== task.id) return false;
                     if (log.status !== 'FAILED') return false;
-                    const logDate = new Date(log.completed_at).toISOString().split('T')[0];
-                    return logDate === checkDateStr;
+                    const logDate = new Date(log.completed_at);
+                    const logDateStr = getLocalDateString(logDate);
+                    return logDateStr === checkDateStr;
                   });
 
                   if (!alreadyFailed) {
@@ -729,8 +775,13 @@ export const useAppStore = create<AppState>()(
           }));
         }
 
-        // Update last check date to yesterday (since we covered up to yesterday)
-        set({ lastMissedCheckDate: endDate.toISOString().split('T')[0] });
+        // Update last check date to TODAY (local string) to indicate we have checked everything up to now.
+        // Actually, if we only checked up to "yesterday", should we set it to "yesterday" or "today"?
+        // If we set it to "today", then tomorrow `isResetNeeded` will be true (tomorrow != today).
+        // And `startDate` will be (today + 1) which is tomorrow.
+        // So we check "today" (which became yesterday).
+        // Yes, setting it to todayStr means "I have run the check logic on [todayStr]".
+        set({ lastMissedCheckDate: todayStr });
       },
 
       logout: async () => {

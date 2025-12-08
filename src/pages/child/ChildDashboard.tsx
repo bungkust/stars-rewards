@@ -4,6 +4,7 @@ import { FaStar, FaClock, FaRedo, FaCamera, FaBolt, FaCalendarWeek, FaCalendarAl
 import { motion, type PanInfo } from 'framer-motion';
 import { ToggleButton } from '../../components/design-system';
 import { parseRRule, isDateValid } from '../../utils/recurrence';
+import { getTodayLocalStart, getLocalStartOfDay, getLocalDateString } from '../../utils/timeUtils';
 import AvatarSelectionModal from '../../components/modals/AvatarSelectionModal';
 import TaskCompletionModal from '../../components/modals/TaskCompletionModal';
 import TaskRejectionDetailsModal from '../../components/modals/TaskRejectionDetailsModal';
@@ -26,13 +27,15 @@ const ChildDashboard = () => {
   // Helper to find log status for today
   const getTodayLog = (taskId: string) => {
     if (!activeChildId) return null;
-    const today = new Date().toISOString().split('T')[0];
+    const todayStr = getLocalDateString();
 
-    return childLogs.find(log =>
-      log.child_id === activeChildId &&
-      log.task_id === taskId &&
-      log.completed_at.startsWith(today)
-    );
+    return childLogs.find(log => {
+      if (log.child_id !== activeChildId || log.task_id !== taskId) return false;
+
+      const logDate = new Date(log.completed_at);
+      const logDateStr = getLocalDateString(logDate);
+      return logDateStr === todayStr;
+    });
   };
 
   // Filter and Sort Tasks
@@ -47,13 +50,14 @@ const ChildDashboard = () => {
       }
 
       if (filter === 'daily') {
-        // Show Recurring tasks that are scheduled for TODAY
+        // Show Recurring tasks that are scheduled for TODAY (Local Time)
         if (task.recurrence_rule === 'Once') return false;
 
         if (task.recurrence_rule) {
           const options = parseRRule(task.recurrence_rule);
           const baseDate = new Date(task.created_at || new Date());
-          const today = new Date();
+          // Use getTodayLocalStart() to ensure we check against local midnight
+          const today = getTodayLocalStart();
           return isDateValid(today, options, baseDate);
         }
         return false;
@@ -65,20 +69,44 @@ const ChildDashboard = () => {
 
       // Filter out tasks that are not due yet (if next_due_date is set and in future)
       if (task.next_due_date) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const today = getTodayLocalStart();
         const dueDate = new Date(task.next_due_date);
-        dueDate.setHours(0, 0, 0, 0);
+        // Ensure dueDate is compared as local date 00:00
+        const localDueDate = getLocalStartOfDay(dueDate);
 
-        if (dueDate > today) return false;
+        if (localDueDate > today) return false;
       }
 
       return true;
     }).sort((a, b) => {
-      // Sort: Pending/Due first, then Completed/Verified
-      // But we also have "due today" logic.
-      // For "All" view, we might want to see everything.
-      // Let's keep simple date sort for now.
+      // Sort Priority:
+      // 1. Not Started (No Log)
+      // 2. Pending (PENDING, PENDING_EXCUSE)
+      // 3. Completed (VERIFIED, EXCUSED, REJECTED)
+
+      const logA = getTodayLog(a.id);
+      const logB = getTodayLog(b.id);
+
+      const getStatusWeight = (log: typeof logA) => {
+        if (!log) return 0; // Not started
+        if (log.status === 'PENDING' || log.status === 'PENDING_EXCUSE') return 1;
+
+        // Completed Status Sorting: Verified > Rejected > Excused
+        if (log.status === 'VERIFIED') return 2;
+        if (log.status === 'REJECTED') return 3;
+        if (log.status === 'EXCUSED') return 4;
+
+        return 5; // Fallback for any other status (e.g. FAILED)
+      };
+
+      const weightA = getStatusWeight(logA);
+      const weightB = getStatusWeight(logB);
+
+      if (weightA !== weightB) {
+        return weightA - weightB;
+      }
+
+      // Secondary Sort: Created Date (Newest First)
       const dateA = new Date(a.created_at || 0).getTime();
       const dateB = new Date(b.created_at || 0).getTime();
       return dateB - dateA;

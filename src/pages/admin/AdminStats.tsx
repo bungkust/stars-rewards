@@ -34,7 +34,36 @@ const AdminStats = () => {
       date: log.completed_at,
       child_id: log.child_id
     }))
-  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  ].sort((a, b) => {
+    // Sort Priority:
+    // 1. Approve (TASK_VERIFIED)
+    // 2. Manual Add (MANUAL_ADJ > 0)
+    // 3. Reduction (REWARD_REDEEMED or MANUAL_ADJ < 0)
+    // 4. Rejected (REJECTED or FAILED)
+    // 5. Excused (EXCUSED)
+
+    const getWeight = (item: typeof a) => {
+      if (item.type === 'transaction') {
+        const tx = item.data;
+        if (tx.type === 'TASK_VERIFIED') return 1;
+        if (tx.type === 'MANUAL_ADJ' && tx.amount > 0) return 2;
+        if (tx.amount < 0) return 3; // Reduction (Redeem or Penalty)
+        return 6; // Fallback
+      } else {
+        const log = item.data;
+        if (log.status === 'REJECTED' || log.status === 'FAILED') return 4;
+        if (log.status === 'EXCUSED') return 5;
+        return 6; // Fallback
+      }
+    };
+
+    const weightA = getWeight(a);
+    const weightB = getWeight(b);
+
+    if (weightA !== weightB) return weightA - weightB;
+
+    return new Date(b.date).getTime() - new Date(a.date).getTime();
+  });
 
   const filteredHistory = combinedHistory.filter(item => {
     // 1. Child Filter

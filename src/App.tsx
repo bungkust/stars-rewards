@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 // Main App Component
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { useAppStore } from './store/useAppStore';
 
@@ -60,7 +61,23 @@ function App() {
       StatusBar.setBackgroundColor({ color: '#F0F9FF' }).catch(() => { }); // Light blue to match app theme
       StatusBar.setStyle({ style: Style.Light }).catch(() => { }); // Dark icons for light background
     }
-  }, [activeChildId, isAdminMode, needsOnboarding, isAuthenticated, isCheckingAuth]);
+
+    // Listen for App Resume (Foreground)
+    // This ensures we re-check daily missions if the app was left open overnight
+    const setupAppListener = async () => {
+      await CapacitorApp.addListener('appStateChange', ({ isActive }) => {
+        if (isActive && isAuthenticated) {
+          console.log('App resumed, refreshing data...');
+          refreshData();
+        }
+      });
+    };
+    setupAppListener();
+
+    return () => {
+      CapacitorApp.removeAllListeners();
+    };
+  }, [activeChildId, isAdminMode, needsOnboarding, isAuthenticated, isCheckingAuth, refreshData]);
 
   // Fetch Data on Mount if Authenticated
   useEffect(() => {
@@ -74,10 +91,11 @@ function App() {
     setIsChildSelectorOpen(false);
   };
 
-  if (isCheckingAuth) {
+  if (isCheckingAuth || (isAuthenticated && useAppStore.getState().isLoading)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-base-100">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-base-100 gap-4">
         <span className="loading loading-spinner loading-lg text-primary"></span>
+        <p className="text-neutral/60 font-medium animate-pulse">Syncing Daily Missions...</p>
       </div>
     );
   }
