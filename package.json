@@ -29,6 +29,7 @@
     "@capacitor/status-bar": "^7.0.3",
     "@emotion/is-prop-valid": "^1.4.0",
     "@headlessui/react": "^2.2.9",
+    "@phosphor-icons/react": "^2.1.10",
     "daisyui": "^4.12.23",
     "framer-motion": "^12.23.24",
     "gapi-script": "^1.2.0",
