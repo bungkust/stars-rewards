@@ -81,7 +81,7 @@ const FamilySetup = () => {
 
           <div className="form-control w-full">
             <label className="label">
-              <span className="label-text font-bold">Your Name (Admin)</span>
+              <span className="label-text font-bold">Your Name</span>
             </label>
             <input
               type="text"
@@ -96,7 +96,7 @@ const FamilySetup = () => {
           <div className="flex gap-4">
             <div className="form-control w-1/2">
               <label className="label">
-                <span className="label-text font-bold">Create Admin PIN</span>
+                <span className="label-text font-bold">Create PIN</span>
               </label>
               <input
                 type="password"
