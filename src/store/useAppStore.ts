@@ -740,7 +740,7 @@ export const useAppStore = create<AppState>()(
           startDate = new Date(lastMissedCheckDate);
           // Fix: Ensure startDate is treated as local 00:00
           startDate = getLocalStartOfDay(startDate);
-          startDate.setDate(startDate.getDate() + 1); // Start from day AFTER last check
+          // startDate.setDate(startDate.getDate() + 1); // REMOVED: We need to check the last check date itself because it only checked up to the day before.
         } else {
           startDate = new Date(todayDate);
           startDate.setDate(startDate.getDate() - 1);
