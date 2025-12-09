@@ -26,6 +26,8 @@ export interface Task {
   created_at?: string;
   assigned_to: string[];
   next_due_date?: string;
+  current_streak?: number;
+  best_streak?: number;
 }
 
 export interface Reward {
@@ -49,6 +51,7 @@ export interface ChildTaskLog {
   notes?: string;
   parentDecisionDate?: string | null;
   completed_at: string;
+  verified_at?: string;
 }
 
 export interface CoinTransaction {

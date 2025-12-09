@@ -497,7 +497,27 @@ export const useAppStore = create<AppState>()(
           const success = await dataService.approveExemption(logId);
           if (!success) throw new Error('Failed to approve exemption');
 
+          // Update Streak Logic (Excused counts as keeping the streak alive)
+          const { tasks, childLogs } = get();
+          const log = childLogs.find(l => l.id === logId);
+          let updatedTasks = tasks;
+
+          if (log) {
+            updatedTasks = tasks.map(t => {
+              if (t.id === log.task_id) {
+                // We increment streak for excused as well, to encourage honesty
+                const currentStreak = (t.current_streak || 0) + 1;
+                const bestStreak = Math.max(t.best_streak || 0, currentStreak);
+
+                dataService.updateTask(t.id, { current_streak: currentStreak, best_streak: bestStreak });
+                return { ...t, current_streak: currentStreak, best_streak: bestStreak };
+              }
+              return t;
+            });
+          }
+
           set((state) => ({
+            tasks: updatedTasks,
             childLogs: state.childLogs.map(log =>
               log.id === logId ? { ...log, status: 'EXCUSED' } : log
             )
@@ -538,8 +558,32 @@ export const useAppStore = create<AppState>()(
 
           if (!success) throw new Error('Failed to verify task');
 
+          // Update Streak Logic
+          const { tasks, childLogs } = get();
+          const log = childLogs.find(l => l.id === logId);
+          let updatedTasks = tasks;
+
+          if (log) {
+            updatedTasks = tasks.map(t => {
+              if (t.id === log.task_id) {
+                const currentStreak = (t.current_streak || 0) + 1;
+                const bestStreak = Math.max(t.best_streak || 0, currentStreak);
+
+                // Persist streak update to DB (optimistic update here, assuming dataService handles it or we need a separate call)
+                // Ideally dataService.updateTask should be called, but for now we update local state.
+                // NOTE: We should probably call updateTask in background or ensure dataService.verifyTask handles it if backend logic existed.
+                // Since we are using local storage/Supabase, we should explicitly update the task.
+                dataService.updateTask(t.id, { current_streak: currentStreak, best_streak: bestStreak });
+
+                return { ...t, current_streak: currentStreak, best_streak: bestStreak };
+              }
+              return t;
+            });
+          }
+
           // Remove from local pendingVerifications
           set((state) => ({
+            tasks: updatedTasks,
             pendingVerifications: state.pendingVerifications.filter(v => v.id !== logId),
             // Also update the child balance locally
             children: state.children.map(c =>
@@ -547,7 +591,7 @@ export const useAppStore = create<AppState>()(
             ),
             // Update the specific log in childLogs
             childLogs: state.childLogs.map(log =>
-              log.id === logId ? { ...log, status: 'VERIFIED' } : log
+              log.id === logId ? { ...log, status: 'VERIFIED', verified_at: new Date().toISOString() } : log
             ),
             // Add to transactions
             transactions: [
@@ -770,7 +814,21 @@ export const useAppStore = create<AppState>()(
         }
 
         if (newLogs.length > 0) {
+          // Reset streaks for failed tasks
+          const { tasks } = get();
+          const failedTaskIds = new Set(newLogs.map(l => l.task_id));
+
+          const updatedTasks = tasks.map(t => {
+            if (failedTaskIds.has(t.id)) {
+              // Reset streak to 0
+              dataService.updateTask(t.id, { current_streak: 0 });
+              return { ...t, current_streak: 0 };
+            }
+            return t;
+          });
+
           set(state => ({
+            tasks: updatedTasks,
             childLogs: [...state.childLogs, ...newLogs].sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime())
           }));
         }
