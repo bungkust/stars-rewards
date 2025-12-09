@@ -852,9 +852,7 @@ export const useAppStore = create<AppState>()(
       },
 
       resetApp: async () => {
-        // Destructive reset: Clear everything
-        localStorage.removeItem('stars-rewards-storage');
-
+        // 1. Reset State (triggers persist write of empty state)
         set({
           userProfile: null,
           activeChildId: null,
@@ -869,7 +867,17 @@ export const useAppStore = create<AppState>()(
           onboardingStep: 'family-setup'
         });
 
-        window.location.reload();
+        // 2. Clear Storage & Redirect (async to ensure state updates propagate)
+        setTimeout(() => {
+          try {
+            localStorage.removeItem('stars-rewards-storage');
+            // Force hard redirect to root
+            window.location.replace('/');
+          } catch (e) {
+            console.error('Error clearing storage:', e);
+            window.location.reload();
+          }
+        }, 100);
       },
 
       importData: async (data) => {
