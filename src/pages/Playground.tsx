@@ -410,6 +410,36 @@ const Playground = () => {
                     </section>
                 </StaggerItem>
 
+                {/* Section F: App Assets */}
+                <StaggerItem>
+                    <section>
+                        <h2 className="text-2xl font-bold mb-4 text-gray-800 border-b pb-2">F. App Assets (Android 15)</h2>
+                        <div className="space-y-6">
+                            <div>
+                                <h3 className="text-lg font-semibold mb-2">App Icon</h3>
+                                <div className="flex items-center gap-4">
+                                    <div className="flex flex-col items-center">
+                                        <img src="/assets-preview/icon.png" alt="App Icon" className="w-24 h-24 rounded-2xl shadow-lg" />
+                                        <span className="text-xs text-gray-500 mt-2">Original (1024x1024)</span>
+                                    </div>
+                                    <div className="flex flex-col items-center">
+                                        <img src="/assets-preview/icon.png" alt="App Icon Small" className="w-12 h-12 rounded-xl shadow-md" />
+                                        <span className="text-xs text-gray-500 mt-2">Small</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 className="text-lg font-semibold mb-2">Splash Screen</h3>
+                                <div className="border rounded-lg overflow-hidden shadow-sm inline-block">
+                                    <img src="/assets-preview/splash.png" alt="Splash Screen" className="w-64 h-auto" />
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">Splash Screen (2732x2732)</p>
+                            </div>
+                        </div>
+                    </section>
+                </StaggerItem>
+
             </StaggerContainer>
         </div>
     );
