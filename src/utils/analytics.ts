@@ -222,6 +222,12 @@ export const getSuccessRatio = (
     // So `isHandled` check above handles them correctly (returns true).
     // So `todo` calculated above excludes pendingReview. Correct.
 
+    // User Request: Only count 'todo' for 'today' filter.
+    // For 'week' and 'month', do not include 'todo' in the stats.
+    if (filter !== 'today') {
+        todo = 0;
+    }
+
     // 5. Calculate Rate
     // Rate = Verified / (Total Activity + Remaining Expected)
     const processedCount = verified + failed + excused + pendingReview;

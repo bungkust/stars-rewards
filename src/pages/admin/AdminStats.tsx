@@ -161,7 +161,7 @@ const AdminStats = () => {
     { name: 'Failed', value: successMetrics.failed, color: '#F87171' }, // error
     { name: 'Excused', value: successMetrics.excused, color: '#FBBF24' }, // warning
     { name: 'Review', value: successMetrics.pendingReview, color: '#60A5FA' }, // blue-400
-    { name: 'To Do', value: successMetrics.todo, color: '#E5E7EB' } // base-200
+    ...(timeFilter === 'today' ? [{ name: 'To Do', value: successMetrics.todo, color: '#E5E7EB' }] : []) // base-200
   ];
 
   if (isLoading) {
@@ -290,10 +290,12 @@ const AdminStats = () => {
                 <div className="w-2 h-2 rounded-full bg-blue-400"></div>
                 <span className="text-neutral/60">Review ({successMetrics.pendingReview})</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-base-200"></div>
-                <span className="text-neutral/60">To Do ({successMetrics.todo})</span>
-              </div>
+              {timeFilter === 'today' && (
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-base-200"></div>
+                  <span className="text-neutral/60">To Do ({successMetrics.todo})</span>
+                </div>
+              )}
             </div>
           </div>
         </AppCard>
