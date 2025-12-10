@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
-import { FaArrowLeft, FaGamepad, FaIceCream, FaTicketAlt, FaGift, FaChevronDown, FaCheck } from 'react-icons/fa';
+import { FaArrowLeft, FaGamepad, FaIceCream, FaTicketAlt, FaGift, FaChevronDown, FaCheck, FaInfinity, FaCheckCircle, FaTrophy, FaPizzaSlice, FaBicycle, FaBook, FaPalette } from 'react-icons/fa';
 import { AlertModal } from '../../components/design-system';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
 
@@ -10,6 +10,10 @@ const ICONS = [
   { id: 'treat', icon: FaIceCream, label: 'Treat' },
   { id: 'event', icon: FaTicketAlt, label: 'Event' },
   { id: 'gift', icon: FaGift, label: 'Gift' },
+  { id: 'food', icon: FaPizzaSlice, label: 'Food' },
+  { id: 'activity', icon: FaBicycle, label: 'Activity' },
+  { id: 'book', icon: FaBook, label: 'Book' },
+  { id: 'art', icon: FaPalette, label: 'Art' },
 ];
 
 const AdminRewardForm = () => {
@@ -100,71 +104,80 @@ const AdminRewardForm = () => {
 
         <div className="form-control w-full">
           <label className="label">
-            <span className="label-text font-bold">Cost (Stars)</span>
+            <span className="label-text font-bold text-gray-500 uppercase text-xs tracking-wider">Reward Cost</span>
           </label>
-          <div className="flex items-center gap-4">
+          <div className="grid grid-cols-4 gap-2 mb-3">
+            {[10, 20, 50, 100].map((val) => (
+              <button
+                key={val}
+                type="button"
+                onClick={() => setCost(val)}
+                className={`btn btn-sm ${cost === val ? 'btn-primary' : 'btn-ghost bg-base-200'}`}
+              >
+                {val}
+              </button>
+            ))}
+          </div>
+          <div className="relative">
             <input
               type="number"
-              className="input input-bordered flex-1 rounded-xl text-center font-bold text-lg"
+              className="input input-bordered w-full rounded-xl pl-12 font-bold text-lg"
               value={cost}
               onChange={(e) => setCost(Number(e.target.value))}
               min={0}
             />
-            <button type="button" onClick={() => handleCostAdjust(1)} className="btn btn-circle btn-sm bg-base-200">+1</button>
-            <button type="button" onClick={() => handleCostAdjust(10)} className="btn btn-circle btn-sm bg-base-200">+10</button>
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+              <span className="text-xs font-bold">STAR</span>
+            </div>
           </div>
           <label className="label">
-            <span className="label-text-alt text-gray-500">Set to 0 for Milestone Rewards (Claimable for free once unlocked)</span>
+            <span className="label-text-alt text-gray-500">Set to 0 for free rewards</span>
           </label>
         </div>
 
         <div className="form-control w-full">
           <label className="label">
-            <span className="label-text font-bold">Reward Type</span>
+            <span className="label-text font-bold text-gray-500 uppercase text-xs tracking-wider">Reward Type</span>
           </label>
-          <div className="flex flex-col gap-3">
-            <div className="flex gap-4">
-              <label className="label cursor-pointer justify-start gap-2 border rounded-xl p-3 flex-1 hover:bg-base-200 transition-colors">
-                <input
-                  type="radio"
-                  name="type"
-                  className="radio radio-primary"
-                  checked={type === 'UNLIMITED'}
-                  onChange={() => setType('UNLIMITED')}
-                />
-                <div className="flex flex-col">
-                  <span className="label-text font-bold">Unlimited</span>
-                  <span className="text-xs text-gray-500">Can be redeemed multiple times</span>
-                </div>
-              </label>
-              <label className="label cursor-pointer justify-start gap-2 border rounded-xl p-3 flex-1 hover:bg-base-200 transition-colors">
-                <input
-                  type="radio"
-                  name="type"
-                  className="radio radio-primary"
-                  checked={type === 'ONE_TIME'}
-                  onChange={() => setType('ONE_TIME')}
-                />
-                <div className="flex flex-col">
-                  <span className="label-text font-bold">One-time</span>
-                  <span className="text-xs text-gray-500">Can be redeemed only once</span>
-                </div>
-              </label>
-            </div>
+          <div className="grid grid-cols-3 gap-3">
+            <button
+              type="button"
+              onClick={() => setType('UNLIMITED')}
+              className={`relative flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${type === 'UNLIMITED'
+                ? 'border-primary bg-primary/5 shadow-md'
+                : 'border-transparent bg-gray-50 hover:bg-gray-100'
+                }`}
+            >
+              <FaInfinity className={`text-2xl mb-2 ${type === 'UNLIMITED' ? 'text-primary' : 'text-gray-400'}`} />
+              <span className={`font-bold text-sm ${type === 'UNLIMITED' ? 'text-gray-800' : 'text-gray-500'}`}>Unlimited</span>
+              <span className="text-[10px] text-gray-400 text-center mt-1">Redeem anytime</span>
+            </button>
 
-            <label className="label cursor-pointer justify-start gap-2 border rounded-xl p-3 hover:bg-base-200 transition-colors">
-              <input
-                type="radio"
-                name="type"
-                className="radio radio-primary"
-                checked={type === 'ACCUMULATIVE'}
-                onChange={() => setType('ACCUMULATIVE')}
-              />
-              <div className="flex flex-col">
-                <span className="label-text font-bold">Milestone / Accumulative</span>
-                <span className="text-xs text-gray-500">Unlock after completing specific tasks</span>
-              </div>
-            </label>
+            <button
+              type="button"
+              onClick={() => setType('ONE_TIME')}
+              className={`relative flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${type === 'ONE_TIME'
+                ? 'border-primary bg-primary/5 shadow-md'
+                : 'border-transparent bg-gray-50 hover:bg-gray-100'
+                }`}
+            >
+              <FaCheckCircle className={`text-2xl mb-2 ${type === 'ONE_TIME' ? 'text-primary' : 'text-gray-400'}`} />
+              <span className={`font-bold text-sm ${type === 'ONE_TIME' ? 'text-gray-800' : 'text-gray-500'}`}>One-time</span>
+              <span className="text-[10px] text-gray-400 text-center mt-1">Single use only</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setType('ACCUMULATIVE')}
+              className={`relative flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${type === 'ACCUMULATIVE'
+                ? 'border-primary bg-primary/5 shadow-md'
+                : 'border-transparent bg-gray-50 hover:bg-gray-100'
+                }`}
+            >
+              <FaTrophy className={`text-2xl mb-2 ${type === 'ACCUMULATIVE' ? 'text-primary' : 'text-gray-400'}`} />
+              <span className={`font-bold text-sm ${type === 'ACCUMULATIVE' ? 'text-gray-800' : 'text-gray-500'}`}>Milestone</span>
+              <span className="text-[10px] text-gray-400 text-center mt-1">Unlock by tasks</span>
+            </button>
           </div>
         </div>
 
@@ -237,18 +250,21 @@ const AdminRewardForm = () => {
 
         <div className="form-control w-full">
           <label className="label">
-            <span className="label-text font-bold">Icon Category</span>
+            <span className="label-text font-bold text-gray-500 uppercase text-xs tracking-wider">Icon Category</span>
           </label>
-          <div className="flex gap-4 overflow-x-auto pb-2">
+          <div className="grid grid-cols-4 gap-3">
             {ICONS.map((item) => (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => setSelectedIcon(item.id)}
-                className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all min-w-[80px] ${selectedIcon === item.id ? 'border-primary bg-blue-50' : 'border-transparent bg-base-100'}`}
+                className={`flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border-2 transition-all aspect-square ${selectedIcon === item.id
+                  ? 'border-primary bg-primary/5 text-primary shadow-sm'
+                  : 'border-transparent bg-gray-50 hover:bg-gray-100 text-gray-400'
+                  }`}
               >
-                <item.icon className={`w-8 h-8 ${selectedIcon === item.id ? 'text-primary' : 'text-gray-400'}`} />
-                <span className="text-xs font-medium text-gray-600">{item.label}</span>
+                <item.icon className="w-6 h-6" />
+                <span className="text-[10px] font-bold uppercase tracking-wide">{item.label}</span>
               </button>
             ))}
           </div>

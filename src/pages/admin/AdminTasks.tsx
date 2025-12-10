@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaPlus, FaTasks, FaPencilAlt, FaTrash } from 'react-icons/fa';
+import { FaPlus, FaTasks, FaPencilAlt, FaTrash, FaBolt, FaRedo, FaCalendarWeek, FaCalendarAlt, FaClock } from 'react-icons/fa';
 import { WarningCTAButton } from '../../components/design-system/WarningCTAButton';
 import { AppCard } from '../../components/design-system/AppCard';
 import { H1Header } from '../../components/design-system/H1Header';
@@ -61,6 +61,16 @@ const AdminTasks = () => {
     }
   };
 
+  const getTaskIcon = (rule: string) => {
+    switch (rule) {
+      case 'Once': return FaBolt;
+      case 'Daily': return FaRedo;
+      case 'Weekly': return FaCalendarWeek;
+      case 'Monthly': return FaCalendarAlt;
+      default: return FaClock;
+    }
+  };
+
   return (
     <div className="relative min-h-full pb-20 flex flex-col gap-6">
       <div className="flex justify-between items-center">
@@ -94,8 +104,13 @@ const AdminTasks = () => {
         ) : (
           filteredTasks.map((task) => (
             <AppCard key={task.id} className="flex flex-row items-center gap-4 !p-4">
-              <div className="bg-base-200 p-3 rounded-lg">
-                <IconWrapper icon={FaTasks} className="text-neutral/50" />
+              <div className={`p-3 rounded-lg ${task.recurrence_rule === 'Once' ? 'bg-accent/10 text-accent' :
+                task.recurrence_rule === 'Daily' ? 'bg-primary/10 text-primary' :
+                  task.recurrence_rule === 'Weekly' ? 'bg-secondary/10 text-secondary' :
+                    task.recurrence_rule === 'Monthly' ? 'bg-info/10 text-info' :
+                      'bg-base-200 text-neutral/50'
+                }`}>
+                <IconWrapper icon={getTaskIcon(task.recurrence_rule || 'Once')} className="" />
               </div>
               <div className="flex-1">
                 <h3 className="font-bold text-neutral">{task.name}</h3>

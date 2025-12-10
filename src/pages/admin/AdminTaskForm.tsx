@@ -9,11 +9,12 @@ import type { RecurrenceOptions } from '../../utils/recurrence';
 
 
 const DIFFICULTY_PRESETS = [
-  { label: 'MILESTONE', value: 0, desc: 'No Star Reward (Trigger for Milestone)', color: 'bg-gradient-to-br from-gray-50 to-gray-100 text-gray-600 border-gray-200' },
-  { label: 'EASY', value: 5, desc: 'Quick daily win (e.g., Brush teeth)', color: 'bg-gradient-to-br from-green-50 to-green-100 text-green-600 border-green-200' },
-  { label: 'MEDIUM', value: 10, desc: 'Daily responsibility (e.g., Make bed)', color: 'bg-gradient-to-br from-blue-50 to-blue-100 text-blue-600 border-blue-200' },
-  { label: 'HARD', value: 15, desc: 'Habit formation (e.g., Practice music)', color: 'bg-gradient-to-br from-purple-50 to-purple-100 text-purple-600 border-purple-200' },
-  { label: 'SPECIAL', value: 25, desc: 'One-off project (e.g., Wash car)', color: 'bg-gradient-to-br from-amber-50 to-amber-100 text-amber-600 border-amber-200' },
+  { label: 'MILESTONE', value: 0, desc: 'No Star Reward (Trigger for Milestone)', color: 'bg-gray-50 text-gray-600 border-gray-200' },
+  { label: 'EASY', value: 5, desc: 'Quick daily win (e.g., Brush teeth)', color: 'bg-green-50 text-green-600 border-green-200' },
+  { label: 'MEDIUM', value: 10, desc: 'Daily responsibility (e.g., Make bed)', color: 'bg-blue-50 text-blue-600 border-blue-200' },
+  { label: 'HARD', value: 15, desc: 'Habit formation (e.g., Practice music)', color: 'bg-purple-50 text-purple-600 border-purple-200' },
+  { label: 'SPECIAL', value: 25, desc: 'One-off project (e.g., Wash car)', color: 'bg-amber-50 text-amber-600 border-amber-200' },
+  { label: 'EPIC', value: 50, desc: 'Major achievement (e.g., Good grades)', color: 'bg-rose-50 text-rose-600 border-rose-200' },
 ];
 
 const AdminTaskForm = () => {
@@ -135,21 +136,35 @@ const AdminTaskForm = () => {
 
         <div className="form-control w-full">
           <label className="label">
-            <span className="label-text font-bold">Difficulty & Reward Guide</span>
+            <span className="label-text font-bold text-gray-500 uppercase text-xs tracking-wider">Suggested Rewards</span>
           </label>
-          <div className="grid grid-cols-2 gap-2 mb-2">
+
+          <div className="grid grid-cols-3 gap-2">
             {DIFFICULTY_PRESETS.map((preset) => (
               <button
                 key={preset.label}
                 type="button"
                 onClick={() => setReward(preset.value)}
-                className={`flex flex-col items-start p-3 rounded-xl border text-left transition-all ${preset.color} ${reward === preset.value ? 'ring-2 ring-offset-1 ring-primary' : 'hover:brightness-95'}`}
+                className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all duration-200 ${reward === preset.value
+                  ? `border-current ${preset.color.split(' ')[1]} bg-white shadow-sm ring-1 ring-current`
+                  : 'border-transparent bg-gray-50 hover:bg-gray-100 text-gray-400'
+                  }`}
               >
-                <span className="font-bold text-xs">{preset.label}</span>
-                <span className="text-lg font-extrabold">{preset.value} Stars</span>
-                <span className="text-[10px] opacity-80 leading-tight mt-1">{preset.desc}</span>
+                <span className={`text-[10px] font-bold uppercase tracking-wider mb-0.5 ${reward === preset.value ? 'text-gray-800' : 'text-gray-500'}`}>
+                  {preset.label}
+                </span>
+                <span className={`text-lg font-black ${reward === preset.value ? 'text-primary' : 'text-gray-300'}`}>
+                  {preset.value}
+                </span>
               </button>
             ))}
+          </div>
+
+          {/* Selected Description Helper */}
+          <div className="min-h-[20px] mt-2 text-center">
+            <p className="text-xs text-gray-400 font-medium transition-all">
+              {DIFFICULTY_PRESETS.find(p => p.value === reward)?.desc || 'Custom reward amount'}
+            </p>
           </div>
         </div>
 
