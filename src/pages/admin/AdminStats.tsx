@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
-import { FaChartLine, FaCheckCircle, FaGift, FaSlidersH, FaTimesCircle, FaChild, FaTrophy, FaExclamationTriangle, FaLightbulb, FaPiggyBank, FaWallet, FaBalanceScale, FaTimes } from 'react-icons/fa';
+import { FaChartLine, FaCheckCircle, FaGift, FaSlidersH, FaTimesCircle, FaChild, FaTrophy, FaExclamationTriangle, FaLightbulb, FaTimes } from 'react-icons/fa';
 import { AppCard, H1Header, IconWrapper, ToggleButton } from '../../components/design-system';
 import { useAppStore } from '../../store/useAppStore';
-import { calculateCoinMetrics, getSuccessRatio, getTopTasks, getExceptionRate, getRedemptionRatio, getRecommendations } from '../../utils/analytics';
+import { calculateCoinMetrics, getSuccessRatio, getTopTasks, getRecommendations } from '../../utils/analytics';
 import type { TimeFilter } from '../../utils/analytics';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
@@ -80,8 +80,6 @@ const AdminStats = () => {
   const successMetrics = useMemo(() => getSuccessRatio(filteredLogs, tasks, children, timeFilter, selectedChildId), [filteredLogs, tasks, children, timeFilter, selectedChildId]);
   const topSuccessTasks = useMemo(() => getTopTasks(filteredLogs, tasks, 'success'), [filteredLogs, tasks]);
   const topFailTasks = useMemo(() => getTopTasks(filteredLogs, tasks, 'fail'), [filteredLogs, tasks]);
-  const exceptionMetrics = useMemo(() => getExceptionRate(filteredLogs), [filteredLogs]);
-  const redemptionMetrics = useMemo(() => getRedemptionRatio(filteredTransactions), [filteredTransactions]);
   const rawRecommendations = useMemo(() => getRecommendations(filteredLogs, tasks), [filteredLogs, tasks]);
 
   const recommendations = useMemo(() =>
@@ -162,7 +160,8 @@ const AdminStats = () => {
     { name: 'Verified', value: successMetrics.verified, color: '#4ADE80' }, // success
     { name: 'Failed', value: successMetrics.failed, color: '#F87171' }, // error
     { name: 'Excused', value: successMetrics.excused, color: '#FBBF24' }, // warning
-    { name: 'Pending', value: successMetrics.pending, color: '#E5E7EB' } // base-200
+    { name: 'Review', value: successMetrics.pendingReview, color: '#60A5FA' }, // blue-400
+    { name: 'To Do', value: successMetrics.todo, color: '#E5E7EB' } // base-200
   ];
 
   if (isLoading) {
@@ -288,31 +287,18 @@ const AdminStats = () => {
                 <span className="text-neutral/60">Excused ({successMetrics.excused})</span>
               </div>
               <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                <span className="text-neutral/60">Review ({successMetrics.pendingReview})</span>
+              </div>
+              <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-base-200"></div>
-                <span className="text-neutral/60">Pending ({successMetrics.pending})</span>
+                <span className="text-neutral/60">To Do ({successMetrics.todo})</span>
               </div>
             </div>
           </div>
         </AppCard>
 
-        {/* M6: Redemption Ratio (Saver vs Spender) */}
-        <AppCard>
-          <div className="flex items-center gap-2 mb-2">
-            <div className={`p - 2 rounded - full ${redemptionMetrics.type === 'Saver' ? 'bg-success/10 text-success' : redemptionMetrics.type === 'Spender' ? 'bg-warning/10 text-warning' : 'bg-info/10 text-info'} `}>
-              {redemptionMetrics.type === 'Saver' ? <FaPiggyBank className="w-4 h-4" /> : redemptionMetrics.type === 'Spender' ? <FaWallet className="w-4 h-4" /> : <FaBalanceScale className="w-4 h-4" />}
-            </div>
-            <h3 className="font-bold text-neutral">Spending Habit</h3>
-          </div>
-          <div className="flex items-end gap-2">
-            <span className="text-2xl font-bold text-neutral">{redemptionMetrics.type}</span>
-          </div>
-          <div className="w-full bg-base-200 rounded-full h-2.5 mt-3 mb-1">
-            <div className={`bg - primary h - 2.5 rounded - full`} style={{ width: `${Math.min(100, redemptionMetrics.ratio)}% ` }}></div>
-          </div>
-          <p className="text-xs text-neutral/40">
-            Spends {redemptionMetrics.ratio}% of earnings.
-          </p>
-        </AppCard>
+
       </div>
 
       {/* M4: Top Tasks */}
@@ -321,7 +307,7 @@ const AdminStats = () => {
         <AppCard className="bg-success/5 border-success/10">
           <div className="flex items-center gap-2 mb-3">
             <FaTrophy className="text-success w-4 h-4" />
-            <h3 className="font-bold text-neutral">Top Completed</h3>
+            <h3 className="font-bold text-neutral">Most Completed</h3>
           </div>
           {topSuccessTasks.length === 0 ? (
             <p className="text-xs text-neutral/40 italic">No data yet.</p>
@@ -330,7 +316,7 @@ const AdminStats = () => {
               {topSuccessTasks.map((t, i) => (
                 <div key={t.id} className="flex justify-between items-center text-sm">
                   <span className="text-neutral font-medium truncate flex-1">{i + 1}. {t.name}</span>
-                  <span className="font-bold text-success">{t.count}</span>
+                  <span className="font-bold text-success">{t.percentage}%</span>
                 </div>
               ))}
             </div>
@@ -341,7 +327,7 @@ const AdminStats = () => {
         <AppCard className="bg-error/5 border-error/10">
           <div className="flex items-center gap-2 mb-3">
             <FaExclamationTriangle className="text-error w-4 h-4" />
-            <h3 className="font-bold text-neutral">Needs Focus</h3>
+            <h3 className="font-bold text-neutral">Most Failed</h3>
           </div>
           {topFailTasks.length === 0 ? (
             <p className="text-xs text-neutral/40 italic">Great job! No failures.</p>
@@ -350,29 +336,14 @@ const AdminStats = () => {
               {topFailTasks.map((t, i) => (
                 <div key={t.id} className="flex justify-between items-center text-sm">
                   <span className="text-neutral font-medium truncate flex-1">{i + 1}. {t.name}</span>
-                  <span className="font-bold text-error">{t.count}</span>
+                  <span className="font-bold text-error">{t.percentage}%</span>
                 </div>
               ))}
             </div>
           )}
         </AppCard>
 
-        {/* M5: Exception Rate */}
-        <AppCard>
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-2 bg-warning/10 text-warning rounded-full">
-              <FaChild className="w-4 h-4" />
-            </div>
-            <h3 className="font-bold text-neutral">Exception Rate</h3>
-          </div>
-          <div className="flex items-end gap-2">
-            <span className="text-3xl font-bold text-neutral">{exceptionMetrics.rate}%</span>
-            <span className="text-xs text-neutral/60 mb-1">of tasks excused</span>
-          </div>
-          <p className="text-xs text-neutral/40 mt-2">
-            {exceptionMetrics.count} excused out of {exceptionMetrics.total} total tasks.
-          </p>
-        </AppCard>
+
       </div>
 
 

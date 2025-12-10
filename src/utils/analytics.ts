@@ -1,5 +1,6 @@
 import type { Task, ChildTaskLog, CoinTransaction, Child } from '../types';
 import { parseRRule, isDateValid } from './recurrence';
+import { getLocalStartOfDay } from './timeUtils';
 
 export type TimeFilter = 'today' | 'week' | 'month';
 
@@ -14,15 +15,12 @@ export interface SuccessMetrics {
     verified: number;
     failed: number;
     excused: number;
-    pending: number;
+    pendingReview: number;
+    todo: number;
     total: number;
 }
 
-interface TopTask {
-    id: string;
-    name: string;
-    count: number;
-}
+// ... (TopTask interface)
 
 interface ExceptionMetrics {
     rate: number;
@@ -55,8 +53,9 @@ export const getSuccessRatio = (
     filter: TimeFilter,
     selectedChildId: string
 ): SuccessMetrics => {
-    // 1. Calculate Total Expected (Theoretical Max)
+    // 1. Calculate Total Expected (Theoretical Max) AND To Do
     let totalExpected = 0;
+    let todo = 0;
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     let startDate = new Date(today);
@@ -70,11 +69,24 @@ export const getSuccessRatio = (
 
     const activeTasks = tasks.filter(t => t.is_active !== false);
 
-    // Iterate through each day in the range to calculate Total Expected
+    // Filter Logs for the period first
+    const startTimestamp = startDate.getTime();
+    const endTimestamp = endDate.getTime() + (24 * 60 * 60 * 1000) - 1; // End of day
+
+    const periodLogs = logs.filter(l => {
+        if (selectedChildId !== 'all' && l.child_id !== selectedChildId) return false;
+        const logTime = new Date(l.completed_at).getTime();
+        return logTime >= startTimestamp && logTime <= endTimestamp;
+    });
+
+    // Iterate through each day in the range to calculate Total Expected (Recurring Only)
     for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
         const currentDate = new Date(d);
+        const currentDateStr = getLocalStartOfDay(currentDate).toISOString().split('T')[0]; // YYYY-MM-DD
 
         activeTasks.forEach(task => {
+            if (task.recurrence_rule === 'Once') return; // Handled separately
+
             const relevantChildren = (task.assigned_to || []).filter(childId => {
                 if (selectedChildId !== 'all' && childId !== selectedChildId) return false;
                 return children.some(c => c.id === childId);
@@ -88,38 +100,135 @@ export const getSuccessRatio = (
 
                 if (isDateValid(currentDate, options, baseDate)) {
                     totalExpected += relevantChildren.length;
+
+                    // Check if this specific instance was completed/handled
+                    // We check if there is ANY log for this task on this day for each child
+                    relevantChildren.forEach(childId => {
+                        const isHandled = periodLogs.some(l => {
+                            if (l.task_id !== task.id || l.child_id !== childId) return false;
+                            // Compare dates (local YYYY-MM-DD)
+                            const logDate = new Date(l.completed_at);
+                            const logDateStr = getLocalStartOfDay(logDate).toISOString().split('T')[0];
+                            return logDateStr === currentDateStr;
+                        });
+
+                        if (!isHandled) {
+                            todo++;
+                        }
+                    });
                 }
             }
         });
     }
 
-    // 2. Filter Logs for the period
-    const startTimestamp = startDate.getTime();
-    const endTimestamp = endDate.getTime() + (24 * 60 * 60 * 1000) - 1; // End of day
+    // Handle 'Once' tasks separately
+    const todayTimestamp = today.getTime();
+    const isTodayInPeriod = todayTimestamp >= startTimestamp && todayTimestamp <= endTimestamp;
 
-    const periodLogs = logs.filter(l => {
-        if (selectedChildId !== 'all' && l.child_id !== selectedChildId) return false;
-        const logTime = new Date(l.completed_at).getTime();
-        return logTime >= startTimestamp && logTime <= endTimestamp;
+    activeTasks.forEach(task => {
+        // Handle 'Once' tasks separately (existing logic)
+        if (task.recurrence_rule === 'Once') {
+            const relevantChildren = (task.assigned_to || []).filter(childId => {
+                if (selectedChildId !== 'all' && childId !== selectedChildId) return false;
+                return children.some(c => c.id === childId);
+            });
+
+            relevantChildren.forEach(childId => {
+                // Check if logged in period
+                const log = logs.find(l => l.task_id === task.id && l.child_id === childId && ['VERIFIED', 'FAILED', 'REJECTED', 'EXCUSED'].includes(l.status));
+
+                if (log) {
+                    const logTime = new Date(log.completed_at).getTime();
+                    if (logTime >= startTimestamp && logTime <= endTimestamp) {
+                        totalExpected++;
+                        // It is handled, so not todo
+                    }
+                } else {
+                    // No log (Pending/To Do)
+                    // If period includes today, it's a To Do
+                    // BUT, we must check if it's scheduled for the future (next_due_date)
+                    if (isTodayInPeriod) {
+                        let isFuture = false;
+                        if (task.next_due_date) {
+                            const dueDate = new Date(task.next_due_date);
+                            const localDueDate = getLocalStartOfDay(dueDate);
+                            const localEndDate = getLocalStartOfDay(endDate);
+
+                            // If due date is strictly after the end of the selected period, it's not a Todo yet
+                            if (localDueDate > localEndDate) {
+                                isFuture = true;
+                            }
+                        }
+
+                        if (!isFuture) {
+                            totalExpected++;
+                            todo++;
+                        }
+                    }
+                }
+            });
+            return;
+        }
+
+        // Handle Recurring Tasks Overdue Logic
+        // If a recurring task is NOT scheduled for today (isDateValid false), 
+        // BUT it has a next_due_date <= Today, it implies it is Overdue/Catch-up.
+        // We should add it to totalExpected so it shows as "To Do".
+        if (isTodayInPeriod && task.recurrence_rule && task.recurrence_rule !== 'Once') {
+            let isOverdue = false;
+            if (task.next_due_date) {
+                const localDueDate = getLocalStartOfDay(new Date(task.next_due_date));
+                const localStartDate = getLocalStartOfDay(startDate);
+                // If due before the period started, it's an overdue carry-over
+                if (localDueDate < localStartDate) {
+                    isOverdue = true;
+                }
+            } else {
+                // If no next_due_date, assume it's active and due (legacy or immediate)
+                isOverdue = true;
+            }
+
+            if (isOverdue) {
+                const relevantChildren = (task.assigned_to || []).filter(childId => {
+                    if (selectedChildId !== 'all' && childId !== selectedChildId) return false;
+                    return children.some(c => c.id === childId);
+                });
+
+                relevantChildren.forEach(childId => {
+                    // Check if this child completed this task in the period
+                    // If they did, it's already in 'processedCount' (verified/failed/etc)
+                    // If NOT, it's a Todo
+                    const isHandled = periodLogs.some(l => l.task_id === task.id && l.child_id === childId);
+
+                    if (!isHandled) {
+                        totalExpected++;
+                        todo++;
+                    }
+                });
+            }
+        }
     });
 
     // 3. Count Statuses
     const verified = periodLogs.filter(l => l.status === 'VERIFIED').length;
     const failed = periodLogs.filter(l => l.status === 'FAILED' || l.status === 'REJECTED').length;
     const excused = periodLogs.filter(l => l.status === 'EXCUSED').length;
-    // Note: PENDING_EXCUSE is technically pending, but we can track it if needed.
-    // For now, let's treat it as pending.
+    const pendingReview = periodLogs.filter(l => l.status === 'PENDING' || l.status === 'PENDING_EXCUSE').length;
 
-    // 4. Derive Pending
-    // Pending is what's left from Total Expected after accounting for all final/semi-final states
-    // We use Math.max(0) because sometimes logs might exceed expected if logic drifts or manual entries occur
-    const processedCount = verified + failed + excused;
-    const pending = Math.max(0, totalExpected - processedCount);
+    // 4. Derive To Do
+    // Todo is calculated directly above.
+    // However, pendingReview tasks are technically "handled" (not todo), but we counted them as todo if they have no log?
+    // Wait, pendingReview tasks HAVE logs (status=PENDING).
+    // So `isHandled` check above handles them correctly (returns true).
+    // So `todo` calculated above excludes pendingReview. Correct.
 
     // 5. Calculate Rate
-    // Rate = Verified / (Total - Excused)
-    // We exclude Excused from the denominator as they are "neutral"
-    const denominator = totalExpected - excused;
+    // Rate = Verified / (Total Activity + Remaining Expected)
+    const processedCount = verified + failed + excused + pendingReview;
+    const adjustedTotal = processedCount + todo;
+
+    // Denominator is the Adjusted Total
+    const denominator = adjustedTotal;
     const rate = denominator <= 0 ? 0 : Math.round((verified / denominator) * 100);
 
     return {
@@ -127,10 +236,24 @@ export const getSuccessRatio = (
         verified,
         failed,
         excused,
-        pending,
-        total: totalExpected
+        pendingReview,
+        todo,
+        total: adjustedTotal
     };
 };
+
+interface TopTask {
+    id: string;
+    name: string;
+    count: number;
+    percentage: number;
+}
+
+// ... (ExceptionMetrics interface remains same)
+
+// ... (calculateCoinMetrics remains same)
+
+// ... (getSuccessRatio remains same)
 
 // M4: Top 3 Success / Fail
 export const getTopTasks = (
@@ -138,26 +261,47 @@ export const getTopTasks = (
     tasks: Task[],
     type: 'success' | 'fail'
 ): TopTask[] => {
-    // Filter logs based on type
+    // 1. Calculate Total Counts per Task (Denominator)
+    const totalCounts: Record<string, number> = {};
+    logs.forEach(l => {
+        totalCounts[l.task_id] = (totalCounts[l.task_id] || 0) + 1;
+    });
+
+    // 2. Filter logs based on type (Numerator)
     const targetLogs = logs.filter(l => {
         if (type === 'success') return l.status === 'VERIFIED';
-        if (type === 'fail') return l.status === 'FAILED' || l.status === 'REJECTED';
+        if (type === 'fail') {
+            // Reverted to only count actual failures as per user request ("Most Failed")
+            return ['FAILED', 'REJECTED'].includes(l.status);
+        }
         return false;
     });
 
-    // Count occurrences
+    // 3. Count occurrences
     const counts: Record<string, number> = {};
     targetLogs.forEach(l => {
         counts[l.task_id] = (counts[l.task_id] || 0) + 1;
     });
 
-    // Convert to array and sort
+    // 4. Convert to array, calculate percentage, and sort
     return Object.entries(counts)
-        .map(([id, count]) => ({
-            id,
-            name: tasks.find(t => t.id === id)?.name || 'Unknown Task',
-            count
-        }))
+        .map(([id, count]) => {
+            const total = totalCounts[id] || 0;
+            const percentage = total === 0 ? 0 : Math.round((count / total) * 100);
+            return {
+                id,
+                name: tasks.find(t => t.id === id)?.name || 'Unknown Task',
+                count,
+                percentage
+            };
+        })
+        .sort((a, b) => b.percentage - a.percentage) // Sort by percentage? Or count? Usually percentage is more meaningful for "Top" but count is good for volume. Let's stick to count for sorting but show percentage, OR user implied "Top" means highest percentage? "Top Complete" usually means most done. "Need Focus" usually means highest failure rate. 
+        // Let's sort by COUNT for now as it shows volume of activity, but display PERCENTAGE. 
+        // Actually, if a task was done 1/1 time (100%) vs 9/10 times (90%), the 9/10 is "more completed" in volume.
+        // But for "Needs Focus", 1/1 failure (100%) is worse than 1/100 failure (1%).
+        // Let's stick to sorting by COUNT (Volume) for "Top Success" and maybe PERCENTAGE for "Fail"?
+        // The user just said "pake persentase aja" (use percentage).
+        // Let's keep sorting by count (frequency) to highlight high-impact items, but display percentage.
         .sort((a, b) => b.count - a.count)
         .slice(0, 3);
 };
