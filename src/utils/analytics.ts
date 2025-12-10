@@ -219,8 +219,9 @@ export interface Recommendation {
 
 export const getRecommendations = (logs: ChildTaskLog[], tasks: Task[]): Recommendation[] => {
     const recommendations: Recommendation[] = [];
+    const now = new Date();
 
-    // 1. Check for high failure rate tasks
+    // 1. Check for high failure rate tasks (Needs Help)
     const failCounts: Record<string, number> = {};
     logs.forEach(l => {
         if (l.status === 'FAILED' || l.status === 'REJECTED') {
@@ -239,12 +240,12 @@ export const getRecommendations = (logs: ChildTaskLog[], tasks: Task[]): Recomme
         }
     });
 
-    // 2. Check for "Night Owl" behavior (tasks done late)
+    // 2. Check for "Night Owl" behavior (tasks done late: 8 PM - 4 AM)
     let nightCount = 0;
     logs.forEach(l => {
         if (l.status === 'VERIFIED') {
             const hour = new Date(l.completed_at).getHours();
-            if (hour >= 21 || hour < 6) nightCount++;
+            if (hour >= 20 || hour < 4) nightCount++;
         }
     });
 
@@ -256,7 +257,24 @@ export const getRecommendations = (logs: ChildTaskLog[], tasks: Task[]): Recomme
         });
     }
 
-    // 3. Check for high streak (Celebration)
+    // 3. Check for "Morning Bird" behavior (tasks done early: 5 AM - 9 AM)
+    let morningCount = 0;
+    logs.forEach(l => {
+        if (l.status === 'VERIFIED') {
+            const hour = new Date(l.completed_at).getHours();
+            if (hour >= 5 && hour < 9) morningCount++;
+        }
+    });
+
+    if (morningCount >= 3) {
+        recommendations.push({
+            id: 'morning-bird',
+            message: `${morningCount} tasks were completed early in the morning! Great start to the day!`,
+            type: 'success'
+        });
+    }
+
+    // 4. Check for High Streak (Celebration)
     const highStreakTask = tasks.find(t => (t.current_streak || 0) >= 7);
     if (highStreakTask) {
         recommendations.push({
@@ -265,6 +283,48 @@ export const getRecommendations = (logs: ChildTaskLog[], tasks: Task[]): Recomme
             type: 'success'
         });
     }
+
+    // 5. Consistent Performer (High Weekly Success Rate)
+    // We need a quick calc for the last 7 days
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(now.getDate() - 7);
+    const recentLogs = logs.filter(l => new Date(l.completed_at) >= oneWeekAgo);
+
+    if (recentLogs.length >= 5) { // Minimum activity threshold
+        const verifiedCount = recentLogs.filter(l => l.status === 'VERIFIED').length;
+        const totalCount = recentLogs.filter(l => ['VERIFIED', 'FAILED', 'REJECTED'].includes(l.status)).length;
+
+        if (totalCount > 0 && (verifiedCount / totalCount) >= 0.9) {
+            recommendations.push({
+                id: 'consistent-performer',
+                message: `Consistent Performer! Over 90% success rate in the last week. Keep it up!`,
+                type: 'success'
+            });
+        }
+    }
+
+    // 6. Neglected Task (Active but not completed in 7+ days)
+    // Only applies to recurring tasks that are active
+    tasks.filter(t => t.is_active !== false && t.type === 'RECURRING').forEach(task => {
+        // Find last completion
+        const taskLogs = logs.filter(l => l.task_id === task.id && l.status === 'VERIFIED');
+        if (taskLogs.length === 0) return; // Never done, maybe new
+
+        // Sort by date desc
+        taskLogs.sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime());
+        const lastDone = new Date(taskLogs[0].completed_at);
+
+        const diffTime = Math.abs(now.getTime() - lastDone.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays > 7) {
+            recommendations.push({
+                id: `neglected-${task.id}`,
+                message: `Task "${task.name}" hasn't been done in ${diffDays} days. Is it still relevant?`,
+                type: 'info'
+            });
+        }
+    });
 
     return recommendations;
 };

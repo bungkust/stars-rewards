@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { FaChartLine, FaCheckCircle, FaGift, FaSlidersH, FaTimesCircle, FaChild, FaTrophy, FaExclamationTriangle, FaLightbulb, FaPiggyBank, FaWallet, FaBalanceScale } from 'react-icons/fa';
+import { useState, useMemo, useEffect } from 'react';
+import { FaChartLine, FaCheckCircle, FaGift, FaSlidersH, FaTimesCircle, FaChild, FaTrophy, FaExclamationTriangle, FaLightbulb, FaPiggyBank, FaWallet, FaBalanceScale, FaTimes } from 'react-icons/fa';
 import { AppCard, H1Header, IconWrapper, ToggleButton } from '../../components/design-system';
 import { useAppStore } from '../../store/useAppStore';
 import { calculateCoinMetrics, getSuccessRatio, getTopTasks, getExceptionRate, getRedemptionRatio, getRecommendations } from '../../utils/analytics';
@@ -11,6 +11,39 @@ const AdminStats = () => {
   const [selectedChildId, setSelectedChildId] = useState<string>('all');
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('today');
   const [visibleTxCount, setVisibleTxCount] = useState(10);
+  const [dismissedInsights, setDismissedInsights] = useState<string[]>([]);
+
+  // Load dismissed state on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('dismissed_insights_v1');
+      if (stored) {
+        const { date, ids } = JSON.parse(stored);
+        // Simple local date check (YYYY-MM-DD)
+        const today = new Date().toLocaleDateString('en-CA');
+
+        if (date === today) {
+          setDismissedInsights(ids);
+        } else {
+          // Reset if date changed (new day = show insights again)
+          localStorage.removeItem('dismissed_insights_v1');
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load dismissed insights', e);
+    }
+  }, []);
+
+  const handleDismiss = (id: string) => {
+    const newIds = [...dismissedInsights, id];
+    setDismissedInsights(newIds);
+
+    const today = new Date().toLocaleDateString('en-CA');
+    localStorage.setItem('dismissed_insights_v1', JSON.stringify({
+      date: today,
+      ids: newIds
+    }));
+  };
 
   const handleTimeFilterChange = (filter: TimeFilter) => {
     setTimeFilter(filter);
@@ -49,7 +82,11 @@ const AdminStats = () => {
   const topFailTasks = useMemo(() => getTopTasks(filteredLogs, tasks, 'fail'), [filteredLogs, tasks]);
   const exceptionMetrics = useMemo(() => getExceptionRate(filteredLogs), [filteredLogs]);
   const redemptionMetrics = useMemo(() => getRedemptionRatio(filteredTransactions), [filteredTransactions]);
-  const recommendations = useMemo(() => getRecommendations(filteredLogs, tasks), [filteredLogs, tasks]);
+  const rawRecommendations = useMemo(() => getRecommendations(filteredLogs, tasks), [filteredLogs, tasks]);
+
+  const recommendations = useMemo(() =>
+    rawRecommendations.filter(r => !dismissedInsights.includes(r.id)),
+    [rawRecommendations, dismissedInsights]);
 
   // History List (Combined & Sorted)
   const visibleHistory = useMemo(() => {
@@ -171,8 +208,14 @@ const AdminStats = () => {
             <h3 className="font-bold text-neutral text-sm">Smart Insights</h3>
           </div>
           {recommendations.map(rec => (
-            <div key={rec.id} className={`alert ${rec.type === 'warning' ? 'alert-warning' : rec.type === 'success' ? 'alert-success' : 'alert-info'} shadow-sm text-sm py-2`}>
+            <div key={rec.id} className={`alert ${rec.type === 'warning' ? 'alert-warning' : rec.type === 'success' ? 'alert-success' : 'alert-info'} shadow-sm text-sm py-2 relative pr-8`}>
               <span>{rec.message}</span>
+              <button
+                onClick={() => handleDismiss(rec.id)}
+                className="absolute right-2 top-2 p-1 opacity-50 hover:opacity-100 transition-opacity"
+              >
+                <FaTimes className="w-3 h-3" />
+              </button>
             </div>
           ))}
         </div>
