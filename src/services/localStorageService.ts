@@ -503,5 +503,9 @@ export const localStorageService = {
             console.error('Restore failed:', error);
             return false;
         }
+    },
+
+    clearAll: async (): Promise<void> => {
+        localStorage.removeItem(STORAGE_KEY);
     }
 };

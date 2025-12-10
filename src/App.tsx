@@ -91,11 +91,11 @@ function App() {
     setIsChildSelectorOpen(false);
   };
 
-  if (isCheckingAuth || (isAuthenticated && useAppStore.getState().isLoading)) {
+  if (isCheckingAuth) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-base-100 gap-4">
         <span className="loading loading-spinner loading-lg text-primary"></span>
-        <p className="text-neutral/60 font-medium animate-pulse">Syncing Daily Missions...</p>
+        <p className="text-neutral/60 font-medium animate-pulse">Initializing...</p>
       </div>
     );
   }

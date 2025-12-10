@@ -170,5 +170,12 @@ export const dataService = {
       return { success: true };
     }
     return { success: false, error: 'Invalid backup data' };
+  },
+
+  /**
+   * Clears all data from the database.
+   */
+  clearAll: async (): Promise<void> => {
+    return localStorageService.clearAll();
   }
 };

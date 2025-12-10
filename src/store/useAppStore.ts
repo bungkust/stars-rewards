@@ -868,9 +868,14 @@ export const useAppStore = create<AppState>()(
         });
 
         // 2. Clear Storage & Redirect (async to ensure state updates propagate)
-        setTimeout(() => {
+        setTimeout(async () => {
           try {
+            // Clear the database
+            await dataService.clearAll();
+
+            // Clear the persisted store
             localStorage.removeItem('stars-rewards-storage');
+
             // Force hard redirect to root
             window.location.replace('/');
           } catch (e) {

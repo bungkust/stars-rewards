@@ -17,7 +17,7 @@ const AVATAR_OPTIONS = [
 const AddChild = () => {
   const navigate = useNavigate();
   const { addChild, setOnboardingStep, children, isLoading } = useAppStore();
-  
+
   const [name, setName] = useState('');
   const [dob, setDob] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState(AVATAR_OPTIONS[0]);
@@ -31,7 +31,7 @@ const AddChild = () => {
       birth_date: dob,
       avatar_url: selectedAvatar,
     });
-    
+
     if (error) {
       setErrorMsg('Failed to add child. Please try again.');
       return false;
@@ -42,7 +42,7 @@ const AddChild = () => {
   const handleAddAnother = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name) return;
-    
+
     const success = await saveChild();
     if (success) {
       setSuccessMsg(`Added ${name}! You can add another child below.`);
@@ -55,7 +55,7 @@ const AddChild = () => {
 
   const handleContinue = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // If form is filled, save current child first
     if (name) {
       const success = await saveChild();
@@ -63,7 +63,7 @@ const AddChild = () => {
     } else if (children.length === 0) {
       // Prevent continuing if NO children exist at all and form is empty
       setErrorMsg('Please add at least one child.');
-      return; 
+      return;
     }
 
     setOnboardingStep('first-task');
@@ -89,7 +89,7 @@ const AddChild = () => {
         )}
 
         <form className="flex flex-col gap-6">
-          
+
           {/* Avatar Selection */}
           <div className="flex flex-col items-center gap-4">
             <div className="avatar">
@@ -141,16 +141,16 @@ const AddChild = () => {
           </div>
 
           <div className="flex flex-col gap-3 mt-4">
-            <SecondaryButton 
+            <SecondaryButton
               onClick={handleAddAnother}
               className="rounded-xl"
               disabled={!name || isLoading}
             >
               <FaPlus className="mr-2" /> {isLoading ? 'Saving...' : 'Save & Add Another Child'}
             </SecondaryButton>
-            
-            <PrimaryButton 
-              onClick={handleContinue} 
+
+            <PrimaryButton
+              onClick={handleContinue}
               className="rounded-xl shadow-md text-lg font-bold"
               disabled={isLoading || (!name && children.length === 0)}
             >
