@@ -740,10 +740,11 @@ export const useAppStore = create<AppState>()(
           startDate = new Date(lastMissedCheckDate);
           // Fix: Ensure startDate is treated as local 00:00
           startDate = getLocalStartOfDay(startDate);
-          // startDate.setDate(startDate.getDate() + 1); // REMOVED: We need to check the last check date itself because it only checked up to the day before.
         } else {
+          // Fix: Look back 7 days instead of just yesterday to catch missed missions 
+          // if the user hasn't opened the app for a while or on first run after update.
           startDate = new Date(todayDate);
-          startDate.setDate(startDate.getDate() - 1);
+          startDate.setDate(startDate.getDate() - 7);
         }
 
         // End date is yesterday (we don't fail today's tasks until tomorrow)

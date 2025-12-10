@@ -9,10 +9,13 @@ interface CoinMetrics {
     net: number;
 }
 
-interface SuccessMetrics {
+export interface SuccessMetrics {
     rate: number;
-    completed: number;
-    expected: number;
+    verified: number;
+    failed: number;
+    excused: number;
+    pending: number;
+    total: number;
 }
 
 interface TopTask {
@@ -52,17 +55,8 @@ export const getSuccessRatio = (
     filter: TimeFilter,
     selectedChildId: string
 ): SuccessMetrics => {
-    // 1. Filter Logs (Completed)
-    // We only care about VERIFIED tasks for "Success"
-    const completedLogs = logs.filter(l => {
-        if (selectedChildId !== 'all' && l.child_id !== selectedChildId) return false;
-        return l.status === 'VERIFIED';
-    });
-
-    const completedCount = completedLogs.length;
-
-    // 2. Calculate Expected
-    let expectedCount = 0;
+    // 1. Calculate Total Expected (Theoretical Max)
+    let totalExpected = 0;
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     let startDate = new Date(today);
@@ -76,12 +70,11 @@ export const getSuccessRatio = (
 
     const activeTasks = tasks.filter(t => t.is_active !== false);
 
-    // Iterate through each day in the range
+    // Iterate through each day in the range to calculate Total Expected
     for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
         const currentDate = new Date(d);
 
         activeTasks.forEach(task => {
-            // Determine which children are relevant for this task AND the current filter
             const relevantChildren = (task.assigned_to || []).filter(childId => {
                 if (selectedChildId !== 'all' && childId !== selectedChildId) return false;
                 return children.some(c => c.id === childId);
@@ -89,28 +82,53 @@ export const getSuccessRatio = (
 
             if (relevantChildren.length === 0) return;
 
-            // Check if task is valid for this day
             if (task.recurrence_rule) {
                 const options = parseRRule(task.recurrence_rule);
                 const baseDate = new Date(task.created_at || new Date());
 
                 if (isDateValid(currentDate, options, baseDate)) {
-                    // If valid, it counts for EACH assigned child
-                    expectedCount += relevantChildren.length;
+                    totalExpected += relevantChildren.length;
                 }
             }
         });
     }
 
-    // Clamp expected to at least completed (in case of logic drift or bonus tasks)
-    if (expectedCount < completedCount) expectedCount = completedCount;
+    // 2. Filter Logs for the period
+    const startTimestamp = startDate.getTime();
+    const endTimestamp = endDate.getTime() + (24 * 60 * 60 * 1000) - 1; // End of day
 
-    const rate = expectedCount === 0 ? 0 : Math.round((completedCount / expectedCount) * 100);
+    const periodLogs = logs.filter(l => {
+        if (selectedChildId !== 'all' && l.child_id !== selectedChildId) return false;
+        const logTime = new Date(l.completed_at).getTime();
+        return logTime >= startTimestamp && logTime <= endTimestamp;
+    });
+
+    // 3. Count Statuses
+    const verified = periodLogs.filter(l => l.status === 'VERIFIED').length;
+    const failed = periodLogs.filter(l => l.status === 'FAILED' || l.status === 'REJECTED').length;
+    const excused = periodLogs.filter(l => l.status === 'EXCUSED').length;
+    // Note: PENDING_EXCUSE is technically pending, but we can track it if needed.
+    // For now, let's treat it as pending.
+
+    // 4. Derive Pending
+    // Pending is what's left from Total Expected after accounting for all final/semi-final states
+    // We use Math.max(0) because sometimes logs might exceed expected if logic drifts or manual entries occur
+    const processedCount = verified + failed + excused;
+    const pending = Math.max(0, totalExpected - processedCount);
+
+    // 5. Calculate Rate
+    // Rate = Verified / (Total - Excused)
+    // We exclude Excused from the denominator as they are "neutral"
+    const denominator = totalExpected - excused;
+    const rate = denominator <= 0 ? 0 : Math.round((verified / denominator) * 100);
 
     return {
         rate,
-        completed: completedCount,
-        expected: expectedCount
+        verified,
+        failed,
+        excused,
+        pending,
+        total: totalExpected
     };
 };
 

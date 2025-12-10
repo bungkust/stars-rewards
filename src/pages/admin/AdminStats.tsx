@@ -122,8 +122,10 @@ const AdminStats = () => {
 
   // Donut Chart Data
   const donutData = [
-    { name: 'Success', value: successMetrics.completed, color: '#4ADE80' }, // success
-    { name: 'Remaining', value: Math.max(0, successMetrics.expected - successMetrics.completed), color: '#E5E7EB' } // base-200
+    { name: 'Verified', value: successMetrics.verified, color: '#4ADE80' }, // success
+    { name: 'Failed', value: successMetrics.failed, color: '#F87171' }, // error
+    { name: 'Excused', value: successMetrics.excused, color: '#FBBF24' }, // warning
+    { name: 'Pending', value: successMetrics.pending, color: '#E5E7EB' } // base-200
   ];
 
   if (isLoading) {
@@ -214,29 +216,37 @@ const AdminStats = () => {
                     data={donutData}
                     innerRadius={35}
                     outerRadius={45}
-                    paddingAngle={0}
+                    paddingAngle={2}
                     dataKey="value"
                     startAngle={90}
                     endAngle={-270}
                   >
                     {donutData.map((entry, index) => (
-                      <Cell key={`cell - ${index} `} fill={entry.color} stroke="none" />
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                     ))}
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-xs font-bold text-neutral/40">{successMetrics.completed}/{successMetrics.expected}</span>
+                <span className="text-xs font-bold text-neutral/40">{successMetrics.verified}/{successMetrics.total}</span>
               </div>
             </div>
-            <div className="flex flex-col gap-1 text-sm">
+            <div className="flex flex-col gap-1 text-xs">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-success"></div>
-                <span className="text-neutral/60">Completed</span>
+                <span className="text-neutral/60">Verified ({successMetrics.verified})</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-error"></div>
+                <span className="text-neutral/60">Failed ({successMetrics.failed})</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-warning"></div>
+                <span className="text-neutral/60">Excused ({successMetrics.excused})</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-base-200"></div>
-                <span className="text-neutral/60">Remaining/Missed</span>
+                <span className="text-neutral/60">Pending ({successMetrics.pending})</span>
               </div>
             </div>
           </div>
