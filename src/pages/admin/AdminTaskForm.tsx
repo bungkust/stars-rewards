@@ -24,7 +24,7 @@ const AdminTaskForm = () => {
 
   const [title, setTitle] = useState('');
   const [reward, setReward] = useState(10);
-  const [duration, setDuration] = useState(0); // Default 0 (Optional)
+  const [expiryTime, setExpiryTime] = useState(''); // Default empty (Optional)
   const [repetition, setRepetition] = useState('Once');
   const [selectedChildId, setSelectedChildId] = useState(children[0]?.id || '');
   const [isActive, setIsActive] = useState(true);
@@ -43,6 +43,7 @@ const AdminTaskForm = () => {
       if (taskToEdit) {
         setTitle(taskToEdit.name);
         setReward(taskToEdit.reward_value);
+        setExpiryTime(taskToEdit.expiry_time || '');
         setIsActive(taskToEdit.is_active !== false);
         if (taskToEdit.assigned_to && taskToEdit.assigned_to.length > 0) {
           setSelectedChildId(taskToEdit.assigned_to[0]);
@@ -84,6 +85,7 @@ const AdminTaskForm = () => {
       type: (finalRule === 'Once' ? 'ONE_TIME' : 'RECURRING') as "ONE_TIME" | "RECURRING",
       recurrence_rule: finalRule,
       is_active: isActive,
+      expiry_time: expiryTime,
       assigned_to: [selectedChildId]
     };
 
@@ -184,18 +186,18 @@ const AdminTaskForm = () => {
 
           <div className="form-control w-full">
             <label className="label">
-              <span className="label-text font-bold">Duration (Min)</span>
+              <span className="label-text font-bold">Expired Time</span>
               <span className="label-text-alt text-gray-400">(Optional)</span>
             </label>
             <input
-              type="number"
+              type="time"
               className="input input-bordered w-full rounded-xl"
-              value={duration}
-              onChange={(e) => setDuration(Number(e.target.value))}
-              min={0}
-              step={5}
-              placeholder="0"
+              value={expiryTime}
+              onChange={(e) => setExpiryTime(e.target.value)}
             />
+            <label className="label">
+              <span className="label-text-alt text-xs text-gray-400">Task will auto-fail if not done by this time.</span>
+            </label>
           </div>
         </div>
 

@@ -131,7 +131,8 @@ export const localStorageService = {
             recurrence_rule: task.recurrence_rule,
             is_active: task.is_active !== undefined ? task.is_active : true,
             created_at: new Date().toISOString(),
-            assigned_to: task.assigned_to || []
+            assigned_to: task.assigned_to || [],
+            expiry_time: task.expiry_time
         };
         db.tasks.push(newTask);
         saveDB(db);

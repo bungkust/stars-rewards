@@ -9,6 +9,7 @@ import AvatarSelectionModal from '../../components/modals/AvatarSelectionModal';
 import TaskCompletionModal from '../../components/modals/TaskCompletionModal';
 import TaskRejectionDetailsModal from '../../components/modals/TaskRejectionDetailsModal';
 import ExemptionModal from '../../components/modals/ExemptionModal';
+import TaskDetailsModal from '../../components/modals/TaskDetailsModal';
 
 const ChildDashboard = () => {
   const { activeChildId, children, getTasksByChildId, updateChildAvatar, completeTask, isLoading, childLogs } = useAppStore();
@@ -67,6 +68,9 @@ const ChildDashboard = () => {
       const todayLog = getTodayLog(task.id);
       if (todayLog && todayLog.status === 'PENDING_EXCUSE') return false;
 
+      // Filter out FAILED tasks (they should only appear in history)
+      if (todayLog && todayLog.status === 'FAILED') return false;
+
       // Filter out tasks that are not due yet (if next_due_date is set and in future)
       if (task.next_due_date) {
         const today = getTodayLocalStart();
@@ -83,6 +87,7 @@ const ChildDashboard = () => {
       // 1. Not Started (No Log)
       // 2. Pending (PENDING, PENDING_EXCUSE)
       // 3. Completed (VERIFIED, EXCUSED, REJECTED)
+      // 4. Failed (FAILED)
 
       const logA = getTodayLog(a.id);
       const logB = getTodayLog(b.id);
@@ -95,8 +100,9 @@ const ChildDashboard = () => {
         if (log.status === 'VERIFIED') return 2;
         if (log.status === 'REJECTED') return 3;
         if (log.status === 'EXCUSED') return 4;
+        if (log.status === 'FAILED') return 5;
 
-        return 5; // Fallback for any other status (e.g. FAILED)
+        return 6; // Fallback
       };
 
       const weightA = getStatusWeight(logA);
@@ -113,6 +119,14 @@ const ChildDashboard = () => {
     });
   }, [allTasks, filter, childLogs, activeChildId]);
 
+  // DEBUG LOGS
+  console.log('[Dashboard] All Tasks:', allTasks.length);
+  console.log('[Dashboard] Filtered Tasks:', filteredTasks.length);
+  filteredTasks.forEach(t => {
+    const log = getTodayLog(t.id);
+    console.log(`[Dashboard] Task: ${t.name}, Status: ${log?.status || 'Not Started'}, Recurrence: ${t.recurrence_rule}, Expiry: ${t.expiry_time || 'None'}`);
+  });
+
   const visibleTasks = filteredTasks.slice(0, visibleCount);
   const hasMore = visibleTasks.length < filteredTasks.length;
 
@@ -122,6 +136,14 @@ const ChildDashboard = () => {
 
   const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
   const [selectedRejection, setSelectedRejection] = useState<{ taskName: string, reason: string } | null>(null);
+
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [selectedTaskDetails, setSelectedTaskDetails] = useState<any>(null);
+
+  const handleTaskClick = (task: any) => {
+    setSelectedTaskDetails(task);
+    setIsDetailsModalOpen(true);
+  };
 
   const handleAvatarSave = async (newAvatar: string) => {
     if (child) {
@@ -235,6 +257,12 @@ const ChildDashboard = () => {
         isLoading={isLoading}
       />
 
+      <TaskDetailsModal
+        isOpen={isDetailsModalOpen}
+        task={selectedTaskDetails}
+        onClose={() => setIsDetailsModalOpen(false)}
+      />
+
       {/* Today's Tasks Section */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 px-1">
@@ -286,19 +314,22 @@ const ChildDashboard = () => {
                     dragElastic={{ right: 0.2 }} // Allow pulling right
                     onDragEnd={(e, info) => handleSwipe(e, info, task)}
                     whileDrag={{ scale: 1.02 }}
-                    className={`relative card bg-white shadow-sm rounded-xl p-4 flex flex-row items-center justify-between border-l-4 ${status === 'VERIFIED' ? 'border-success' :
+                    onClick={() => handleTaskClick(task)}
+                    className={`relative card bg-white shadow-sm rounded-xl p-4 flex flex-row items-center justify-between border-l-4 cursor-pointer active:scale-95 transition-transform ${status === 'VERIFIED' ? 'border-success' :
                       status === 'REJECTED' ? 'border-error' :
-                        status === 'PENDING' ? 'border-warning' :
-                          status === 'PENDING_EXCUSE' ? 'border-warning' :
-                            status === 'EXCUSED' ? 'border-gray-300' : 'border-primary'
+                        status === 'FAILED' ? 'border-error' :
+                          status === 'PENDING' ? 'border-warning' :
+                            status === 'PENDING_EXCUSE' ? 'border-warning' :
+                              status === 'EXCUSED' ? 'border-gray-300' : 'border-primary'
                       }`}
                   >
                     <div className="flex items-center gap-3">
                       <div className={`p-3 rounded-full ${status === 'VERIFIED' ? 'bg-success/10 text-success' :
                         status === 'REJECTED' ? 'bg-error/10 text-error' :
-                          status === 'PENDING' ? 'bg-warning/10 text-warning' :
-                            status === 'PENDING_EXCUSE' ? 'bg-warning/10 text-warning' :
-                              status === 'EXCUSED' ? 'bg-neutral/10 text-neutral' : 'bg-primary/10 text-primary'
+                          status === 'FAILED' ? 'bg-error/10 text-error' :
+                            status === 'PENDING' ? 'bg-warning/10 text-warning' :
+                              status === 'PENDING_EXCUSE' ? 'bg-warning/10 text-warning' :
+                                status === 'EXCUSED' ? 'bg-neutral/10 text-neutral' : 'bg-primary/10 text-primary'
                         }`}>
                         {task.recurrence_rule === 'Once' ? <FaBolt className="w-6 h-6" /> :
                           task.recurrence_rule === 'Daily' ? <FaRedo className="w-6 h-6" /> :
@@ -326,10 +357,12 @@ const ChildDashboard = () => {
                     ) : status === 'REJECTED' ? (
                       <button
                         className="btn btn-sm btn-error btn-outline rounded-full"
-                        onClick={() => handleViewRejection(task.name, log?.rejection_reason)}
+                        onClick={(e) => { e.stopPropagation(); handleViewRejection(task.name, log?.rejection_reason); }}
                       >
                         Why?
                       </button>
+                    ) : status === 'FAILED' ? (
+                      <span className="badge badge-error text-white font-bold p-3">Failed</span>
                     ) : status === 'PENDING' ? (
                       <span className="badge badge-warning text-white font-bold p-3">Pending</span>
                     ) : status === 'PENDING_EXCUSE' ? (
@@ -339,7 +372,7 @@ const ChildDashboard = () => {
                     ) : (
                       <button
                         className="btn btn-sm btn-primary rounded-full text-white"
-                        onClick={() => handleTaskComplete(task)}
+                        onClick={(e) => { e.stopPropagation(); handleTaskComplete(task); }}
                         disabled={isLoading}
                       >
                         Done

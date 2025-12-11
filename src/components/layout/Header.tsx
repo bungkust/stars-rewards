@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { IoEllipsisVertical } from 'react-icons/io5';
+import { IoMenu } from 'react-icons/io5';
 import { useAppStore } from '../../store/useAppStore';
 
 interface HeaderProps {
@@ -74,7 +74,7 @@ const Header = ({ onParentLoginClick, onSettingsClick, onChildSelectClick }: Hea
             onClick={() => setIsMenuOpen((prev) => !prev)}
             title="More options"
           >
-            <IoEllipsisVertical className="w-6 h-6" />
+            <IoMenu className="w-6 h-6" />
           </button>
           <ul className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-white/95 backdrop-blur rounded-box border border-base-200 min-w-44">
             {isAdminMode ? (

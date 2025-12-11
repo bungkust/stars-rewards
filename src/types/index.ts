@@ -26,6 +26,7 @@ export interface Task {
   created_at?: string;
   assigned_to: string[];
   next_due_date?: string;
+  expiry_time?: string; // Format: "HH:mm"
   current_streak?: number;
   best_streak?: number;
 }

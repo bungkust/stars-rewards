@@ -60,15 +60,29 @@ const AdminStats = () => {
     if (timeFilter === 'week') startTime = today - (6 * oneDay);
     if (timeFilter === 'month') startTime = today - (29 * oneDay);
 
-    const filterItem = (dateStr: string, childId: string) => {
+    const filterItem = (dateStr: string, childId: string, isLog: boolean = false, status?: string) => {
       const date = new Date(dateStr).getTime();
+
+      // Special case: Show yesterday's failures/excused in 'Today' view
+      // This allows parents to see what happened yesterday without switching to 'Week'
+      if (timeFilter === 'today' && isLog && (status === 'FAILED' || status === 'EXCUSED')) {
+        const yesterday = today - oneDay;
+        // Check if it's exactly yesterday (or after yesterday start)
+        // We use >= yesterday because 'today' variable is start of today. 
+        // 'yesterday' variable is start of yesterday.
+        if (date >= yesterday) {
+          if (selectedChildId !== 'all' && childId !== selectedChildId) return false;
+          return true;
+        }
+      }
+
       if (date < startTime) return false;
       if (selectedChildId !== 'all' && childId !== selectedChildId) return false;
       return true;
     };
 
     const filteredTransactions = transactions.filter(t => filterItem(t.created_at, t.child_id));
-    const filteredLogs = childLogs.filter(l => filterItem(l.completed_at, l.child_id));
+    const filteredLogs = childLogs.filter(l => filterItem(l.completed_at, l.child_id, true, l.status));
 
     return { filteredTransactions, filteredLogs };
   }, [transactions, childLogs, timeFilter, selectedChildId]);
@@ -138,6 +152,29 @@ const AdminStats = () => {
 
     return combined;
   }, [filteredTransactions, filteredLogs]);
+
+  const [statusFilter, setStatusFilter] = useState<'all' | 'earned' | 'spent' | 'failed'>('all');
+
+  // Filtered History based on Status
+  const finalHistory = useMemo(() => {
+    return visibleHistory.filter(item => {
+      if (statusFilter === 'all') return true;
+
+      if (statusFilter === 'earned') {
+        return item.type === 'transaction' && item.data.amount > 0;
+      }
+
+      if (statusFilter === 'spent') {
+        return item.type === 'transaction' && item.data.amount < 0;
+      }
+
+      if (statusFilter === 'failed') {
+        return item.type === 'rejected_mission';
+      }
+
+      return true;
+    });
+  }, [visibleHistory, statusFilter]);
 
   const getChildName = (childId: string) => children.find(c => c.id === childId)?.name || 'Unknown';
 
@@ -352,13 +389,35 @@ const AdminStats = () => {
 
       {/* Transaction History */}
       <AppCard>
-        <div className="flex items-center gap-3 mb-4">
-          <IconWrapper icon={FaChartLine} />
-          <h3 className="font-bold text-lg text-neutral">Transaction History</h3>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          <div className="flex items-center gap-3">
+            <IconWrapper icon={FaChartLine} />
+            <h3 className="font-bold text-lg text-neutral">Transaction History</h3>
+          </div>
+
+          <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+            {[
+              { id: 'all', label: 'All' },
+              { id: 'earned', label: 'Earned' },
+              { id: 'spent', label: 'Spent' },
+              { id: 'failed', label: 'Failed' }
+            ].map(filter => (
+              <button
+                key={filter.id}
+                onClick={() => setStatusFilter(filter.id as any)}
+                className={`btn btn-xs sm:btn-sm rounded-full normal-case ${statusFilter === filter.id
+                  ? 'btn-primary text-white'
+                  : 'btn-ghost bg-base-200 text-neutral/60'
+                  }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="flex flex-col gap-4">
-          {visibleHistory.slice(0, visibleTxCount).map((item) => {
+          {finalHistory.slice(0, visibleTxCount).map((item) => {
             if (item.type === 'transaction') {
               const tx = item.data;
               let Icon = FaCheckCircle;
