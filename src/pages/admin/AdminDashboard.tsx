@@ -103,28 +103,36 @@ const AdminDashboard = () => {
     }
   };
 
-  const openAdjustmentModal = (child: typeof children[0]) => {
-    setSelectedChild({
-      id: child.id,
-      name: child.name,
-      balance: child.current_balance
-    });
+  const openAdjustmentModal = (child: typeof children[0] | null) => {
+    if (child) {
+      setSelectedChild({
+        id: child.id,
+        name: child.name,
+        balance: child.current_balance
+      });
+    } else {
+      setSelectedChild(null);
+    }
     setAdjustmentModalOpen(true);
   };
 
-  const handleAdjustment = async (amount: number, type: 'add' | 'deduct', reason: string) => {
-    if (!selectedChild) return;
-
+  const handleAdjustment = async (childIds: string[], amount: number, type: 'add' | 'deduct', reason: string) => {
     // If deducting, make amount negative
     const finalAmount = type === 'deduct' ? -amount : amount;
 
-    const { error } = await manualAdjustment(selectedChild.id, finalAmount, reason);
+    let hasError = false;
+    for (const childId of childIds) {
+      const { error } = await manualAdjustment(childId, finalAmount, reason);
+      if (error) hasError = true;
+    }
 
-    if (!error) {
+    if (!hasError) {
       setAdjustmentModalOpen(false);
       setSelectedChild(null);
     } else {
-      alert('Failed to update balance');
+      alert('Some adjustments failed to update');
+      setAdjustmentModalOpen(false); // Close anyway to avoid stuck state
+      setSelectedChild(null);
     }
   };
 
@@ -132,33 +140,13 @@ const AdminDashboard = () => {
     <div className="flex flex-col gap-6">
       <div className="flex justify-between items-center">
         <H1Header>Homepage</H1Header>
+        <button
+          className="btn btn-sm btn-ghost text-primary font-bold"
+          onClick={() => openAdjustmentModal(null)}
+        >
+          <FaEdit className="mr-2" /> Adjust Balance
+        </button>
       </div>
-
-      {/* Children Overview Section */}
-      <section>
-        <h2 className="text-lg font-bold text-neutral mb-3">My Children</h2>
-        <div className="grid grid-cols-2 gap-4">
-          {children.map(child => (
-            <AppCard
-              key={child.id}
-              className="!p-4 flex items-center justify-between cursor-pointer hover:bg-base-200 transition-colors active:scale-95"
-              onClick={() => openAdjustmentModal(child)}
-            >
-              <div className="flex items-center gap-4">
-                <div className="avatar">
-                  <div className="w-12 h-12 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-                    <img src={child.avatar_url} alt={child.name} />
-                  </div>
-                </div>
-                <div>
-                  <h3 className="font-bold text-neutral">{child.name}</h3>
-                  <p className="text-primary font-bold">{child.current_balance} Stars</p>
-                </div>
-              </div>
-            </AppCard>
-          ))}
-        </div>
-      </section>
 
       <RejectionReasonModal
         isOpen={rejectionModalOpen}
@@ -176,19 +164,17 @@ const AdminDashboard = () => {
         onClose={() => setSuccessModalOpen(false)}
       />
 
-      {selectedChild && (
-        <StarAdjustmentModal
-          isOpen={adjustmentModalOpen}
-          childName={selectedChild.name}
-          currentBalance={selectedChild.balance}
-          onClose={() => {
-            setAdjustmentModalOpen(false);
-            setSelectedChild(null);
-          }}
-          onConfirm={handleAdjustment}
-          isLoading={isLoading}
-        />
-      )}
+      <StarAdjustmentModal
+        isOpen={adjustmentModalOpen}
+        childrenList={children}
+        initialChildId={selectedChild?.id}
+        onClose={() => {
+          setAdjustmentModalOpen(false);
+          setSelectedChild(null);
+        }}
+        onConfirm={handleAdjustment}
+        isLoading={isLoading}
+      />
 
       <section>
         <div className="flex justify-between items-center mb-3">
