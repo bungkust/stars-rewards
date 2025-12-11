@@ -37,9 +37,7 @@ const ChildSelector = ({ onSelect, onClose }: ChildSelectorProps) => {
                     ))}
                 </div>
 
-                <PrimaryButton onClick={onClose} className="w-full">
-                    Cancel
-                </PrimaryButton>
+
             </div>
         </div>
     );
