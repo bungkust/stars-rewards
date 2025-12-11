@@ -118,6 +118,26 @@ export const localStorageService = {
         return true;
     },
 
+    deleteChild: async (childId: string): Promise<boolean> => {
+        const db = getDB();
+        const initialLength = db.children.length;
+        db.children = db.children.filter(c => c.id !== childId);
+
+        if (db.children.length !== initialLength) {
+            // Optional: Clean up assigned tasks? 
+            // For now, let's just leave them or filter them out on read if needed.
+            // But cleaner to remove childId from assigned_to arrays.
+            db.tasks = db.tasks.map(t => ({
+                ...t,
+                assigned_to: t.assigned_to ? t.assigned_to.filter(id => id !== childId) : []
+            }));
+
+            saveDB(db);
+            return true;
+        }
+        return false;
+    },
+
     // --- Tasks ---
 
     addTask: async (task: Omit<Task, 'id' | 'parent_id' | 'created_at'>): Promise<Task> => {

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 import { PrimaryButton } from '../../components/design-system/PrimaryButton';
-import { FaGamepad, FaIceCream, FaTicketAlt, FaGift, FaChevronDown, FaCheck } from 'react-icons/fa';
+import { FaGamepad, FaIceCream, FaTicketAlt, FaGift, FaChevronDown, FaCheck, FaInfinity, FaCheckCircle, FaTrophy, FaPizzaSlice, FaBicycle, FaBook, FaPalette } from 'react-icons/fa';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
 
 const ICONS = [
@@ -10,28 +10,46 @@ const ICONS = [
   { id: 'treat', icon: FaIceCream, label: 'Treat' },
   { id: 'event', icon: FaTicketAlt, label: 'Event' },
   { id: 'gift', icon: FaGift, label: 'Gift' },
+  { id: 'food', icon: FaPizzaSlice, label: 'Food' },
+  { id: 'activity', icon: FaBicycle, label: 'Activity' },
+  { id: 'book', icon: FaBook, label: 'Book' },
+  { id: 'art', icon: FaPalette, label: 'Art' },
 ];
 
 const FirstReward = () => {
   const navigate = useNavigate();
-  const { addReward, setOnboardingStep, isLoading, tasks } = useAppStore();
+  const { addReward, setOnboardingStep, isLoading, tasks, children } = useAppStore();
 
   const [name, setName] = useState('');
-  const [cost, setCost] = useState(50);
+  const [cost, setCost] = useState(10);
   const [selectedIcon, setSelectedIcon] = useState(ICONS[0].id);
   const [type, setType] = useState<'ONE_TIME' | 'UNLIMITED' | 'ACCUMULATIVE'>('UNLIMITED');
   const [requiredTaskId, setRequiredTaskId] = useState('');
   const [requiredTaskCount, setRequiredTaskCount] = useState(1);
+  const [selectedChildIds, setSelectedChildIds] = useState<string[]>([]);
   const [error, setError] = useState('');
 
-  const handleCostAdjust = (amount: number) => {
-    setCost(Math.max(0, cost + amount));
+  // Initialize selected children (select all by default for onboarding convenience)
+  useState(() => {
+    setSelectedChildIds(children.map(c => c.id));
+  });
+
+  const toggleChildSelection = (childId: string) => {
+    setSelectedChildIds(prev =>
+      prev.includes(childId)
+        ? prev.filter(id => id !== childId)
+        : [...prev, childId]
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       setError('Please enter a reward name');
+      return;
+    }
+    if (selectedChildIds.length === 0) {
+      setError('Please select at least one child');
       return;
     }
 
@@ -42,6 +60,7 @@ const FirstReward = () => {
       type,
       required_task_id: type === 'ACCUMULATIVE' ? requiredTaskId : undefined,
       required_task_count: type === 'ACCUMULATIVE' ? Number(requiredTaskCount) : undefined,
+      assigned_to: selectedChildIds,
     };
 
     const { error: rewardError } = await addReward(rewardData);
@@ -54,6 +73,8 @@ const FirstReward = () => {
     setOnboardingStep('completed');
     navigate('/');
   };
+
+  const isFormValid = name.trim().length > 0 && selectedChildIds.length > 0 && cost >= 0;
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center app-gradient p-6 py-12">
@@ -79,71 +100,80 @@ const FirstReward = () => {
 
           <div className="form-control w-full">
             <label className="label">
-              <span className="label-text font-bold">Cost (Stars)</span>
+              <span className="label-text font-bold text-gray-500 uppercase text-xs tracking-wider">Reward Cost</span>
             </label>
-            <div className="flex items-center gap-4">
+            <div className="grid grid-cols-4 gap-2 mb-3">
+              {[10, 20, 50, 100].map((val) => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => setCost(val)}
+                  className={`btn btn-sm ${cost === val ? 'btn-primary' : 'btn-ghost bg-base-200'}`}
+                >
+                  {val}
+                </button>
+              ))}
+            </div>
+            <div className="relative">
               <input
                 type="number"
-                className="input input-bordered flex-1 rounded-xl text-center font-bold text-lg"
+                className="input input-bordered w-full rounded-xl pl-12 font-bold text-lg"
                 value={cost}
                 onChange={(e) => setCost(Number(e.target.value))}
                 min={0}
               />
-              <button type="button" onClick={() => handleCostAdjust(1)} className="btn btn-circle btn-sm bg-base-200">+1</button>
-              <button type="button" onClick={() => handleCostAdjust(10)} className="btn btn-circle btn-sm bg-base-200">+10</button>
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                <span className="text-xs font-bold">STAR</span>
+              </div>
             </div>
             <label className="label">
-              <span className="label-text-alt text-gray-500">Set to 0 for Milestone Rewards</span>
+              <span className="label-text-alt text-gray-500">Set to 0 for free rewards</span>
             </label>
           </div>
 
           <div className="form-control w-full">
             <label className="label">
-              <span className="label-text font-bold">Reward Type</span>
+              <span className="label-text font-bold text-gray-500 uppercase text-xs tracking-wider">Reward Type</span>
             </label>
-            <div className="flex flex-col gap-3">
-              <div className="flex gap-4">
-                <label className="label cursor-pointer justify-start gap-2 border rounded-xl p-3 flex-1 hover:bg-base-200 transition-colors bg-white/50">
-                  <input
-                    type="radio"
-                    name="type"
-                    className="radio radio-primary"
-                    checked={type === 'UNLIMITED'}
-                    onChange={() => setType('UNLIMITED')}
-                  />
-                  <div className="flex flex-col">
-                    <span className="label-text font-bold">Unlimited</span>
-                    <span className="text-xs text-gray-500">Multiple times</span>
-                  </div>
-                </label>
-                <label className="label cursor-pointer justify-start gap-2 border rounded-xl p-3 flex-1 hover:bg-base-200 transition-colors bg-white/50">
-                  <input
-                    type="radio"
-                    name="type"
-                    className="radio radio-primary"
-                    checked={type === 'ONE_TIME'}
-                    onChange={() => setType('ONE_TIME')}
-                  />
-                  <div className="flex flex-col">
-                    <span className="label-text font-bold">One-time</span>
-                    <span className="text-xs text-gray-500">Once only</span>
-                  </div>
-                </label>
-              </div>
+            <div className="grid grid-cols-3 gap-3">
+              <button
+                type="button"
+                onClick={() => setType('UNLIMITED')}
+                className={`relative flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${type === 'UNLIMITED'
+                  ? 'border-primary bg-primary/5 shadow-md'
+                  : 'border-transparent bg-gray-50 hover:bg-gray-100'
+                  }`}
+              >
+                <FaInfinity className={`text-2xl mb-2 ${type === 'UNLIMITED' ? 'text-primary' : 'text-gray-400'}`} />
+                <span className={`font-bold text-sm ${type === 'UNLIMITED' ? 'text-gray-800' : 'text-gray-500'}`}>Unlimited</span>
+                <span className="text-[10px] text-gray-400 text-center mt-1">Redeem anytime</span>
+              </button>
 
-              <label className="label cursor-pointer justify-start gap-2 border rounded-xl p-3 hover:bg-base-200 transition-colors bg-white/50">
-                <input
-                  type="radio"
-                  name="type"
-                  className="radio radio-primary"
-                  checked={type === 'ACCUMULATIVE'}
-                  onChange={() => setType('ACCUMULATIVE')}
-                />
-                <div className="flex flex-col">
-                  <span className="label-text font-bold">Milestone / Accumulative</span>
-                  <span className="text-xs text-gray-500">Unlock after completing specific tasks</span>
-                </div>
-              </label>
+              <button
+                type="button"
+                onClick={() => setType('ONE_TIME')}
+                className={`relative flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${type === 'ONE_TIME'
+                  ? 'border-primary bg-primary/5 shadow-md'
+                  : 'border-transparent bg-gray-50 hover:bg-gray-100'
+                  }`}
+              >
+                <FaCheckCircle className={`text-2xl mb-2 ${type === 'ONE_TIME' ? 'text-primary' : 'text-gray-400'}`} />
+                <span className={`font-bold text-sm ${type === 'ONE_TIME' ? 'text-gray-800' : 'text-gray-500'}`}>One-time</span>
+                <span className="text-[10px] text-gray-400 text-center mt-1">Single use only</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setType('ACCUMULATIVE')}
+                className={`relative flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${type === 'ACCUMULATIVE'
+                  ? 'border-primary bg-primary/5 shadow-md'
+                  : 'border-transparent bg-gray-50 hover:bg-gray-100'
+                  }`}
+              >
+                <FaTrophy className={`text-2xl mb-2 ${type === 'ACCUMULATIVE' ? 'text-primary' : 'text-gray-400'}`} />
+                <span className={`font-bold text-sm ${type === 'ACCUMULATIVE' ? 'text-gray-800' : 'text-gray-500'}`}>Milestone</span>
+                <span className="text-[10px] text-gray-400 text-center mt-1">Unlock by tasks</span>
+              </button>
             </div>
           </div>
 
@@ -213,20 +243,58 @@ const FirstReward = () => {
 
           <div className="form-control w-full">
             <label className="label">
-              <span className="label-text font-bold">Icon Category</span>
+              <span className="label-text font-bold text-gray-500 uppercase text-xs tracking-wider">Icon Category</span>
             </label>
-            <div className="flex gap-4 overflow-x-auto pb-2">
+            <div className="grid grid-cols-4 gap-3">
               {ICONS.map((item) => (
                 <button
                   key={item.id}
                   type="button"
                   onClick={() => setSelectedIcon(item.id)}
-                  className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all min-w-[80px] ${selectedIcon === item.id ? 'border-primary bg-blue-50' : 'border-transparent bg-white/50'}`}
+                  className={`flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border-2 transition-all aspect-square ${selectedIcon === item.id
+                    ? 'border-primary bg-primary/5 text-primary shadow-sm'
+                    : 'border-transparent bg-gray-50 hover:bg-gray-100 text-gray-400'
+                    }`}
                 >
-                  <item.icon className={`w-8 h-8 ${selectedIcon === item.id ? 'text-primary' : 'text-gray-400'}`} />
-                  <span className="text-xs font-medium text-gray-600">{item.label}</span>
+                  <item.icon className="w-6 h-6" />
+                  <span className="text-[10px] font-bold uppercase tracking-wide">{item.label}</span>
                 </button>
               ))}
+            </div>
+          </div>
+
+          <div className="form-control w-full">
+            <label className="label">
+              <span className="label-text font-bold">Assign To</span>
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {children.map(child => {
+                const isSelected = selectedChildIds.includes(child.id);
+                return (
+                  <button
+                    key={child.id}
+                    type="button"
+                    onClick={() => toggleChildSelection(child.id)}
+                    className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${isSelected
+                      ? 'border-primary bg-primary/5'
+                      : 'border-transparent bg-base-100 shadow-sm hover:bg-base-200'
+                      }`}
+                  >
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-primary bg-primary' : 'border-gray-300'
+                      }`}>
+                      {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                    </div>
+                    <div className="avatar">
+                      <div className="w-8 h-8 rounded-full">
+                        <img src={child.avatar_url} alt={child.name} />
+                      </div>
+                    </div>
+                    <span className={`font-bold ${isSelected ? 'text-primary' : 'text-gray-600'}`}>
+                      {child.name}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -235,7 +303,7 @@ const FirstReward = () => {
           <PrimaryButton
             type="submit"
             className="rounded-xl mt-4 shadow-md text-lg font-bold"
-            disabled={!name.trim() || isLoading}
+            disabled={!isFormValid || isLoading}
           >
             {isLoading ? 'Finishing...' : 'Finish Setup'}
           </PrimaryButton>

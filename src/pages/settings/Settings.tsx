@@ -10,6 +10,7 @@ import { IconWrapper } from '../../components/design-system/IconWrapper';
 import RestoreConfirmationModal from '../../components/modals/RestoreConfirmationModal';
 import BackupConfirmationModal from '../../components/modals/BackupConfirmationModal';
 import ResetConfirmationModal from '../../components/modals/ResetConfirmationModal';
+import AlertModal from '../../components/design-system/AlertModal';
 
 const Settings = () => {
   const {
@@ -24,6 +25,8 @@ const Settings = () => {
   const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [isDeleteChildModalOpen, setIsDeleteChildModalOpen] = useState(false);
+  const [childToDelete, setChildToDelete] = useState<string | null>(null);
   const [restoreData, setRestoreData] = useState<any>(null);
   const [restoreFilename, setRestoreFilename] = useState('');
   const [appVersion, setAppVersion] = useState('1.0.3'); // Default/Fallback
@@ -95,14 +98,17 @@ const Settings = () => {
             <span className="text-neutral/60 font-medium">Parent Email</span>
             <span className="font-bold text-neutral">{familySummary.parentEmail}</span>
           </div>
+
           <div className="flex justify-between items-center p-3 hover:bg-base-200 rounded-lg transition-colors">
             <span className="text-neutral/60 font-medium">Children Linked</span>
-            <span className="font-bold text-neutral">{familySummary.childCount}</span>
+            <span className="font-bold text-neutral">{children.length} / 4</span>
           </div>
 
-          <Link to="/settings/add-child" className="btn btn-outline btn-primary btn-sm mt-2 w-full">
-            <FaPlus className="mr-2" /> Add Child
-          </Link>
+          {children.length < 4 && (
+            <Link to="/settings/add-child" className="btn btn-outline btn-primary btn-sm mt-2 w-full">
+              <FaPlus className="mr-2" /> Add Child
+            </Link>
+          )}
         </div>
       </AppCard>
 
@@ -235,16 +241,56 @@ const Settings = () => {
           <IconWrapper icon={FaExclamationTriangle} className="bg-error/10 text-error" />
           <h3 className="font-bold text-lg text-error">Danger Zone</h3>
         </div>
-        <div className="flex flex-col gap-2">
-          <p className="text-sm text-neutral/60 mb-2">
-            Resetting the app will delete all data permanently. This cannot be undone.
-          </p>
-          <button
-            className="btn btn-error btn-outline btn-sm w-full sm:w-auto"
-            onClick={() => setIsResetModalOpen(true)}
-          >
-            Reset App Data
-          </button>
+        <div className="flex flex-col gap-6">
+          {/* Delete Child Section */}
+          <div>
+            <h4 className="font-bold text-neutral mb-2">Delete Child Profile</h4>
+            <p className="text-sm text-neutral/60 mb-3">
+              Permanently remove a child profile and their history.
+            </p>
+            <div className="flex flex-col gap-2">
+              {children.map(child => (
+                <div key={child.id} className="flex items-center justify-between p-3 bg-white/50 rounded-xl border border-error/10">
+                  <div className="flex items-center gap-3">
+                    <div className="avatar">
+                      <div className="w-8 h-8 rounded-full">
+                        <img src={child.avatar_url} alt={child.name} />
+                      </div>
+                    </div>
+                    <span className="font-bold text-neutral">{child.name}</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setChildToDelete(child.id);
+                      setIsDeleteChildModalOpen(true);
+                    }}
+                    className="btn btn-error btn-outline btn-xs"
+                  >
+                    Delete
+                  </button>
+                </div>
+              ))}
+              {children.length === 0 && (
+                <p className="text-sm text-neutral/40 italic">No children profiles found.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="divider my-0"></div>
+
+          {/* Reset App Section */}
+          <div>
+            <h4 className="font-bold text-neutral mb-2">Reset Application</h4>
+            <p className="text-sm text-neutral/60 mb-3">
+              Resetting the app will delete all data permanently. This cannot be undone.
+            </p>
+            <button
+              className="btn btn-error btn-sm w-full sm:w-auto"
+              onClick={() => setIsResetModalOpen(true)}
+            >
+              Reset App Data
+            </button>
+          </div>
         </div>
       </AppCard>
 
@@ -313,6 +359,22 @@ const Settings = () => {
         onClose={() => setIsResetModalOpen(false)}
         onConfirm={() => {
           useAppStore.getState().resetApp();
+        }}
+      />
+
+      <AlertModal
+        isOpen={isDeleteChildModalOpen}
+        title="Delete Child Profile"
+        message="Are you sure you want to delete this child profile? This action cannot be undone and all their history will be lost."
+        confirmText="Delete"
+        type="danger"
+        onClose={() => setIsDeleteChildModalOpen(false)}
+        onConfirm={async () => {
+          if (childToDelete) {
+            await useAppStore.getState().deleteChild(childToDelete);
+            setChildToDelete(null);
+            setIsDeleteChildModalOpen(false);
+          }
         }}
       />
     </div>

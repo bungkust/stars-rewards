@@ -26,6 +26,15 @@ const AddChildSettings = () => {
 
     const saveChild = async () => {
         setErrorMsg('');
+
+        // Check limit before saving (although UI should hide add button, double check here)
+        // Note: We need to access children from store to check length
+        const currentChildren = useAppStore.getState().children;
+        if (currentChildren.length >= 4) {
+            setErrorMsg('Maximum 4 children allowed.');
+            return false;
+        }
+
         const { error } = await addChild({
             name,
             birth_date: dob,

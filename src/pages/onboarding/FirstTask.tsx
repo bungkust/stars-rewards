@@ -16,12 +16,13 @@ const DIFFICULTY_PRESETS = [
 
 const FirstTask = () => {
   const navigate = useNavigate();
-  const { addTask, setOnboardingStep, isLoading } = useAppStore();
+  const { addTask, setOnboardingStep, isLoading, children } = useAppStore();
 
   const [title, setTitle] = useState('');
   const [reward, setReward] = useState(10);
-  const [duration, setDuration] = useState(0);
+  const [expiryTime, setExpiryTime] = useState('');
   const [repetition, setRepetition] = useState('Daily');
+  const [selectedChildIds, setSelectedChildIds] = useState<string[]>([]);
   const [isCustomRecurrence, setIsCustomRecurrence] = useState(false);
   const [customOptions, setCustomOptions] = useState<RecurrenceOptions>({
     frequency: 'WEEKLY',
@@ -29,6 +30,11 @@ const FirstTask = () => {
     byDay: ['MO', 'WE', 'FR']
   });
   const [error, setError] = useState('');
+
+  // Initialize selected children (select all by default for onboarding convenience)
+  useState(() => {
+    setSelectedChildIds(children.map(c => c.id));
+  });
 
   const handleRepetitionTypeChange = (type: string) => {
     setRepetition(type);
@@ -39,10 +45,22 @@ const FirstTask = () => {
     }
   };
 
+  const toggleChildSelection = (childId: string) => {
+    setSelectedChildIds(prev =>
+      prev.includes(childId)
+        ? prev.filter(id => id !== childId)
+        : [...prev, childId]
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
       setError('Please enter a task name');
+      return;
+    }
+    if (selectedChildIds.length === 0) {
+      setError('Please select at least one child');
       return;
     }
 
@@ -57,7 +75,8 @@ const FirstTask = () => {
       type: (finalRule === 'Once' ? 'ONE_TIME' : 'RECURRING') as "ONE_TIME" | "RECURRING",
       recurrence_rule: finalRule,
       is_active: true,
-      assigned_to: [], // Assigned to the child created in previous step by default logic or backend
+      expiry_time: expiryTime,
+      assigned_to: selectedChildIds,
     });
 
     if (taskError) {
@@ -68,6 +87,8 @@ const FirstTask = () => {
     setOnboardingStep('first-reward');
     navigate('/onboarding/first-reward');
   };
+
+  const isFormValid = title.trim().length > 0 && selectedChildIds.length > 0 && reward >= 0;
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center app-gradient p-6 py-12">
@@ -93,21 +114,35 @@ const FirstTask = () => {
 
           <div className="form-control w-full">
             <label className="label">
-              <span className="label-text font-bold">Difficulty & Reward Guide</span>
+              <span className="label-text font-bold text-gray-500 uppercase text-xs tracking-wider">Suggested Rewards</span>
             </label>
-            <div className="grid grid-cols-2 gap-2 mb-2">
+
+            <div className="grid grid-cols-3 gap-2">
               {DIFFICULTY_PRESETS.map((preset) => (
                 <button
                   key={preset.label}
                   type="button"
                   onClick={() => setReward(preset.value)}
-                  className={`flex flex-col items-start p-3 rounded-xl border text-left transition-all ${preset.color} ${reward === preset.value ? 'ring-2 ring-offset-1 ring-primary' : 'hover:brightness-95'}`}
+                  className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all duration-200 ${reward === preset.value
+                    ? `border-current ${preset.color.split(' ')[1]} bg-white shadow-sm ring-1 ring-current`
+                    : 'border-transparent bg-gray-50 hover:bg-gray-100 text-gray-400'
+                    }`}
                 >
-                  <span className="font-bold text-xs">{preset.label}</span>
-                  <span className="text-lg font-extrabold">{preset.value} Stars</span>
-                  <span className="text-[10px] opacity-80 leading-tight mt-1">{preset.desc}</span>
+                  <span className={`text-[10px] font-bold uppercase tracking-wider mb-0.5 ${reward === preset.value ? 'text-gray-800' : 'text-gray-500'}`}>
+                    {preset.label}
+                  </span>
+                  <span className={`text-lg font-black ${reward === preset.value ? 'text-primary' : 'text-gray-300'}`}>
+                    {preset.value}
+                  </span>
                 </button>
               ))}
+            </div>
+
+            {/* Selected Description Helper */}
+            <div className="min-h-[20px] mt-2 text-center">
+              <p className="text-xs text-gray-400 font-medium transition-all">
+                {DIFFICULTY_PRESETS.find(p => p.value === reward)?.desc || 'Custom reward amount'}
+              </p>
             </div>
           </div>
 
@@ -127,17 +162,14 @@ const FirstTask = () => {
 
             <div className="form-control w-full">
               <label className="label">
-                <span className="label-text font-bold">Duration (Min)</span>
+                <span className="label-text font-bold">Expired Time</span>
                 <span className="label-text-alt text-gray-400">(Optional)</span>
               </label>
               <input
-                type="number"
+                type="time"
                 className="input input-bordered w-full rounded-xl"
-                value={duration}
-                onChange={(e) => setDuration(Number(e.target.value))}
-                min={0}
-                step={5}
-                placeholder="0"
+                value={expiryTime}
+                onChange={(e) => setExpiryTime(e.target.value)}
               />
             </div>
           </div>
@@ -282,12 +314,47 @@ const FirstTask = () => {
             )}
           </div>
 
+          <div className="form-control w-full">
+            <label className="label">
+              <span className="label-text font-bold">Assign To</span>
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {children.map(child => {
+                const isSelected = selectedChildIds.includes(child.id);
+                return (
+                  <button
+                    key={child.id}
+                    type="button"
+                    onClick={() => toggleChildSelection(child.id)}
+                    className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${isSelected
+                      ? 'border-primary bg-primary/5'
+                      : 'border-transparent bg-base-100 shadow-sm hover:bg-base-200'
+                      }`}
+                  >
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-primary bg-primary' : 'border-gray-300'
+                      }`}>
+                      {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                    </div>
+                    <div className="avatar">
+                      <div className="w-8 h-8 rounded-full">
+                        <img src={child.avatar_url} alt={child.name} />
+                      </div>
+                    </div>
+                    <span className={`font-bold ${isSelected ? 'text-primary' : 'text-gray-600'}`}>
+                      {child.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {error && <p className="text-error text-sm text-center">{error}</p>}
 
           <PrimaryButton
             type="submit"
             className="rounded-xl mt-4 shadow-md text-lg font-bold"
-            disabled={!title.trim() || isLoading}
+            disabled={!isFormValid || isLoading}
           >
             {isLoading ? 'Saving...' : 'Save & Continue'}
           </PrimaryButton>

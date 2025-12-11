@@ -46,6 +46,7 @@ export interface AppState {
   refreshData: () => Promise<void>;
   getTasksByChildId: (childId: string) => Task[];
   addChild: (child: Omit<Child, 'id' | 'parent_id' | 'balance' | 'current_balance'>) => Promise<{ error: any }>;
+  deleteChild: (childId: string) => Promise<{ error: any }>;
   addTask: (task: Omit<Task, 'id' | 'parent_id' | 'created_at'>) => Promise<{ error: any }>;
   updateTask: (taskId: string, updates: Partial<Task>) => Promise<{ error: any }>;
   addReward: (reward: Omit<Reward, 'id' | 'parent_id'>) => Promise<{ error: any }>;
@@ -185,6 +186,27 @@ export const useAppStore = create<AppState>()(
           return { error: null };
         } catch (error) {
           console.error('Error adding child:', error);
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      deleteChild: async (childId: string) => {
+        set({ isLoading: true });
+        try {
+          const success = await dataService.deleteChild(childId);
+          if (!success) throw new Error('Failed to delete child');
+
+          set((state) => ({
+            children: state.children.filter(c => c.id !== childId),
+            // Also remove from active if deleted
+            activeChildId: state.activeChildId === childId ? null : state.activeChildId
+          }));
+
+          return { error: null };
+        } catch (error) {
+          console.error('Error deleting child:', error);
           return { error };
         } finally {
           set({ isLoading: false });

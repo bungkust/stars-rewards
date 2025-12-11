@@ -10,6 +10,13 @@ export const dataService = {
   },
 
   /**
+   * Deletes a child profile.
+   */
+  deleteChild: async (childId: string): Promise<boolean> => {
+    return localStorageService.deleteChild(childId);
+  },
+
+  /**
    * Adds a new task template.
    */
   addTask: async (_parentId: string, task: Omit<Task, 'id' | 'parent_id' | 'created_at'>): Promise<Task | null> => {

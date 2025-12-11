@@ -43,6 +43,11 @@ const AddChild = () => {
     e.preventDefault();
     if (!name) return;
 
+    if (children.length >= 4) {
+      setErrorMsg('Maximum 4 children allowed.');
+      return;
+    }
+
     const success = await saveChild();
     if (success) {
       setSuccessMsg(`Added ${name}! You can add another child below.`);
