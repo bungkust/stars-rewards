@@ -1,4 +1,4 @@
-import { FaArrowLeft, FaGamepad, FaIceCream, FaTicketAlt, FaGift, FaPizzaSlice, FaBicycle, FaBook, FaPalette } from 'react-icons/fa';
+import { FaGamepad, FaIceCream, FaTicketAlt, FaGift, FaPizzaSlice, FaBicycle, FaBook, FaPalette } from 'react-icons/fa';
 import { IoEllipsisVertical } from 'react-icons/io5';
 
 const FontPlayground = () => {

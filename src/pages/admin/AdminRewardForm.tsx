@@ -44,10 +44,6 @@ const AdminRewardForm = () => {
     }
   }, [id, rewards]);
 
-  const handleCostAdjust = (amount: number) => {
-    setCost(Math.max(0, cost + amount)); // Allow 0 cost for accumulative rewards if desired
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 

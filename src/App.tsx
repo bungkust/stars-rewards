@@ -20,7 +20,6 @@ import FirstReward from './pages/onboarding/FirstReward';
 import Welcome from './pages/Welcome';
 import AdminTaskForm from './pages/admin/AdminTaskForm';
 import AdminRewardForm from './pages/admin/AdminRewardForm';
-import FontPlayground from './pages/FontPlayground';
 
 import Privacy from './pages/legal/Privacy';
 import Terms from './pages/legal/Terms';
