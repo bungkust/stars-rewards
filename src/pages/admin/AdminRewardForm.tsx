@@ -19,7 +19,7 @@ const ICONS = [
 const AdminRewardForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { addReward, updateReward, tasks, rewards } = useAppStore();
+  const { addReward, updateReward, tasks, rewards, children, isLoading } = useAppStore();
 
   const [name, setName] = useState('');
   const [cost, setCost] = useState(10);
@@ -27,6 +27,7 @@ const AdminRewardForm = () => {
   const [type, setType] = useState<'ONE_TIME' | 'UNLIMITED' | 'ACCUMULATIVE'>('UNLIMITED');
   const [requiredTaskId, setRequiredTaskId] = useState('');
   const [requiredTaskCount, setRequiredTaskCount] = useState(1);
+  const [selectedChildIds, setSelectedChildIds] = useState<string[]>([]);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Load existing reward if editing
@@ -40,12 +41,35 @@ const AdminRewardForm = () => {
         setType(rewardToEdit.type as any);
         if (rewardToEdit.required_task_id) setRequiredTaskId(rewardToEdit.required_task_id);
         if (rewardToEdit.required_task_count) setRequiredTaskCount(rewardToEdit.required_task_count);
+
+        if (rewardToEdit.assigned_to && rewardToEdit.assigned_to.length > 0) {
+          setSelectedChildIds(rewardToEdit.assigned_to);
+        } else {
+          // Fallback for old rewards: assign to all (or none? let's do all for backward compatibility if needed, but user asked for default none for new. For edit, if missing, maybe all is safer to show it exists?)
+          // Actually, if it's undefined, it means it was visible to everyone before. So ALL is correct fallback.
+          setSelectedChildIds(children.map(c => c.id));
+        }
       }
+    } else {
+      // New Reward: Default to NONE
+      setSelectedChildIds([]);
     }
-  }, [id, rewards]);
+  }, [id, rewards, children]);
+
+  const toggleChildSelection = (childId: string) => {
+    setSelectedChildIds(prev =>
+      prev.includes(childId)
+        ? prev.filter(id => id !== childId)
+        : [...prev, childId]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (selectedChildIds.length === 0 || !name) {
+      return;
+    }
 
     const rewardData = {
       name,
@@ -54,6 +78,7 @@ const AdminRewardForm = () => {
       type,
       required_task_id: type === 'ACCUMULATIVE' ? requiredTaskId : undefined,
       required_task_count: type === 'ACCUMULATIVE' ? Number(requiredTaskCount) : undefined,
+      assigned_to: selectedChildIds
     };
 
     if (id) {
@@ -64,6 +89,8 @@ const AdminRewardForm = () => {
 
     navigate('/rewards');
   };
+
+  const isFormValid = name.trim().length > 0 && selectedChildIds.length > 0 && cost >= 0;
 
   const handleDelete = async () => {
     // Currently not implementing hard delete, maybe just visual removal or soft delete if backend supported it.
@@ -266,7 +293,46 @@ const AdminRewardForm = () => {
           </div>
         </div>
 
-        <button type="submit" className="btn btn-primary rounded-xl w-full mt-4 text-white font-bold text-lg shadow-md">
+        <div className="form-control w-full">
+          <label className="label">
+            <span className="label-text font-bold">Assign To</span>
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            {children.map(child => {
+              const isSelected = selectedChildIds.includes(child.id);
+              return (
+                <button
+                  key={child.id}
+                  type="button"
+                  onClick={() => toggleChildSelection(child.id)}
+                  className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${isSelected
+                    ? 'border-primary bg-primary/5'
+                    : 'border-transparent bg-base-100 shadow-sm hover:bg-base-200'
+                    }`}
+                >
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-primary bg-primary' : 'border-gray-300'
+                    }`}>
+                    {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                  </div>
+                  <div className="avatar">
+                    <div className="w-8 h-8 rounded-full">
+                      <img src={child.avatar_url} alt={child.name} />
+                    </div>
+                  </div>
+                  <span className={`font-bold ${isSelected ? 'text-primary' : 'text-gray-600'}`}>
+                    {child.name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          className="btn btn-primary rounded-xl w-full mt-4 text-white font-bold text-lg shadow-md disabled:bg-gray-300 disabled:text-gray-500"
+          disabled={!isFormValid || isLoading}
+        >
           {id ? 'Update Reward' : 'Save Reward'}
         </button>
       </form>

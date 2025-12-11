@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { Link } from 'react-router-dom';
-import { FaUsers, FaBell, FaShieldAlt, FaDatabase, FaCloudDownloadAlt, FaFileUpload, FaChevronRight, FaExclamationTriangle } from 'react-icons/fa';
+import { FaUsers, FaBell, FaShieldAlt, FaDatabase, FaCloudDownloadAlt, FaFileUpload, FaChevronRight, FaExclamationTriangle, FaPlus } from 'react-icons/fa';
 import { useAppStore } from '../../store/useAppStore';
 import { AppCard } from '../../components/design-system/AppCard';
 import { H1Header } from '../../components/design-system/H1Header';
@@ -99,6 +99,10 @@ const Settings = () => {
             <span className="text-neutral/60 font-medium">Children Linked</span>
             <span className="font-bold text-neutral">{familySummary.childCount}</span>
           </div>
+
+          <Link to="/settings/add-child" className="btn btn-outline btn-primary btn-sm mt-2 w-full">
+            <FaPlus className="mr-2" /> Add Child
+          </Link>
         </div>
       </AppCard>
 

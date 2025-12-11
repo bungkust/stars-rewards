@@ -161,8 +161,13 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      getTasksByChildId: (_childId) => {
-        return get().tasks;
+      getTasksByChildId: (childId) => {
+        return get().tasks.filter(t => {
+          // If assigned_to is missing/undefined, assume assigned to all (backward compatibility)
+          if (!t.assigned_to) return true;
+          // If assigned_to is present, check if childId is in it
+          return t.assigned_to.includes(childId);
+        });
       },
 
       addChild: async (child) => {

@@ -14,6 +14,7 @@ import Rewards from './pages/Rewards';
 import Stats from './pages/Stats';
 import Settings from './pages/settings/Settings';
 import AddChild from './pages/onboarding/AddChild';
+import AddChildSettings from './pages/settings/AddChildSettings';
 import FamilySetup from './pages/onboarding/FamilySetup';
 import FirstTask from './pages/onboarding/FirstTask';
 import FirstReward from './pages/onboarding/FirstReward';
@@ -237,6 +238,11 @@ const AnimatedRoutes = () => {
         <Route path="/settings" element={
           <PageTransition>
             <Settings />
+          </PageTransition>
+        } />
+        <Route path="/settings/add-child" element={
+          <PageTransition>
+            <AddChildSettings />
           </PageTransition>
         } />
         <Route path="/privacy" element={

@@ -40,6 +40,7 @@ export interface Reward {
   type: 'ONE_TIME' | 'UNLIMITED' | 'ACCUMULATIVE';
   required_task_id?: string;
   required_task_count?: number;
+  assigned_to?: string[];
 }
 
 export interface ChildTaskLog {

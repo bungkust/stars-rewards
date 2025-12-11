@@ -44,9 +44,8 @@ const Header = ({ onParentLoginClick, onSettingsClick, onChildSelectClick }: Hea
     >
       <div className="flex-1">
         {activeChild && !isAdminMode ? (
-          <button
-            className="btn btn-ghost gap-2 normal-case"
-            onClick={onChildSelectClick}
+          <div
+            className="btn btn-ghost gap-2 normal-case hover:bg-transparent cursor-default"
           >
             <div className="avatar placeholder">
               <div className="bg-neutral-focus text-neutral-content rounded-full w-8">
@@ -57,7 +56,7 @@ const Header = ({ onParentLoginClick, onSettingsClick, onChildSelectClick }: Hea
               </div>
             </div>
             <span className={`text-lg font-bold ${titleColor}`}>{activeChild.name}</span>
-          </button>
+          </div>
         ) : (
           <a className={`btn btn-ghost text-xl font-bold hover:bg-transparent ${titleColor}`}>
             {isAdminMode ? 'Parent Dashboard' : 'Stars Rewards'}
@@ -116,6 +115,17 @@ const Header = ({ onParentLoginClick, onSettingsClick, onChildSelectClick }: Hea
               </>
             ) : (
               <>
+                <li>
+                  <button
+                    className="justify-between text-sm font-medium"
+                    onClick={() => {
+                      closeMenu();
+                      if (onChildSelectClick) onChildSelectClick();
+                    }}
+                  >
+                    Switch Profile
+                  </button>
+                </li>
                 <li>
                   <button
                     className="justify-between text-sm font-medium"

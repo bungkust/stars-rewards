@@ -20,13 +20,13 @@ const DIFFICULTY_PRESETS = [
 const AdminTaskForm = () => {
   const navigate = useNavigate();
   const { id } = useParams(); // Get task ID from URL if editing
-  const { addTask, updateTask, tasks, children } = useAppStore();
+  const { addTask, updateTask, tasks, children, isLoading } = useAppStore();
 
   const [title, setTitle] = useState('');
   const [reward, setReward] = useState(10);
   const [expiryTime, setExpiryTime] = useState(''); // Default empty (Optional)
   const [repetition, setRepetition] = useState('Once');
-  const [selectedChildId, setSelectedChildId] = useState(children[0]?.id || '');
+  const [selectedChildIds, setSelectedChildIds] = useState<string[]>([]);
   const [isActive, setIsActive] = useState(true);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isCustomRecurrence, setIsCustomRecurrence] = useState(false);
@@ -46,7 +46,10 @@ const AdminTaskForm = () => {
         setExpiryTime(taskToEdit.expiry_time || '');
         setIsActive(taskToEdit.is_active !== false);
         if (taskToEdit.assigned_to && taskToEdit.assigned_to.length > 0) {
-          setSelectedChildId(taskToEdit.assigned_to[0]);
+          setSelectedChildIds(taskToEdit.assigned_to);
+        } else {
+          // Fallback for old tasks without assignment (shouldn't happen but safe)
+          setSelectedChildIds(children.map(c => c.id));
         }
 
         const rule = taskToEdit.recurrence_rule || 'Once';
@@ -59,8 +62,11 @@ const AdminTaskForm = () => {
           setCustomOptions(parseRRule(rule));
         }
       }
+    } else {
+      // New Task: Default to NONE
+      setSelectedChildIds([]);
     }
-  }, [id, tasks]);
+  }, [id, tasks, children]);
 
   const handleRepetitionTypeChange = (type: string) => {
     setRepetition(type);
@@ -71,8 +77,21 @@ const AdminTaskForm = () => {
     }
   };
 
+  const toggleChildSelection = (childId: string) => {
+    setSelectedChildIds(prev =>
+      prev.includes(childId)
+        ? prev.filter(id => id !== childId)
+        : [...prev, childId]
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validation is handled by disabled button, but double check here
+    if (selectedChildIds.length === 0 || !title) {
+      return;
+    }
 
     let finalRule = repetition;
     if (isCustomRecurrence) {
@@ -86,7 +105,7 @@ const AdminTaskForm = () => {
       recurrence_rule: finalRule,
       is_active: isActive,
       expiry_time: expiryTime,
-      assigned_to: [selectedChildId]
+      assigned_to: selectedChildIds
     };
 
     if (id) {
@@ -104,6 +123,8 @@ const AdminTaskForm = () => {
       navigate('/tasks');
     }
   };
+
+  const isFormValid = title.trim().length > 0 && selectedChildIds.length > 0 && reward >= 0;
 
   return (
     <div className="flex flex-col gap-6 pb-24">
@@ -361,18 +382,42 @@ const AdminTaskForm = () => {
           <label className="label">
             <span className="label-text font-bold">Assign To</span>
           </label>
-          <select
-            className="select select-bordered w-full rounded-xl"
-            value={selectedChildId}
-            onChange={(e) => setSelectedChildId(e.target.value)}
-          >
-            {children.map(child => (
-              <option key={child.id} value={child.id}>{child.name}</option>
-            ))}
-          </select>
+          <div className="grid grid-cols-2 gap-3">
+            {children.map(child => {
+              const isSelected = selectedChildIds.includes(child.id);
+              return (
+                <button
+                  key={child.id}
+                  type="button"
+                  onClick={() => toggleChildSelection(child.id)}
+                  className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${isSelected
+                    ? 'border-primary bg-primary/5'
+                    : 'border-transparent bg-base-100 shadow-sm hover:bg-base-200'
+                    }`}
+                >
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-primary bg-primary' : 'border-gray-300'
+                    }`}>
+                    {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                  </div>
+                  <div className="avatar">
+                    <div className="w-8 h-8 rounded-full">
+                      <img src={child.avatar_url} alt={child.name} />
+                    </div>
+                  </div>
+                  <span className={`font-bold ${isSelected ? 'text-primary' : 'text-gray-600'}`}>
+                    {child.name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <button type="submit" className="btn btn-primary rounded-xl w-full mt-4 text-white font-bold text-lg shadow-md">
+        <button
+          type="submit"
+          className="btn btn-primary rounded-xl w-full mt-4 text-white font-bold text-lg shadow-md disabled:bg-gray-300 disabled:text-gray-500"
+          disabled={!isFormValid || isLoading}
+        >
           {id ? 'Update Mission' : 'Save Mission'}
         </button>
       </form>

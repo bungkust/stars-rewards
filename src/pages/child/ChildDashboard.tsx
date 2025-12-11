@@ -44,6 +44,11 @@ const ChildDashboard = () => {
     return allTasks.filter(task => {
       if (!task.is_active) return false;
 
+      // Filter by Assignment
+      if (task.assigned_to && activeChildId && !task.assigned_to.includes(activeChildId)) {
+        return false;
+      }
+
       if (filter === 'all') return true;
 
       if (filter === 'once') {
@@ -120,11 +125,12 @@ const ChildDashboard = () => {
   }, [allTasks, filter, childLogs, activeChildId]);
 
   // DEBUG LOGS
+  console.log('[Dashboard] Active Child:', activeChildId);
   console.log('[Dashboard] All Tasks:', allTasks.length);
   console.log('[Dashboard] Filtered Tasks:', filteredTasks.length);
   filteredTasks.forEach(t => {
     const log = getTodayLog(t.id);
-    console.log(`[Dashboard] Task: ${t.name}, Status: ${log?.status || 'Not Started'}, Recurrence: ${t.recurrence_rule}, Expiry: ${t.expiry_time || 'None'}`);
+    console.log(`[Dashboard] Task: ${t.name}, Status: ${log?.status || 'Not Started'}, Recurrence: ${t.recurrence_rule}, Expiry: ${t.expiry_time || 'None'}, AssignedTo: ${t.assigned_to ? JSON.stringify(t.assigned_to) : 'ALL'}`);
   });
 
   const visibleTasks = filteredTasks.slice(0, visibleCount);

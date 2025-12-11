@@ -137,9 +137,13 @@ const AdminDashboard = () => {
       {/* Children Overview Section */}
       <section>
         <h2 className="text-lg font-bold text-neutral mb-3">My Children</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           {children.map(child => (
-            <AppCard key={child.id} className="!p-4 flex items-center justify-between">
+            <AppCard
+              key={child.id}
+              className="!p-4 flex items-center justify-between cursor-pointer hover:bg-base-200 transition-colors active:scale-95"
+              onClick={() => openAdjustmentModal(child)}
+            >
               <div className="flex items-center gap-4">
                 <div className="avatar">
                   <div className="w-12 h-12 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
@@ -151,14 +155,6 @@ const AdminDashboard = () => {
                   <p className="text-primary font-bold">{child.current_balance} Stars</p>
                 </div>
               </div>
-              <button
-                className="btn btn-circle btn-ghost btn-sm text-neutral/40 hover:text-primary"
-                onClick={() => openAdjustmentModal(child)}
-                title="Adjust Balance"
-                disabled={isLoading}
-              >
-                <FaEdit className="w-5 h-5" />
-              </button>
             </AppCard>
           ))}
         </div>
