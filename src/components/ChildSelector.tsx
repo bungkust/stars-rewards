@@ -1,12 +1,11 @@
 import { useAppStore } from '../store/useAppStore';
-import { PrimaryButton } from './design-system/PrimaryButton';
 
 interface ChildSelectorProps {
     onSelect: (childId: string) => void;
-    onClose: () => void;
+    onClose?: () => void;
 }
 
-const ChildSelector = ({ onSelect, onClose }: ChildSelectorProps) => {
+const ChildSelector = ({ onSelect }: ChildSelectorProps) => {
     const { children } = useAppStore();
 
     if (children.length === 0) {
@@ -36,8 +35,6 @@ const ChildSelector = ({ onSelect, onClose }: ChildSelectorProps) => {
                         </button>
                     ))}
                 </div>
-
-
             </div>
         </div>
     );
