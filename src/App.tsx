@@ -21,6 +21,7 @@ import FirstReward from './pages/onboarding/FirstReward';
 import Welcome from './pages/Welcome';
 import AdminTaskForm from './pages/admin/AdminTaskForm';
 import AdminRewardForm from './pages/admin/AdminRewardForm';
+import CategoryManagement from './pages/admin/CategoryManagement';
 
 import Privacy from './pages/legal/Privacy';
 import Terms from './pages/legal/Terms';
@@ -258,6 +259,12 @@ const AnimatedRoutes = () => {
         <Route path="/admin/rewards/:id/edit" element={
           <PageTransition>
             <AdminRewardForm />
+          </PageTransition>
+        } />
+
+        <Route path="/admin/categories" element={
+          <PageTransition>
+            <CategoryManagement />
           </PageTransition>
         } />
 

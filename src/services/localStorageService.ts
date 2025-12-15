@@ -1,4 +1,4 @@
-import type { Child, Task, Reward, ChildTaskLog, CoinTransaction, VerificationRequest, Profile } from '../types';
+import type { Child, Task, Reward, ChildTaskLog, CoinTransaction, VerificationRequest, Profile, Category } from '../types';
 
 const STORAGE_KEY = 'stars-rewards-db';
 
@@ -9,6 +9,7 @@ interface LocalDB {
     rewards: Reward[];
     logs: ChildTaskLog[];
     transactions: CoinTransaction[];
+    categories: Category[];
 }
 
 const getDB = (): LocalDB => {
@@ -19,7 +20,8 @@ const getDB = (): LocalDB => {
         tasks: [],
         rewards: [],
         logs: [],
-        transactions: []
+        transactions: [],
+        categories: []
     };
 
     if (!stored) {
@@ -36,7 +38,8 @@ const getDB = (): LocalDB => {
             tasks: Array.isArray(parsed.tasks) ? parsed.tasks : defaults.tasks,
             rewards: Array.isArray(parsed.rewards) ? parsed.rewards : defaults.rewards,
             logs: Array.isArray(parsed.logs) ? parsed.logs : defaults.logs,
-            transactions: Array.isArray(parsed.transactions) ? parsed.transactions : defaults.transactions
+            transactions: Array.isArray(parsed.transactions) ? parsed.transactions : defaults.transactions,
+            categories: Array.isArray(parsed.categories) ? parsed.categories : defaults.categories
         };
     } catch (e) {
         console.error('Failed to parse local storage', e);
@@ -138,6 +141,45 @@ export const localStorageService = {
         return false;
     },
 
+    // --- Categories ---
+
+    addCategory: async (category: Omit<Category, 'id'>): Promise<Category> => {
+        const db = getDB();
+        const newCategory: Category = {
+            id: generateId(),
+            ...category
+        };
+        db.categories.push(newCategory);
+        saveDB(db);
+        return newCategory;
+    },
+
+    fetchCategories: async (): Promise<Category[]> => {
+        const db = getDB();
+        return db.categories;
+    },
+
+    updateCategory: async (categoryId: string, updates: Partial<Category>): Promise<Category | null> => {
+        const db = getDB();
+        const index = db.categories.findIndex(c => c.id === categoryId);
+        if (index === -1) return null;
+
+        db.categories[index] = { ...db.categories[index], ...updates };
+        saveDB(db);
+        return db.categories[index];
+    },
+
+    deleteCategory: async (categoryId: string): Promise<boolean> => {
+        const db = getDB();
+        const initialLength = db.categories.length;
+        db.categories = db.categories.filter(c => c.id !== categoryId);
+        if (db.categories.length !== initialLength) {
+            saveDB(db);
+            return true;
+        }
+        return false;
+    },
+
     // --- Tasks ---
 
     addTask: async (task: Omit<Task, 'id' | 'parent_id' | 'created_at'>): Promise<Task> => {
@@ -152,6 +194,7 @@ export const localStorageService = {
             is_active: task.is_active !== undefined ? task.is_active : true,
             created_at: new Date().toISOString(),
             assigned_to: task.assigned_to || [],
+            category_id: task.category_id,
             expiry_time: task.expiry_time
         };
         db.tasks.push(newTask);
@@ -515,7 +558,8 @@ export const localStorageService = {
                 tasks: data.tasks || [],
                 rewards: data.rewards || [],
                 logs: data.logs || data.childLogs || [], // Handle both keys if they differ
-                transactions: data.transactions || []
+                transactions: data.transactions || [],
+                categories: data.categories || []
             };
 
             saveDB(newDB);

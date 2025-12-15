@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Profile, Child, Task, Reward, VerificationRequest, CoinTransaction, ChildTaskLog } from '../types';
+import type { Profile, Child, Task, Reward, VerificationRequest, CoinTransaction, ChildTaskLog, Category } from '../types';
 import { dataService } from '../services/dataService';
 import { localStorageService } from '../services/localStorageService';
 import { parseRRule, isDateValid, getNextDueDate } from '../utils/recurrence';
@@ -22,6 +22,7 @@ export interface AppState {
 
   // Data Stores
   children: Child[];
+  categories: Category[];
   tasks: Task[]; // Templates
   pendingVerifications: VerificationRequest[]; // Tasks waiting for approval
   rewards: Reward[];
@@ -47,6 +48,9 @@ export interface AppState {
   getTasksByChildId: (childId: string) => Task[];
   addChild: (child: Omit<Child, 'id' | 'parent_id' | 'balance' | 'current_balance'>) => Promise<{ error: any }>;
   deleteChild: (childId: string) => Promise<{ error: any }>;
+  addCategory: (category: Omit<Category, 'id'>) => Promise<{ error: any }>;
+  updateCategory: (categoryId: string, updates: Partial<Category>) => Promise<{ error: any }>;
+  deleteCategory: (categoryId: string) => Promise<{ error: any }>;
   addTask: (task: Omit<Task, 'id' | 'parent_id' | 'created_at'>) => Promise<{ error: any }>;
   updateTask: (taskId: string, updates: Partial<Task>) => Promise<{ error: any }>;
   addReward: (reward: Omit<Reward, 'id' | 'parent_id'>) => Promise<{ error: any }>;
@@ -86,6 +90,7 @@ export const useAppStore = create<AppState>()(
       adminPin: null,
       notificationsEnabled: true,
       children: [],
+      categories: [],
       tasks: [],
       childLogs: [],
       pendingVerifications: [],
@@ -128,18 +133,40 @@ export const useAppStore = create<AppState>()(
           const userId = 'local-user';
 
           // Fetch ALL data including REWARDS and TRANSACTIONS
-          const [children, tasks, verifications, rewards, transactions, logs, redeemedHistory] = await Promise.all([
+          const [children, tasks, verifications, rewards, transactions, logs, redeemedHistory, categories] = await Promise.all([
             dataService.fetchChildren(userId),
             dataService.fetchActiveTasks(userId),
             dataService.fetchPendingVerifications(userId),
             dataService.fetchRewards(userId),
             dataService.fetchTransactions(userId),
             dataService.fetchChildLogs(userId),
-            dataService.fetchRedeemedRewards(userId)
+            dataService.fetchRedeemedRewards(userId),
+            dataService.fetchCategories(userId)
           ]);
+
+          // Seed default categories if empty
+          let finalCategories = categories;
+          if (categories.length === 0) {
+            const DEFAULT_CATEGORIES = [
+              { name: 'Hygiene', icon: 'soap', is_default: true },
+              { name: 'Time', icon: 'clock', is_default: true },
+              { name: 'Personal Responsibility', icon: 'user-check', is_default: true },
+              { name: 'Skill', icon: 'book', is_default: true },
+              { name: 'Family', icon: 'users', is_default: true },
+              { name: 'Social', icon: 'message-circle', is_default: true },
+              { name: 'Dressing', icon: 'shirt', is_default: true },
+              { name: 'Emotion', icon: 'smile', is_default: true },
+            ];
+
+            // We need to add them one by one or batch if supported. 
+            // dataService.addCategory returns the new category.
+            const seeded = await Promise.all(DEFAULT_CATEGORIES.map(c => dataService.addCategory(userId, c)));
+            finalCategories = seeded.filter((c): c is Category => c !== null);
+          }
 
           set({
             children,
+            categories: finalCategories,
             tasks,
             pendingVerifications: verifications,
             rewards,
@@ -207,6 +234,73 @@ export const useAppStore = create<AppState>()(
           return { error: null };
         } catch (error) {
           console.error('Error deleting child:', error);
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      addCategory: async (category) => {
+        set({ isLoading: true });
+        try {
+          const userId = 'local-user';
+          const newCategory = await dataService.addCategory(userId, category);
+
+          if (!newCategory) throw new Error('Failed to add category');
+
+          set((state) => ({
+            categories: [...state.categories, newCategory]
+          }));
+
+          return { error: null };
+        } catch (error) {
+          console.error('Error adding category:', error);
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      updateCategory: async (categoryId, updates) => {
+        set({ isLoading: true });
+        try {
+          const updatedCategory = await dataService.updateCategory(categoryId, updates);
+
+          if (!updatedCategory) throw new Error('Failed to update category');
+
+          set((state) => ({
+            categories: state.categories.map(c => c.id === categoryId ? updatedCategory : c)
+          }));
+
+          return { error: null };
+        } catch (error) {
+          console.error('Error updating category:', error);
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      deleteCategory: async (categoryId) => {
+        set({ isLoading: true });
+        try {
+          // Check dependency
+          const { tasks } = get();
+          const isUsed = tasks.some(t => t.category_id === categoryId && t.is_active !== false);
+          if (isUsed) {
+            throw new Error('Cannot delete category used by active tasks');
+          }
+
+          const success = await dataService.deleteCategory(categoryId);
+          if (!success) throw new Error('Failed to delete category');
+
+          set((state) => ({
+            categories: state.categories.filter(c => c.id !== categoryId)
+          }));
+
+          return { error: null };
+        } catch (error) {
+          console.error('Error deleting category:', error);
           return { error };
         } finally {
           set({ isLoading: false });

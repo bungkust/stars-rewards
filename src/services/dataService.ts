@@ -1,5 +1,5 @@
 import { localStorageService } from './localStorageService';
-import type { Child, Task, Reward, VerificationRequest, CoinTransaction, ChildTaskLog } from '../types';
+import type { Child, Task, Reward, VerificationRequest, CoinTransaction, ChildTaskLog, Category } from '../types';
 
 export const dataService = {
   /**
@@ -14,6 +14,34 @@ export const dataService = {
    */
   deleteChild: async (childId: string): Promise<boolean> => {
     return localStorageService.deleteChild(childId);
+  },
+
+  /**
+   * Adds a new category.
+   */
+  addCategory: async (_parentId: string, category: Omit<Category, 'id'>): Promise<Category | null> => {
+    return localStorageService.addCategory(category);
+  },
+
+  /**
+   * Updates an existing category.
+   */
+  updateCategory: async (categoryId: string, updates: Partial<Category>): Promise<Category | null> => {
+    return localStorageService.updateCategory(categoryId, updates);
+  },
+
+  /**
+   * Deletes a category.
+   */
+  deleteCategory: async (categoryId: string): Promise<boolean> => {
+    return localStorageService.deleteCategory(categoryId);
+  },
+
+  /**
+   * Retrieves all categories.
+   */
+  fetchCategories: async (_parentId: string): Promise<Category[]> => {
+    return localStorageService.fetchCategories();
   },
 
   /**

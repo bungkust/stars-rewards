@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { Link } from 'react-router-dom';
-import { FaUsers, FaBell, FaShieldAlt, FaDatabase, FaCloudDownloadAlt, FaFileUpload, FaChevronRight, FaExclamationTriangle, FaPlus } from 'react-icons/fa';
+import { FaUsers, FaBell, FaShieldAlt, FaDatabase, FaCloudDownloadAlt, FaFileUpload, FaChevronRight, FaExclamationTriangle, FaPlus, FaShapes } from 'react-icons/fa';
 import { useAppStore } from '../../store/useAppStore';
 import { AppCard } from '../../components/design-system/AppCard';
 import { H1Header } from '../../components/design-system/H1Header';
@@ -139,6 +139,26 @@ const Settings = () => {
             Push notifications require permissions on your device. You can change this anytime.
           </p>
         </div>
+      </AppCard>
+
+      {/* Customization */}
+      <AppCard>
+        <div className="flex items-center gap-3 mb-4">
+          <IconWrapper icon={FaShapes} />
+          <h3 className="font-bold text-lg text-neutral">Customization</h3>
+        </div>
+        <Link to="/admin/categories" className="flex justify-between items-center p-3 hover:bg-base-200 rounded-lg transition-colors">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 text-primary rounded-full">
+              <FaShapes />
+            </div>
+            <div>
+              <p className="font-bold text-neutral">Manage Categories</p>
+              <p className="text-xs text-neutral/60">Customize task categories and icons</p>
+            </div>
+          </div>
+          <FaChevronRight className="text-neutral/20" />
+        </Link>
       </AppCard>
 
       {/* Data Management */}

@@ -15,6 +15,13 @@ export interface Child {
   avatar_url: string;
 }
 
+export interface Category {
+  id: string;
+  name: string;
+  icon: string;
+  is_default?: boolean;
+}
+
 export interface Task {
   id: string;
   parent_id: string;
@@ -25,6 +32,7 @@ export interface Task {
   is_active?: boolean;
   created_at?: string;
   assigned_to: string[];
+  category_id?: string;
   next_due_date?: string;
   expiry_time?: string; // Format: "HH:mm"
   current_streak?: number;

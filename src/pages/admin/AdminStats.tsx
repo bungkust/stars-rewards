@@ -1,15 +1,17 @@
 import { useState, useMemo, useEffect } from 'react';
 import { FaChartLine, FaCheckCircle, FaGift, FaSlidersH, FaTimesCircle, FaChild, FaTrophy, FaExclamationTriangle, FaLightbulb, FaTimes } from 'react-icons/fa';
 import { AppCard, H1Header, IconWrapper, ToggleButton } from '../../components/design-system';
+
 import { useAppStore } from '../../store/useAppStore';
-import { calculateCoinMetrics, getSuccessRatio, getTopTasks, getRecommendations } from '../../utils/analytics';
+import { calculateCoinMetrics, getSuccessRatio, getTopTasks, getRecommendations, getCategoryPerformance } from '../../utils/analytics';
+import { ICON_MAP } from '../../utils/icons';
 import type { TimeFilter } from '../../utils/analytics';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { AnimatePresence, motion } from 'framer-motion';
 import TaskDetailsModal from '../../components/modals/TaskDetailsModal';
 
 const AdminStats = () => {
-  const { children, transactions, childLogs, tasks, isLoading } = useAppStore();
+  const { children, transactions, childLogs, tasks, categories, isLoading } = useAppStore();
   const [selectedChildId, setSelectedChildId] = useState<string>('all');
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('today');
   const [specificDate, setSpecificDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -109,6 +111,12 @@ const AdminStats = () => {
   const recommendations = useMemo(() =>
     rawRecommendations.filter(r => !dismissedInsights.includes(r.id)),
     [rawRecommendations, dismissedInsights]);
+
+  // Category Metrics
+  const categoryMetrics = useMemo(() =>
+    getCategoryPerformance(categories, filteredLogs, filteredTransactions, tasks),
+    [categories, filteredLogs, filteredTransactions, tasks]
+  );
 
   // History List (Combined & Sorted)
   const visibleHistory = useMemo(() => {
@@ -396,6 +404,50 @@ const AdminStats = () => {
 
 
       </div>
+
+      {/* Category Performance */}
+      <AppCard>
+        <div className="flex items-center gap-3 mb-4">
+          <IconWrapper icon={FaChartLine} className="bg-primary/10 text-primary" />
+          <h3 className="font-bold text-lg text-neutral">Category Performance</h3>
+        </div>
+        {categoryMetrics.length === 0 ? (
+          <p className="text-center text-neutral/50 py-4">No data available for this period.</p>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {categoryMetrics.map((cat) => {
+              const Icon = ICON_MAP[cat.icon] || ICON_MAP['default'];
+              const percentage = cat.total > 0 ? Math.round((cat.completed / cat.total) * 100) : 0;
+
+              return (
+                <div key={cat.id} className="flex items-center gap-4">
+                  <div className="p-2 rounded-lg bg-base-200 text-neutral/60">
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-bold text-neutral text-sm">{cat.name}</span>
+                      <span className="text-xs font-bold text-primary">{cat.earned} Stars</span>
+                    </div>
+                    <div className="w-full bg-base-200 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="bg-primary h-full rounded-full"
+                        style={{ width: `${percentage}%` }}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-[10px] text-neutral/40">{cat.completed}/{cat.total} Completed</span>
+                      <span className="text-[10px] text-neutral/40">{percentage}% Success</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </AppCard>
+
+
 
       {/* M4: Top Tasks */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

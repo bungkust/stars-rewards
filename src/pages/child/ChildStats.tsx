@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { H1Header, ToggleButton } from '../../components/design-system';
-import { FaStar, FaTrophy, FaChartPie, FaCheckCircle, FaGift, FaSlidersH, FaTimesCircle, FaChild } from 'react-icons/fa';
+import { FaStar, FaTrophy, FaChartPie, FaCheckCircle, FaGift, FaSlidersH, FaTimesCircle, FaChild, FaChartLine } from 'react-icons/fa';
+import { ICON_MAP } from '../../utils/icons';
+import { getCategoryPerformance } from '../../utils/analytics';
 import {
   CartesianGrid,
   Line,
@@ -34,7 +36,7 @@ const timeframeOptions: { value: Timeframe; label: string }[] = [
 ];
 
 const ChildStats = () => {
-  const { activeChildId, children, transactions, tasks, rewards, childLogs } = useAppStore();
+  const { activeChildId, children, transactions, tasks, rewards, childLogs, categories } = useAppStore();
   const [timeframe, setTimeframe] = useState<Timeframe>('week');
   const child = children.find(c => c.id === activeChildId);
 
@@ -178,6 +180,13 @@ const ChildStats = () => {
     () => buildChartData(childTransactions, timeframe),
     [childTransactions, timeframe]
   );
+
+  // Category Metrics
+  const categoryMetrics = useMemo(() =>
+    getCategoryPerformance(categories, childLogs.filter(l => l.child_id === activeChildId), childTransactions, tasks),
+    [categories, childLogs, activeChildId, childTransactions, tasks]
+  );
+
   const chartNetTotal = chartData.reduce((acc, point) => acc + point.value, 0);
   const hasTransactions = childTransactions.length > 0;
   const chartMinValue = chartData.reduce((min, point) => Math.min(min, point.value), 0);
@@ -372,6 +381,49 @@ const ChildStats = () => {
         </div>
       </div>
 
+      {/* Category Performance */}
+      <div className="card bg-base-100 shadow-md rounded-xl p-6">
+        <div className="flex items-center gap-2 mb-6">
+          <FaChartLine className="text-neutral/40" />
+          <h3 className="text-lg font-bold text-neutral">Category Performance</h3>
+        </div>
+
+        {categoryMetrics.length === 0 ? (
+          <p className="text-center text-neutral/50 py-4">No data available.</p>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {categoryMetrics.map((cat) => {
+              const Icon = ICON_MAP[cat.icon] || ICON_MAP['default'];
+              const percentage = cat.total > 0 ? Math.round((cat.completed / cat.total) * 100) : 0;
+
+              return (
+                <div key={cat.id} className="flex items-center gap-4">
+                  <div className="p-2 rounded-lg bg-base-200 text-neutral/60">
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-bold text-neutral text-sm">{cat.name}</span>
+                      <span className="text-xs font-bold text-primary">{cat.earned} Stars</span>
+                    </div>
+                    <div className="w-full bg-base-200 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="bg-primary h-full rounded-full"
+                        style={{ width: `${percentage}%` }}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-[10px] text-neutral/40">{cat.completed}/{cat.total} Completed</span>
+                      <span className="text-[10px] text-neutral/40">{percentage}% Success</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       {/* Recent History (Simple List) */}
       <div className="card bg-base-100 shadow-md rounded-xl p-6">
         <div className="flex flex-col gap-3 mb-4">
@@ -542,7 +594,7 @@ const ChildStats = () => {
         task={selectedTaskDetails}
         onClose={() => setIsDetailsModalOpen(false)}
       />
-    </div>
+    </div >
   );
 };
 

@@ -10,19 +10,24 @@ import { AlertModal, ToggleButton } from '../../components/design-system';
 
 const AdminTasks = () => {
   const navigate = useNavigate();
-  const { tasks, updateTask } = useAppStore();
+  const { tasks, updateTask, categories } = useAppStore();
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
   const [filter, setFilter] = useState<'daily' | 'once' | 'all'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   const filteredTasks = tasks
     .filter(task => task.is_active !== false)
     .filter(task => {
-      if (filter === 'all') return true;
-      if (filter === 'once') return task.recurrence_rule === 'Once';
-      if (filter === 'daily') return task.recurrence_rule !== 'Once';
+      // Recurrence Filter
+      if (filter === 'once' && task.recurrence_rule !== 'Once') return false;
+      if (filter === 'daily' && task.recurrence_rule === 'Once') return false;
+
+      // Category Filter
+      if (categoryFilter !== 'all' && task.category_id !== categoryFilter) return false;
+
       return true;
     });
 
@@ -96,6 +101,20 @@ const AdminTasks = () => {
         />
       </div>
 
+      {/* Category Filter */}
+      <div className="form-control w-full">
+        <select
+          className="select select-bordered w-full"
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+        >
+          <option value="all">All Categories</option>
+          {categories.map(cat => (
+            <option key={cat.id} value={cat.id}>{cat.name}</option>
+          ))}
+        </select>
+      </div>
+
       <div className="grid gap-4">
         {filteredTasks.length === 0 ? (
           <div className="text-center py-10 text-neutral/50">
@@ -118,6 +137,11 @@ const AdminTasks = () => {
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getBadgeStyle(task.recurrence_rule || 'Once')}`}>
                     {['Once', 'Daily', 'Weekly', 'Monthly'].includes(task.recurrence_rule || 'Once') ? (task.recurrence_rule || 'Once') : 'Custom'}
                   </span>
+                  {task.category_id && (
+                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                      {categories.find(c => c.id === task.category_id)?.name || 'Unknown'}
+                    </span>
+                  )}
                   {task.reward_value > 0 && (
                     <span className="text-sm text-neutral/60">• {task.reward_value} Stars</span>
                   )}

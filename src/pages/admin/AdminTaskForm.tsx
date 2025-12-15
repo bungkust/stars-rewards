@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
-import { FaArrowLeft, FaTrash } from 'react-icons/fa';
+import { FaArrowLeft, FaTrash, FaSoap, FaClock, FaUserCheck, FaBook, FaUsers, FaCommentDots, FaTshirt, FaSmile, FaShapes } from 'react-icons/fa';
 import { AlertModal, AppCard, ToggleButton } from '../../components/design-system';
 import { generateRRule, parseRRule, WEEKDAYS } from '../../utils/recurrence';
 import type { RecurrenceOptions } from '../../utils/recurrence';
@@ -17,12 +17,25 @@ const DIFFICULTY_PRESETS = [
   { label: 'EPIC', value: 50, desc: 'Major achievement (e.g., Good grades)', color: 'bg-rose-50 text-rose-600 border-rose-200' },
 ];
 
+const ICON_MAP: Record<string, any> = {
+  'soap': FaSoap,
+  'clock': FaClock,
+  'user-check': FaUserCheck,
+  'book': FaBook,
+  'users': FaUsers,
+  'message-circle': FaCommentDots,
+  'shirt': FaTshirt,
+  'smile': FaSmile,
+  'default': FaShapes
+};
+
 const AdminTaskForm = () => {
   const navigate = useNavigate();
   const { id } = useParams(); // Get task ID from URL if editing
-  const { addTask, updateTask, tasks, children, isLoading } = useAppStore();
+  const { addTask, updateTask, tasks, children, categories, isLoading } = useAppStore();
 
   const [title, setTitle] = useState('');
+  const [categoryId, setCategoryId] = useState('');
   const [reward, setReward] = useState(10);
   const [expiryTime, setExpiryTime] = useState(''); // Default empty (Optional)
   const [repetition, setRepetition] = useState('Once');
@@ -42,6 +55,7 @@ const AdminTaskForm = () => {
       const taskToEdit = tasks.find(t => t.id === id);
       if (taskToEdit) {
         setTitle(taskToEdit.name);
+        setCategoryId(taskToEdit.category_id || '');
         setReward(taskToEdit.reward_value);
         setExpiryTime(taskToEdit.expiry_time || '');
         setIsActive(taskToEdit.is_active !== false);
@@ -89,7 +103,7 @@ const AdminTaskForm = () => {
     e.preventDefault();
 
     // Validation is handled by disabled button, but double check here
-    if (selectedChildIds.length === 0 || !title) {
+    if (selectedChildIds.length === 0 || !title || !categoryId) {
       return;
     }
 
@@ -100,6 +114,7 @@ const AdminTaskForm = () => {
 
     const taskData = {
       name: title,
+      category_id: categoryId,
       reward_value: Number(reward),
       type: (finalRule === 'Once' ? 'ONE_TIME' : 'RECURRING') as "ONE_TIME" | "RECURRING",
       recurrence_rule: finalRule,
@@ -124,7 +139,7 @@ const AdminTaskForm = () => {
     }
   };
 
-  const isFormValid = title.trim().length > 0 && selectedChildIds.length > 0 && reward >= 0;
+  const isFormValid = title.trim().length > 0 && selectedChildIds.length > 0 && reward >= 0 && categoryId;
 
   return (
     <div className="flex flex-col gap-6 pb-24">
@@ -155,6 +170,34 @@ const AdminTaskForm = () => {
             onChange={(e) => setTitle(e.target.value)}
             required
           />
+        </div>
+
+        <div className="form-control w-full">
+          <label className="label">
+            <span className="label-text font-bold">Category</span>
+          </label>
+          <div className="grid grid-cols-4 gap-2">
+            {categories.map((cat) => {
+              const Icon = ICON_MAP[cat.icon] || ICON_MAP['default'];
+              const isSelected = categoryId === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setCategoryId(cat.id)}
+                  className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all duration-200 h-20 ${isSelected
+                    ? 'border-primary bg-primary/10 text-primary ring-1 ring-primary'
+                    : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-500'
+                    }`}
+                >
+                  <Icon className="text-xl mb-1" />
+                  <span className="text-[10px] font-bold text-center leading-tight line-clamp-2">
+                    {cat.name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="form-control w-full">

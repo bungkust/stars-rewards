@@ -1,4 +1,4 @@
-import type { Task, ChildTaskLog, CoinTransaction, Child } from '../types';
+import type { Task, ChildTaskLog, CoinTransaction, Child, Category } from '../types';
 import { parseRRule, isDateValid } from './recurrence';
 import { getLocalStartOfDay } from './timeUtils';
 
@@ -461,4 +461,61 @@ export const getRecommendations = (logs: ChildTaskLog[], tasks: Task[]): Recomme
     });
 
     return recommendations;
+};
+
+// Category Performance Metrics
+export interface CategoryMetric {
+    id: string;
+    name: string;
+    icon: string;
+    earned: number;
+    total: number;
+    completed: number;
+}
+
+export const getCategoryPerformance = (
+    categories: Category[],
+    logs: ChildTaskLog[],
+    transactions: CoinTransaction[],
+    tasks: Task[]
+): CategoryMetric[] => {
+    const metrics: Record<string, CategoryMetric> = {};
+
+    // Initialize
+    categories.forEach(c => {
+        metrics[c.id] = { id: c.id, name: c.name, icon: c.icon, earned: 0, total: 0, completed: 0 };
+    });
+    metrics['uncategorized'] = { id: 'uncategorized', name: 'Others', icon: 'default', earned: 0, total: 0, completed: 0 };
+
+    // Process Logs (for completion rate)
+    logs.forEach(log => {
+        const task = tasks.find(t => t.id === log.task_id);
+        const catId = task?.category_id || 'uncategorized';
+
+        if (!metrics[catId]) metrics[catId] = { id: catId, name: 'Unknown', icon: 'default', earned: 0, total: 0, completed: 0 };
+
+        metrics[catId].total++;
+        if (['VERIFIED', 'COMPLETED'].includes(log.status)) {
+            metrics[catId].completed++;
+        }
+    });
+
+    // Process Transactions (for earned stars)
+    transactions.forEach(tx => {
+        if (tx.type === 'TASK_VERIFIED' && tx.amount > 0) {
+            // We need to find the task to get the category
+            // The transaction reference_id is the log_id
+            const log = logs.find(l => l.id === tx.reference_id);
+            const task = log ? tasks.find(t => t.id === log.task_id) : null;
+            const catId = task?.category_id || 'uncategorized';
+
+            if (metrics[catId]) {
+                metrics[catId].earned += tx.amount;
+            }
+        }
+    });
+
+    return Object.values(metrics)
+        .filter(m => m.total > 0 || m.earned > 0)
+        .sort((a, b) => b.completed - a.completed);
 };
