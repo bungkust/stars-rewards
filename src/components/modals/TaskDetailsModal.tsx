@@ -3,6 +3,7 @@ import { Dialog } from '@headlessui/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { FaStar, FaClock, FaRedo, FaCalendarWeek, FaCalendarAlt, FaBolt, FaInfoCircle } from 'react-icons/fa';
 import { PrimaryButton } from '../design-system/PrimaryButton';
+import { formatRRule } from '../../utils/recurrence';
 
 interface TaskDetailsModalProps {
     isOpen: boolean;
@@ -30,8 +31,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, task, onClo
     };
 
     const getRecurrenceLabel = (rule?: string) => {
-        if (!rule) return 'One Time';
-        return rule === 'Once' ? 'One Time Mission' : `Repeats ${rule}`;
+        return formatRRule(rule || '');
     };
 
     return (

@@ -10,9 +10,9 @@ const BottomNav = () => {
 
   const navItems = [
     { id: 'home', icon: FaHome, label: 'Home', path: isAdminMode ? '/parent' : '/child' },
-    { id: 'tasks', icon: FaTasks, label: 'Missions', path: '/tasks' },
-    { id: 'rewards', icon: IoGiftOutline, label: 'Rewards', path: '/rewards' },
-    { id: 'stats', icon: FaChartLine, label: 'Stats', path: '/stats' },
+    { id: 'tasks', icon: FaTasks, label: 'Missions', path: isAdminMode ? '/parent/tasks' : '/child/tasks' },
+    { id: 'rewards', icon: IoGiftOutline, label: 'Rewards', path: isAdminMode ? '/parent/rewards' : '/child/rewards' },
+    { id: 'stats', icon: FaChartLine, label: 'Stats', path: isAdminMode ? '/parent/stats' : '/child/stats' },
   ];
 
   return (

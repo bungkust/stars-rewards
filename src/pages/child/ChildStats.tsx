@@ -12,6 +12,8 @@ import {
   YAxis,
   type TooltipContentProps,
 } from 'recharts';
+import { AnimatePresence, motion } from 'framer-motion';
+import TaskDetailsModal from '../../components/modals/TaskDetailsModal';
 import type { CoinTransaction } from '../../types';
 
 type Timeframe = 'week' | 'month';
@@ -47,12 +49,39 @@ const ChildStats = () => {
     [childLogs, child?.id]
   );
 
-  const [historyFilter, setHistoryFilter] = useState<'today' | 'week' | 'month'>('today');
+  const [historyFilter, setHistoryFilter] = useState<'today' | 'week' | 'month' | 'specific'>('today');
+  const [specificDate, setSpecificDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [tempDate, setTempDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [visibleHistoryCount, setVisibleHistoryCount] = useState(10);
 
-  const handleHistoryFilterChange = (filter: 'today' | 'week' | 'month') => {
+  const handleHistoryFilterChange = (filter: 'today' | 'week' | 'month' | 'specific') => {
     setHistoryFilter(filter);
     setVisibleHistoryCount(10);
+  };
+
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [selectedTaskDetails, setSelectedTaskDetails] = useState<any>(null);
+
+  const handleHistoryItemClick = (item: any) => {
+    let task = null;
+
+    if (item.type === 'transaction') {
+      const tx = item.data;
+      if (tx.type === 'TASK_VERIFIED') {
+        const log = childLogs.find(l => l.id === tx.reference_id);
+        if (log) {
+          task = tasks.find(t => t.id === log.task_id);
+        }
+      }
+    } else {
+      const log = item.data;
+      task = tasks.find(t => t.id === log.task_id);
+    }
+
+    if (task) {
+      setSelectedTaskDetails(task);
+      setIsDetailsModalOpen(true);
+    }
   };
 
   // Combine transactions and rejected missions for history
@@ -111,6 +140,12 @@ const ChildStats = () => {
     return allItems.filter(item => {
       const itemDate = new Date(item.date).getTime();
 
+      if (historyFilter === 'specific') {
+        // Compare YYYY-MM-DD strings in local time
+        const itemDateStr = new Date(item.date).toLocaleDateString('en-CA');
+        return specificDate === itemDateStr;
+      }
+
       if (historyFilter === 'today') {
         return itemDate >= today;
       }
@@ -125,7 +160,7 @@ const ChildStats = () => {
 
       return true;
     });
-  }, [childTransactions, rejectedMissions, historyFilter]);
+  }, [childTransactions, rejectedMissions, historyFilter, specificDate]);
 
   const visibleHistory = combinedHistory.slice(0, visibleHistoryCount);
   const hasMoreHistory = visibleHistory.length < combinedHistory.length;
@@ -343,7 +378,7 @@ const ChildStats = () => {
           <h3 className="text-lg font-bold text-neutral">Recent History</h3>
 
           {/* History Filter Tabs */}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
             <ToggleButton
               label="Today"
               isActive={historyFilter === 'today'}
@@ -359,92 +394,133 @@ const ChildStats = () => {
               isActive={historyFilter === 'month'}
               onClick={() => handleHistoryFilterChange('month')}
             />
+            <ToggleButton
+              label="Specific Date"
+              isActive={historyFilter === 'specific'}
+              onClick={() => handleHistoryFilterChange('specific')}
+            />
+            {historyFilter === 'specific' && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={tempDate}
+                  onChange={(e) => setTempDate(e.target.value)}
+                  className="input input-sm input-bordered rounded-full"
+                />
+                <button
+                  className="btn btn-sm btn-primary rounded-full"
+                  onClick={() => setSpecificDate(tempDate)}
+                >
+                  Apply
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
         <div className="flex flex-col gap-3">
-          {visibleHistory.map(item => {
-            if (item.type === 'transaction') {
-              const transaction = item.data;
-              const details = getTransactionDetails(transaction);
+          <AnimatePresence mode="popLayout">
+            {visibleHistory.map(item => {
+              if (item.type === 'transaction') {
+                const transaction = item.data;
+                const details = getTransactionDetails(transaction);
 
-              let Icon = FaCheckCircle;
-              let iconBg = 'bg-success/10';
-              let iconColor = 'text-success';
+                let Icon = FaCheckCircle;
+                let iconBg = 'bg-success/10';
+                let iconColor = 'text-success';
 
-              if (transaction.type === 'REWARD_REDEEMED') {
-                Icon = FaGift;
-                iconBg = 'bg-warning/10';
-                iconColor = 'text-warning';
-              } else if (transaction.type === 'MANUAL_ADJ') {
-                Icon = FaSlidersH;
-                iconBg = 'bg-info/10';
-                iconColor = 'text-info';
+                if (transaction.type === 'REWARD_REDEEMED') {
+                  Icon = FaGift;
+                  iconBg = 'bg-warning/10';
+                  iconColor = 'text-warning';
+                } else if (transaction.type === 'MANUAL_ADJ') {
+                  Icon = FaSlidersH;
+                  iconBg = 'bg-info/10';
+                  iconColor = 'text-info';
+                }
+
+                return (
+                  <motion.div
+                    key={item.id}
+                    layout
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                    className={`flex justify-between items-center border-b border-base-200 pb-3 last:border-none last:pb-0 ${transaction.type === 'TASK_VERIFIED' ? 'cursor-pointer hover:bg-base-200/50 transition-colors rounded-lg px-2 -mx-2' : ''}`}
+                    onClick={() => handleHistoryItemClick(item)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-full ${iconBg} ${iconColor}`}>
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-neutral text-sm">{details.name}</span>
+                        <span className="text-xs text-neutral/40">{formatDate(transaction.created_at)}</span>
+                        {details.description && (
+                          <span className="text-xs text-neutral/50 italic mt-0.5">
+                            {details.description}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <span className={`font-bold ${transaction.amount > 0 ? 'text-success' : transaction.amount < 0 ? 'text-error' : 'text-neutral/60'}`}>
+                      {transaction.amount !== 0 ? (
+                        <>{transaction.amount > 0 ? '+' : ''}{transaction.amount}</>
+                      ) : (
+                        <span className="text-xs uppercase">
+                          {transaction.type === 'TASK_VERIFIED' ? 'Done' : transaction.type === 'REWARD_REDEEMED' ? 'Redeemed' : '-'}
+                        </span>
+                      )}
+                    </span>
+                  </motion.div>
+                );
+              } else if (item.type === 'rejected_mission') {
+                const log = item.data;
+                const details = getRejectedMissionDetails(log);
+                const isFailed = log.status === 'FAILED';
+                const isExcused = log.status === 'EXCUSED';
+
+                return (
+                  <motion.div
+                    key={item.id}
+                    layout
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex justify-between items-center border-b border-base-200 pb-3 last:border-none last:pb-0 cursor-pointer hover:bg-base-200/50 transition-colors rounded-lg px-2 -mx-2"
+                    onClick={() => handleHistoryItemClick(item)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-full ${isFailed ? 'bg-base-200 text-neutral/60' : isExcused ? 'bg-warning/10 text-warning' : 'bg-error/10 text-error'}`}>
+                        {isExcused ? <FaChild className="w-4 h-4" /> : <FaTimesCircle className="w-4 h-4" />}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-neutral text-sm">{details.name}</span>
+                        <span className="text-xs text-neutral/40">{formatDate(log.completed_at)}</span>
+                        {log.rejection_reason && !isExcused && (
+                          <span className={`text-xs italic mt-0.5 ${isFailed ? 'text-neutral/60' : 'text-error'}`}>
+                            {isFailed ? 'Missed Deadline' : `Reason: ${log.rejection_reason}`}
+                          </span>
+                        )}
+                        {isExcused && (
+                          <span className="text-xs italic mt-0.5 text-warning">
+                            {log.notes || 'No reason provided'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <span className={`font-bold ${isFailed ? 'text-neutral/40' : isExcused ? 'text-warning' : 'text-error'}`}>
+                      <span className="text-xs uppercase">{isFailed ? 'Failed' : isExcused ? 'Excused' : 'Rejected'}</span>
+                    </span>
+                  </motion.div>
+                );
+
               }
-
-              return (
-                <div key={item.id} className="flex justify-between items-center border-b border-base-200 pb-3 last:border-none last:pb-0">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-full ${iconBg} ${iconColor}`}>
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="font-bold text-neutral text-sm">{details.name}</span>
-                      <span className="text-xs text-neutral/40">{formatDate(transaction.created_at)}</span>
-                      {details.description && (
-                        <span className="text-xs text-neutral/50 italic mt-0.5">
-                          {details.description}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <span className={`font-bold ${transaction.amount > 0 ? 'text-success' : transaction.amount < 0 ? 'text-error' : 'text-neutral/60'}`}>
-                    {transaction.amount !== 0 ? (
-                      <>{transaction.amount > 0 ? '+' : ''}{transaction.amount}</>
-                    ) : (
-                      <span className="text-xs uppercase">
-                        {transaction.type === 'TASK_VERIFIED' ? 'Done' : transaction.type === 'REWARD_REDEEMED' ? 'Redeemed' : '-'}
-                      </span>
-                    )}
-                  </span>
-                </div>
-              );
-            } else if (item.type === 'rejected_mission') {
-              const log = item.data;
-              const details = getRejectedMissionDetails(log);
-              const isFailed = log.status === 'FAILED';
-              const isExcused = log.status === 'EXCUSED';
-
-              return (
-                <div key={item.id} className="flex justify-between items-center border-b border-base-200 pb-3 last:border-none last:pb-0">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-full ${isFailed ? 'bg-base-200 text-neutral/60' : isExcused ? 'bg-warning/10 text-warning' : 'bg-error/10 text-error'}`}>
-                      {isExcused ? <FaChild className="w-4 h-4" /> : <FaTimesCircle className="w-4 h-4" />}
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="font-bold text-neutral text-sm">{details.name}</span>
-                      <span className="text-xs text-neutral/40">{formatDate(log.completed_at)}</span>
-                      {log.rejection_reason && !isExcused && (
-                        <span className={`text-xs italic mt-0.5 ${isFailed ? 'text-neutral/60' : 'text-error'}`}>
-                          {isFailed ? 'Missed Deadline' : `Reason: ${log.rejection_reason}`}
-                        </span>
-                      )}
-                      {isExcused && (
-                        <span className="text-xs italic mt-0.5 text-warning">
-                          {log.notes || 'No reason provided'}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <span className={`font-bold ${isFailed ? 'text-neutral/40' : isExcused ? 'text-warning' : 'text-error'}`}>
-                    <span className="text-xs uppercase">{isFailed ? 'Failed' : isExcused ? 'Excused' : 'Rejected'}</span>
-                  </span>
-                </div>
-              );
-
-            }
-            return null;
-          })}
+              return null;
+            })}
+          </AnimatePresence>
 
           {visibleHistory.length === 0 && (
             <p className="text-neutral/40 text-center text-sm py-4">No activity in this period.</p>
@@ -460,6 +536,12 @@ const ChildStats = () => {
           )}
         </div>
       </div>
+
+      <TaskDetailsModal
+        isOpen={isDetailsModalOpen}
+        task={selectedTaskDetails}
+        onClose={() => setIsDetailsModalOpen(false)}
+      />
     </div>
   );
 };

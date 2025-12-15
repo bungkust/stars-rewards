@@ -190,18 +190,54 @@ const AnimatedRoutes = () => {
             </PageTransition>
           </ParentRoute>
         } />
+        <Route path="/parent/tasks" element={
+          <ParentRoute>
+            <PageTransition>
+              <Tasks />
+            </PageTransition>
+          </ParentRoute>
+        } />
+        <Route path="/parent/rewards" element={
+          <ParentRoute>
+            <PageTransition>
+              <Rewards />
+            </PageTransition>
+          </ParentRoute>
+        } />
+        <Route path="/parent/stats" element={
+          <ParentRoute>
+            <PageTransition>
+              <Stats />
+            </PageTransition>
+          </ParentRoute>
+        } />
 
         <Route path="/child" element={
           <PageTransition>
             <Dashboard />
           </PageTransition>
         } />
-
-        <Route path="/tasks" element={
+        <Route path="/child/tasks" element={
           <PageTransition>
             <Tasks />
           </PageTransition>
         } />
+        <Route path="/child/rewards" element={
+          <PageTransition>
+            <Rewards />
+          </PageTransition>
+        } />
+        <Route path="/child/stats" element={
+          <PageTransition>
+            <Stats />
+          </PageTransition>
+        } />
+
+        {/* Legacy Redirects */}
+        <Route path="/tasks" element={<Navigate to={isAdminMode ? "/parent/tasks" : "/child/tasks"} replace />} />
+        <Route path="/rewards" element={<Navigate to={isAdminMode ? "/parent/rewards" : "/child/rewards"} replace />} />
+        <Route path="/stats" element={<Navigate to={isAdminMode ? "/parent/stats" : "/child/stats"} replace />} />
+
         <Route path="/admin/tasks/new" element={
           <PageTransition>
             <AdminTaskForm />
@@ -214,11 +250,6 @@ const AnimatedRoutes = () => {
         } />
 
 
-        <Route path="/rewards" element={
-          <PageTransition>
-            <Rewards />
-          </PageTransition>
-        } />
         <Route path="/admin/rewards/new" element={
           <PageTransition>
             <AdminRewardForm />
@@ -230,11 +261,6 @@ const AnimatedRoutes = () => {
           </PageTransition>
         } />
 
-        <Route path="/stats" element={
-          <PageTransition>
-            <Stats />
-          </PageTransition>
-        } />
         <Route path="/settings" element={
           <PageTransition>
             <Settings />

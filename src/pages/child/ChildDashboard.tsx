@@ -3,7 +3,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { FaStar, FaClock, FaRedo, FaCamera, FaBolt, FaCalendarWeek, FaCalendarAlt } from 'react-icons/fa';
 import { motion, type PanInfo } from 'framer-motion';
 import { ToggleButton } from '../../components/design-system';
-import { parseRRule, isDateValid } from '../../utils/recurrence';
+import { parseRRule, isDateValid, formatRRule } from '../../utils/recurrence';
 import { getTodayLocalStart, getLocalStartOfDay, getLocalDateString } from '../../utils/timeUtils';
 import AvatarSelectionModal from '../../components/modals/AvatarSelectionModal';
 import TaskCompletionModal from '../../components/modals/TaskCompletionModal';
@@ -16,11 +16,11 @@ const ChildDashboard = () => {
   const child = children.find(c => c.id === activeChildId);
   const allTasks = activeChildId ? getTasksByChildId(activeChildId) : [];
 
-  const [filter, setFilter] = useState<'daily' | 'once' | 'all'>('all');
+  const [filter, setFilter] = useState<'today' | 'daily' | 'once' | 'all'>('today');
   const [visibleCount, setVisibleCount] = useState(20);
 
   // Reset visible count when filter changes
-  const handleFilterChange = (newFilter: 'daily' | 'once' | 'all') => {
+  const handleFilterChange = (newFilter: 'today' | 'daily' | 'once' | 'all') => {
     setFilter(newFilter);
     setVisibleCount(20);
   };
@@ -56,8 +56,14 @@ const ChildDashboard = () => {
       }
 
       if (filter === 'daily') {
-        // Show Recurring tasks that are scheduled for TODAY (Local Time)
-        if (task.recurrence_rule === 'Once') return false;
+        return task.recurrence_rule === 'Daily';
+      }
+
+      if (filter === 'today') {
+        // Show tasks scheduled for TODAY (Local Time)
+
+        // If it's 'Once', it is available today (unless filtered out by future due date below)
+        if (task.recurrence_rule === 'Once') return true;
 
         if (task.recurrence_rule) {
           const options = parseRRule(task.recurrence_rule);
@@ -277,8 +283,12 @@ const ChildDashboard = () => {
           </h3>
 
           {/* Filter Tabs */}
-          {/* Filter Tabs */}
           <div className="flex gap-2">
+            <ToggleButton
+              label="Today"
+              isActive={filter === 'today'}
+              onClick={() => handleFilterChange('today')}
+            />
             <ToggleButton
               label="Daily"
               isActive={filter === 'daily'}

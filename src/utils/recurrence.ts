@@ -234,3 +234,50 @@ const getStartOfWeek = (date: Date) => {
     d.setDate(diff);
     return d;
 };
+
+/**
+ * Formats an RRULE string into a human-readable string.
+ */
+export const formatRRule = (rrule: string): string => {
+    if (!rrule) return 'One Time';
+    if (rrule === 'Once') return 'One Time Mission';
+    if (rrule === 'Daily') return 'Daily';
+    if (rrule === 'Weekly') return 'Weekly';
+    if (rrule === 'Monthly') return 'Monthly';
+
+    const options = parseRRule(rrule);
+    const dayMap: Record<string, string> = {
+        'MO': 'Mon', 'TU': 'Tue', 'WE': 'Wed', 'TH': 'Thu', 'FR': 'Fri', 'SA': 'Sat', 'SU': 'Sun'
+    };
+
+    if (options.frequency === 'DAILY') {
+        return options.interval > 1 ? `Every ${options.interval} days` : 'Daily';
+    }
+
+    if (options.frequency === 'WEEKLY') {
+        const days = options.byDay?.map(d => dayMap[d]).join(', ');
+        const intervalStr = options.interval > 1 ? `Every ${options.interval} weeks` : 'Weekly';
+        return days ? `${intervalStr} on ${days}` : intervalStr;
+    }
+
+    if (options.frequency === 'MONTHLY') {
+        const intervalStr = options.interval > 1 ? `Every ${options.interval} months` : 'Monthly';
+
+        if (options.byMonthDay) {
+            return `${intervalStr} on day ${options.byMonthDay}`;
+        }
+
+        if (options.bySetPos && options.byDay) {
+            const posMap: Record<number, string> = {
+                1: '1st', 2: '2nd', 3: '3rd', 4: '4th', '-1': 'last'
+            };
+            const pos = posMap[options.bySetPos] || `${options.bySetPos}th`;
+            const day = dayMap[options.byDay[0]];
+            return `${intervalStr} on the ${pos} ${day}`;
+        }
+
+        return intervalStr;
+    }
+
+    return rrule;
+};

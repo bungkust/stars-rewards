@@ -2,7 +2,7 @@ import type { Task, ChildTaskLog, CoinTransaction, Child } from '../types';
 import { parseRRule, isDateValid } from './recurrence';
 import { getLocalStartOfDay } from './timeUtils';
 
-export type TimeFilter = 'today' | 'week' | 'month';
+export type TimeFilter = 'today' | 'week' | 'month' | 'specific';
 
 interface CoinMetrics {
     earned: number;
@@ -390,22 +390,6 @@ export const getRecommendations = (logs: ChildTaskLog[], tasks: Task[]): Recomme
         }
     });
 
-    // 2. Check for "Night Owl" behavior (tasks done late: 8 PM - 4 AM)
-    let nightCount = 0;
-    logs.forEach(l => {
-        if (l.status === 'VERIFIED') {
-            const hour = new Date(l.completed_at).getHours();
-            if (hour >= 20 || hour < 4) nightCount++;
-        }
-    });
-
-    if (nightCount >= 3) {
-        recommendations.push({
-            id: 'night-owl',
-            message: `${nightCount} tasks were completed late at night. Consider setting earlier deadlines?`,
-            type: 'info'
-        });
-    }
 
     // 3. Check for "Morning Bird" behavior (tasks done early: 5 AM - 9 AM)
     let morningCount = 0;
