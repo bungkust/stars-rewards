@@ -3,7 +3,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { FaStar, FaClock, FaRedo, FaCamera, FaBolt, FaCalendarWeek, FaCalendarAlt } from 'react-icons/fa';
 import { motion, type PanInfo } from 'framer-motion';
 import { ToggleButton } from '../../components/design-system';
-import { parseRRule, isDateValid, formatRRule } from '../../utils/recurrence';
+import { parseRRule, isDateValid } from '../../utils/recurrence';
 import { getTodayLocalStart, getLocalStartOfDay, getLocalDateString } from '../../utils/timeUtils';
 import AvatarSelectionModal from '../../components/modals/AvatarSelectionModal';
 import TaskCompletionModal from '../../components/modals/TaskCompletionModal';

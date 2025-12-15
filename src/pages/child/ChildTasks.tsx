@@ -10,11 +10,10 @@ const ChildTasks = () => {
   const allTasks = activeChildId ? getTasksByChildId(activeChildId) : [];
 
   const [filter, setFilter] = useState<'daily' | 'once' | 'all'>('all');
-  const [visibleCount, setVisibleCount] = useState(20);
+
 
   const handleFilterChange = (newFilter: 'daily' | 'once' | 'all') => {
     setFilter(newFilter);
-    setVisibleCount(20);
   };
 
   const filteredTasks = useMemo(() => {
