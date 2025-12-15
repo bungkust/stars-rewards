@@ -150,7 +150,7 @@ export const useAppStore = create<AppState>()(
             const DEFAULT_CATEGORIES = [
               { name: 'Hygiene', icon: 'soap', is_default: true },
               { name: 'Time', icon: 'clock', is_default: true },
-              { name: 'Personal Responsibility', icon: 'user-check', is_default: true },
+              { name: 'Responsibility', icon: 'user-check', is_default: true },
               { name: 'Skill', icon: 'book', is_default: true },
               { name: 'Family', icon: 'users', is_default: true },
               { name: 'Social', icon: 'message-circle', is_default: true },
@@ -162,6 +162,13 @@ export const useAppStore = create<AppState>()(
             // dataService.addCategory returns the new category.
             const seeded = await Promise.all(DEFAULT_CATEGORIES.map(c => dataService.addCategory(userId, c)));
             finalCategories = seeded.filter((c): c is Category => c !== null);
+          } else {
+            // Migration: Rename "Personal Responsibility" to "Responsibility" if found
+            const longNameCat = categories.find(c => c.name === 'Personal Responsibility' && c.is_default);
+            if (longNameCat) {
+              await dataService.updateCategory(longNameCat.id, { name: 'Responsibility' });
+              finalCategories = categories.map(c => c.id === longNameCat.id ? { ...c, name: 'Responsibility' } : c);
+            }
           }
 
           set({
