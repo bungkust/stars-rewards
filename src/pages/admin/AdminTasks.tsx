@@ -133,17 +133,19 @@ const AdminTasks = () => {
               </div>
               <div className="flex-1">
                 <h3 className="font-bold text-neutral">{task.name}</h3>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getBadgeStyle(task.recurrence_rule || 'Once')}`}>
-                    {['Once', 'Daily', 'Weekly', 'Monthly'].includes(task.recurrence_rule || 'Once') ? (task.recurrence_rule || 'Once') : 'Custom'}
-                  </span>
-                  {task.category_id && (
-                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                      {categories.find(c => c.id === task.category_id)?.name || 'Unknown'}
+                <div className="flex flex-col gap-1 mt-1">
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getBadgeStyle(task.recurrence_rule || 'Once')}`}>
+                      {['Once', 'Daily', 'Weekly', 'Monthly'].includes(task.recurrence_rule || 'Once') ? (task.recurrence_rule || 'Once') : 'Custom'}
                     </span>
-                  )}
+                    {task.category_id && (
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                        {categories.find(c => c.id === task.category_id)?.name || 'Unknown'}
+                      </span>
+                    )}
+                  </div>
                   {task.reward_value > 0 && (
-                    <span className="text-sm text-neutral/60">• {task.reward_value} Stars</span>
+                    <span className="text-xs text-neutral/60 font-medium">{task.reward_value} Stars</span>
                   )}
                 </div>
               </div>
