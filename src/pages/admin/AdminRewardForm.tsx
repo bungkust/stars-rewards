@@ -29,6 +29,7 @@ const AdminRewardForm = () => {
   const [requiredTaskCount, setRequiredTaskCount] = useState(1);
   const [selectedChildIds, setSelectedChildIds] = useState<string[]>([]);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Load existing reward if editing
   useEffect(() => {
@@ -224,29 +225,47 @@ const AdminRewardForm = () => {
                     </span>
                   </ListboxButton>
                   <ListboxOptions className="absolute mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm z-50">
-                    {tasks.map((task) => (
-                      <ListboxOption
-                        key={task.id}
-                        className={({ active }) =>
-                          `relative cursor-pointer select-none py-2 pl-10 pr-4 ${active ? 'bg-blue-50 text-primary' : 'text-gray-900'
-                          }`
-                        }
-                        value={task.id}
-                      >
-                        {({ selected }) => (
-                          <>
-                            <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
-                              {task.name}
-                            </span>
-                            {selected ? (
-                              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-primary">
-                                <FaCheck className="h-3 w-3" aria-hidden="true" />
+                    <div className="sticky top-0 z-10 bg-white px-2 py-2 border-b border-gray-100">
+                      <input
+                        type="text"
+                        className="input input-sm input-bordered w-full rounded-lg"
+                        placeholder="Search missions..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                    {tasks
+                      .filter(task => task.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                      .map((task) => (
+                        <ListboxOption
+                          key={task.id}
+                          className={({ active }) =>
+                            `relative cursor-pointer select-none py-2 pl-10 pr-4 ${active ? 'bg-blue-50 text-primary' : 'text-gray-900'
+                            }`
+                          }
+                          value={task.id}
+                        >
+                          {({ selected }) => (
+                            <>
+                              <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
+                                {task.name}
                               </span>
-                            ) : null}
-                          </>
-                        )}
-                      </ListboxOption>
-                    ))}
+                              {selected ? (
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-primary">
+                                  <FaCheck className="h-3 w-3" aria-hidden="true" />
+                                </span>
+                              ) : null}
+                            </>
+                          )}
+                        </ListboxOption>
+                      ))}
+                    {tasks.filter(task => task.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+                      <div className="py-2 px-4 text-gray-500 text-sm italic">
+                        No missions found.
+                      </div>
+                    )}
                   </ListboxOptions>
                 </div>
               </Listbox>
