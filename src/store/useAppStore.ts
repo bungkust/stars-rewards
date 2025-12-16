@@ -3,8 +3,9 @@ import { persist } from 'zustand/middleware';
 import type { Profile, Child, Task, Reward, VerificationRequest, CoinTransaction, ChildTaskLog, Category } from '../types';
 import { dataService } from '../services/dataService';
 import { localStorageService } from '../services/localStorageService';
-import { parseRRule, isDateValid, getNextDueDate } from '../utils/recurrence';
-import { getLocalDateString, getTodayLocalStart, getLocalStartOfDay, isResetNeeded } from '../utils/timeUtils';
+import { getNextDueDate } from '../utils/recurrence';
+import { getLocalDateString } from '../utils/timeUtils';
+import { missionLogicService } from '../services/missionLogicService';
 
 export type OnboardingStep = 'family-setup' | 'parent-setup' | 'add-child' | 'first-task' | 'first-reward' | 'completed';
 
@@ -672,17 +673,7 @@ export const useAppStore = create<AppState>()(
           let updatedTasks = tasks;
 
           if (log) {
-            updatedTasks = tasks.map(t => {
-              if (t.id === log.task_id) {
-                // We increment streak for excused as well, to encourage honesty
-                const currentStreak = (t.current_streak || 0) + 1;
-                const bestStreak = Math.max(t.best_streak || 0, currentStreak);
-
-                dataService.updateTask(t.id, { current_streak: currentStreak, best_streak: bestStreak });
-                return { ...t, current_streak: currentStreak, best_streak: bestStreak };
-              }
-              return t;
-            });
+            updatedTasks = await missionLogicService.incrementStreak(log.task_id, tasks);
           }
 
           set((state) => ({
@@ -733,21 +724,7 @@ export const useAppStore = create<AppState>()(
           let updatedTasks = tasks;
 
           if (log) {
-            updatedTasks = tasks.map(t => {
-              if (t.id === log.task_id) {
-                const currentStreak = (t.current_streak || 0) + 1;
-                const bestStreak = Math.max(t.best_streak || 0, currentStreak);
-
-                // Persist streak update to DB (optimistic update here, assuming dataService handles it or we need a separate call)
-                // Ideally dataService.updateTask should be called, but for now we update local state.
-                // NOTE: We should probably call updateTask in background or ensure dataService.verifyTask handles it if backend logic existed.
-                // Since we are using local storage/Supabase, we should explicitly update the task.
-                dataService.updateTask(t.id, { current_streak: currentStreak, best_streak: bestStreak });
-
-                return { ...t, current_streak: currentStreak, best_streak: bestStreak };
-              }
-              return t;
-            });
+            updatedTasks = await missionLogicService.incrementStreak(log.task_id, tasks);
           }
 
           // Remove from local pendingVerifications
@@ -888,199 +865,25 @@ export const useAppStore = create<AppState>()(
 
       checkMissedMissions: async () => {
         const { children, tasks, childLogs, lastMissedCheckDate } = get();
-        const userId = 'local-user';
-        const todayStr = getLocalDateString();
 
-        // 1. Check for MISSED tasks from PAST DAYS
-        // Only run this if we haven't checked today yet
-        if (isResetNeeded(lastMissedCheckDate)) {
-          let startDate: Date;
-          const todayDate = getTodayLocalStart();
+        try {
+          const result = await missionLogicService.checkMissedMissions(
+            children,
+            tasks,
+            childLogs,
+            lastMissedCheckDate
+          );
 
-          if (lastMissedCheckDate) {
-            startDate = new Date(lastMissedCheckDate);
-            startDate = getLocalStartOfDay(startDate);
-          } else {
-            startDate = new Date(todayDate);
-            startDate.setDate(startDate.getDate() - 7);
+          if (result.newLogs.length > 0 || result.lastCheckedDate !== lastMissedCheckDate) {
+            set(state => ({
+              lastMissedCheckDate: result.lastCheckedDate,
+              childLogs: [...state.childLogs, ...result.newLogs].sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime()),
+              tasks: result.updatedTasks
+            }));
           }
-
-          const endDate = new Date(todayDate);
-          endDate.setDate(endDate.getDate() - 1);
-
-          if (startDate <= endDate) {
-            const newLogs: ChildTaskLog[] = [];
-            const activeTasks = tasks.filter(t => t.is_active !== false);
-
-            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-              const checkDate = new Date(d);
-              const checkDateStr = getLocalDateString(checkDate);
-              const checkDateIso = checkDate.toISOString();
-
-              for (const task of activeTasks) {
-                if (!task.recurrence_rule) continue;
-
-                const taskCreatedDate = new Date(task.created_at || new Date());
-                const taskCreatedDateStr = getLocalDateString(taskCreatedDate);
-                if (checkDateStr < taskCreatedDateStr) continue;
-
-                let isScheduled = false;
-                if (task.recurrence_rule === 'Once') {
-                  isScheduled = task.next_due_date === checkDateStr;
-                } else {
-                  const options = parseRRule(task.recurrence_rule);
-                  const baseDate = new Date(task.created_at || new Date());
-                  isScheduled = isDateValid(checkDate, options, baseDate);
-                }
-
-                if (isScheduled) {
-                  const assignedChildren = (task.assigned_to || []).filter((id: string) => children.some(c => c.id === id));
-
-                  for (const childId of assignedChildren) {
-                    const hasLog = childLogs.some(log => {
-                      if (log.child_id !== childId || log.task_id !== task.id) return false;
-                      const logDate = new Date(log.completed_at);
-                      return getLocalDateString(logDate) === checkDateStr;
-                    });
-
-                    if (!hasLog) {
-                      const alreadyFailed = childLogs.some(log => {
-                        if (log.child_id !== childId || log.task_id !== task.id) return false;
-                        if (log.status !== 'FAILED') return false;
-                        const logDate = new Date(log.completed_at);
-                        const logDateStr = getLocalDateString(logDate);
-                        return logDateStr === checkDateStr;
-                      });
-
-                      if (!alreadyFailed) {
-                        const newLog = await dataService.logFailedTask(userId, childId, task.id, checkDateIso);
-                        if (newLog) {
-                          newLogs.push(newLog);
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-
-            // Update last check date if we processed past days
-            set({ lastMissedCheckDate: todayStr });
-
-            if (newLogs.length > 0) {
-              set(state => ({
-                childLogs: [...newLogs, ...state.childLogs]
-              }));
-            }
-
-            // Phase 3: Schedule Missed Daily Report
-            if (newLogs.length > 0) {
-              import('../services/notificationService').then(({ notificationService }) => {
-                notificationService.scheduleMissedDailyReport(newLogs.length);
-              });
-            }
-          }
+        } catch (error) {
+          console.error('Error checking missed missions:', error);
         }
-
-        // 2. Check for EXPIRED tasks for TODAY (ALWAYS RUN THIS)
-        const activeTasks = tasks.filter(t => t.is_active !== false);
-        const newLogs: ChildTaskLog[] = [];
-        const todayDate = getTodayLocalStart();
-        const now = new Date();
-        const currentHours = now.getHours();
-        const currentMinutes = now.getMinutes();
-        const currentTimeVal = currentHours * 60 + currentMinutes;
-
-        console.log('[AutoFail] Checking expired tasks at:', now.toLocaleTimeString(), 'Val:', currentTimeVal);
-
-        for (const task of activeTasks) {
-          if (!task.expiry_time) continue;
-
-          // Parse expiry time
-          const [expHour, expMinute] = task.expiry_time.split(':').map(Number);
-          const expTimeVal = expHour * 60 + expMinute;
-
-          console.log(`[AutoFail] Task: ${task.name}, Expiry: ${task.expiry_time} (${expTimeVal}), Current: ${currentTimeVal}`);
-
-          if (currentTimeVal > expTimeVal) {
-            console.log(`[AutoFail] Task ${task.name} is EXPIRED. Checking if due today...`);
-            // Task has expired for today. Check if it was due today.
-            const checkDate = new Date(todayDate); // Today local start
-            const checkDateStr = getLocalDateString(checkDate);
-            const checkDateIso = checkDate.toISOString();
-
-            // Don't check dates before the task existed
-            const taskCreatedDate = new Date(task.created_at || new Date());
-            const taskCreatedDateStr = getLocalDateString(taskCreatedDate);
-            if (checkDateStr < taskCreatedDateStr) {
-              console.log(`[AutoFail] Task ${task.name} created after today, skipping.`);
-              continue;
-            }
-
-            let isScheduled = false;
-            if (task.recurrence_rule === 'Once') {
-              isScheduled = task.next_due_date === checkDateStr;
-            } else if (task.recurrence_rule) {
-              const options = parseRRule(task.recurrence_rule);
-              const baseDate = new Date(task.created_at || new Date());
-              isScheduled = isDateValid(checkDate, options, baseDate);
-            }
-
-            console.log(`[AutoFail] Task ${task.name} scheduled for today? ${isScheduled}`);
-
-            if (isScheduled) {
-              const assignedChildren = (task.assigned_to || []).filter((id: string) => children.some(c => c.id === id));
-
-              for (const childId of assignedChildren) {
-                // Check if completed/failed/excused today
-                const hasLog = childLogs.some(log => {
-                  if (log.child_id !== childId || log.task_id !== task.id) return false;
-                  const logDate = new Date(log.completed_at);
-                  return getLocalDateString(logDate) === checkDateStr;
-                });
-
-                console.log(`[AutoFail] Child ${childId} has log today? ${hasLog}`);
-
-                if (!hasLog) {
-                  console.log(`[AutoFail] MARKING FAILED: Task ${task.name} for Child ${childId}`);
-                  // Log FAILED immediately
-                  const newLog = await dataService.logFailedTask(userId, childId, task.id, checkDateIso);
-                  if (newLog) {
-                    newLogs.push(newLog);
-                  }
-                }
-              }
-            }
-          }
-        }
-
-        if (newLogs.length > 0) {
-          // Reset streaks for failed tasks
-          const { tasks } = get();
-          const failedTaskIds = new Set(newLogs.map(l => l.task_id));
-
-          const updatedTasks = tasks.map(t => {
-            if (failedTaskIds.has(t.id)) {
-              // Reset streak to 0
-              dataService.updateTask(t.id, { current_streak: 0 });
-              return { ...t, current_streak: 0 };
-            }
-            return t;
-          });
-
-          set(state => ({
-            tasks: updatedTasks,
-            childLogs: [...state.childLogs, ...newLogs].sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime())
-          }));
-        }
-
-        // Update last check date to TODAY (local string) to indicate we have checked everything up to now.
-        // Actually, if we only checked up to "yesterday", should we set it to "yesterday" or "today"?
-        // If we set it to "today", then tomorrow `isResetNeeded` will be true (tomorrow != today).
-        // And `startDate` will be (today + 1) which is tomorrow.
-        // So we check "today" (which became yesterday).
-        // Yes, setting it to todayStr means "I have run the check logic on [todayStr]".
-        set({ lastMissedCheckDate: todayStr });
       },
 
       logout: async () => {

@@ -1,4 +1,6 @@
 import type { Child, Task, Reward, ChildTaskLog, CoinTransaction, VerificationRequest, Profile, Category } from '../types';
+import { AppError } from '../types/error';
+import { backupSchema } from '../schemas/backupSchema';
 
 const STORAGE_KEY = 'stars-rewards-db';
 
@@ -474,6 +476,24 @@ export const localStorageService = {
         return newLog;
     },
 
+    logFailedTasksBatch: async (items: { childId: string; taskId: string; date: string }[]): Promise<ChildTaskLog[]> => {
+        if (items.length === 0) return [];
+        const db = getDB();
+        const newLogs: ChildTaskLog[] = items.map(item => ({
+            id: generateId(),
+            parent_id: 'local-user',
+            child_id: item.childId,
+            task_id: item.taskId,
+            status: 'FAILED',
+            rejection_reason: 'Missed daily deadline',
+            completed_at: item.date
+        }));
+
+        db.logs.push(...newLogs);
+        saveDB(db);
+        return newLogs;
+    },
+
     // --- Transactions / Redemption ---
 
     redeemReward: async (childId: string, cost: number, rewardId?: string): Promise<boolean> => {
@@ -534,39 +554,74 @@ export const localStorageService = {
 
     restoreBackup: async (data: any): Promise<boolean> => {
         try {
-            // Basic validation
-            if (!data || typeof data !== 'object') return false;
-            // Allow if children OR tasks exist (partial backups might be possible, but let's be lenient)
-            if (!Array.isArray(data.children) && !Array.isArray(data.tasks)) return false;
+            // Validate using Zod schema
+            const result = backupSchema.safeParse(data);
+
+            if (!result.success) {
+                console.error('Backup validation failed:', result.error);
+                throw new AppError('Invalid backup file format', 'VALIDATION_ERROR', result.error.format());
+            }
+
+            const validData = result.data;
 
             // Reconstruct Profile if missing but flat fields exist
-            let profile = data.profile;
-            if (!profile && (data.adminName || data.familyName)) {
+            let profile = validData.profile;
+            if (!profile && (validData.adminName || validData.familyName)) {
                 profile = {
                     id: 'local-user',
                     created_at: new Date().toISOString(),
-                    pin_admin: data.adminPin || '0000',
-                    family_name: data.familyName || 'My Family',
-                    parent_name: data.adminName || 'Parent'
+                    pin_admin: validData.adminPin || '0000',
+                    family_name: validData.familyName || 'My Family',
+                    parent_name: validData.adminName || 'Parent'
                 };
             }
 
             // Ensure structure matches LocalDB
+            const validChildren = (validData.children || []).map(c => ({
+                ...c,
+                current_balance: c.current_balance ?? 0,
+                avatar_url: c.avatar_url || ''
+            }));
+
+            const validTasks = (validData.tasks || []).map(t => ({
+                ...t,
+                type: t.type || 'ONE_TIME',
+                assigned_to: t.assigned_to || []
+            }));
+
+            const validRewards = (validData.rewards || []).map(r => ({
+                ...r,
+                type: r.type || 'UNLIMITED'
+            }));
+
+            // Filter logs to ensure referential integrity
+            const rawLogs = validData.logs || validData.childLogs || [];
+            const validLogs = rawLogs.filter(log => {
+                const childExists = validChildren.some(c => c.id === log.child_id);
+                const taskExists = validTasks.some(t => t.id === log.task_id);
+                return childExists && taskExists;
+            });
+
             const newDB: LocalDB = {
-                profile: profile || null,
-                children: data.children || [],
-                tasks: data.tasks || [],
-                rewards: data.rewards || [],
-                logs: data.logs || data.childLogs || [], // Handle both keys if they differ
-                transactions: data.transactions || [],
-                categories: data.categories || []
+                profile: profile ? {
+                    ...profile,
+                    created_at: profile.created_at || new Date().toISOString(),
+                    pin_admin: profile.pin_admin || '0000'
+                } : null,
+                children: validChildren,
+                tasks: validTasks,
+                rewards: validRewards,
+                logs: validLogs,
+                transactions: validData.transactions || [],
+                categories: validData.categories || []
             };
 
             saveDB(newDB);
             return true;
         } catch (error) {
             console.error('Restore failed:', error);
-            return false;
+            if (error instanceof AppError) throw error;
+            throw new AppError('Failed to restore backup', 'STORAGE_ERROR', error);
         }
     },
 

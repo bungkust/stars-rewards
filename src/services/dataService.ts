@@ -176,6 +176,13 @@ export const dataService = {
   },
 
   /**
+   * Logs multiple failed tasks in a batch.
+   */
+  logFailedTasksBatch: async (_parentId: string, items: { childId: string; taskId: string; date: string }[]): Promise<ChildTaskLog[]> => {
+    return localStorageService.logFailedTasksBatch(items);
+  },
+
+  /**
    * Redeems a reward.
    */
   redeemReward: async (childId: string, cost: number, rewardId?: string): Promise<boolean> => {
@@ -200,11 +207,12 @@ export const dataService = {
    * Restores data from backup.
    */
   restoreBackup: async (_userId: string, data: any): Promise<{ success: boolean; error?: any }> => {
-    const success = await localStorageService.restoreBackup(data);
-    if (success) {
+    try {
+      await localStorageService.restoreBackup(data);
       return { success: true };
+    } catch (error) {
+      return { success: false, error };
     }
-    return { success: false, error: 'Invalid backup data' };
   },
 
   /**
