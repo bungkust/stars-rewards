@@ -4,6 +4,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { PrimaryButton } from '../../components/design-system/PrimaryButton';
 import { AppCard, ToggleButton } from '../../components/design-system';
 import { generateRRule, WEEKDAYS } from '../../utils/recurrence';
+import { ICON_MAP } from '../../utils/icons';
 import type { RecurrenceOptions } from '../../utils/recurrence';
 
 const DIFFICULTY_PRESETS = [
@@ -16,9 +17,10 @@ const DIFFICULTY_PRESETS = [
 
 const FirstTask = () => {
   const navigate = useNavigate();
-  const { addTask, setOnboardingStep, isLoading, children } = useAppStore();
+  const { addTask, setOnboardingStep, isLoading, children, categories } = useAppStore();
 
   const [title, setTitle] = useState('');
+  const [categoryId, setCategoryId] = useState('');
   const [reward, setReward] = useState(10);
   const [expiryTime, setExpiryTime] = useState('');
   const [repetition, setRepetition] = useState('Daily');
@@ -59,6 +61,10 @@ const FirstTask = () => {
       setError('Please enter a task name');
       return;
     }
+    if (!categoryId) {
+      setError('Please select a category');
+      return;
+    }
     if (selectedChildIds.length === 0) {
       setError('Please select at least one child');
       return;
@@ -71,6 +77,7 @@ const FirstTask = () => {
 
     const { error: taskError } = await addTask({
       name: title,
+      category_id: categoryId,
       reward_value: Number(reward),
       type: (finalRule === 'Once' ? 'ONE_TIME' : 'RECURRING') as "ONE_TIME" | "RECURRING",
       recurrence_rule: finalRule,
@@ -88,7 +95,7 @@ const FirstTask = () => {
     navigate('/onboarding/first-reward');
   };
 
-  const isFormValid = title.trim().length > 0 && selectedChildIds.length > 0 && reward >= 0;
+  const isFormValid = title.trim().length > 0 && categoryId && selectedChildIds.length > 0 && reward >= 0;
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center app-gradient p-6 py-12">
@@ -110,6 +117,34 @@ const FirstTask = () => {
               autoFocus
               required
             />
+          </div>
+
+          <div className="form-control w-full">
+            <label className="label">
+              <span className="label-text font-bold">Category</span>
+            </label>
+            <div className="grid grid-cols-4 gap-2">
+              {categories.map((cat) => {
+                const Icon = ICON_MAP[cat.icon] || ICON_MAP['default'];
+                const isSelected = categoryId === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setCategoryId(cat.id)}
+                    className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all duration-200 h-20 ${isSelected
+                      ? 'border-primary bg-primary/10 text-primary ring-1 ring-primary'
+                      : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-500'
+                      }`}
+                  >
+                    <Icon className="text-xl mb-1" />
+                    <span className="text-[10px] font-bold text-center leading-tight line-clamp-2">
+                      {cat.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="form-control w-full">
