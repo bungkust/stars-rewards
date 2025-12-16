@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { FaStar, FaClock, FaRedo, FaCamera, FaBolt, FaCalendarWeek, FaCalendarAlt } from 'react-icons/fa';
 import { motion, type PanInfo } from 'framer-motion';
@@ -24,6 +24,54 @@ const ChildDashboard = () => {
     setFilter(newFilter);
     setVisibleCount(20);
   };
+
+  // Schedule Missed Notification
+  useEffect(() => {
+    if (!activeChildId) return;
+
+    const checkAndSchedule = async () => {
+      const { notificationService } = await import('../../services/notificationService');
+
+      // Calculate incomplete tasks for today
+      const todayStr = getLocalDateString();
+      const incompleteCount = allTasks.filter(task => {
+        if (task.is_active === false) return false;
+        if (task.assigned_to && !task.assigned_to.includes(activeChildId)) return false;
+
+        // Check if scheduled for today
+        let isScheduled = false;
+        if (task.recurrence_rule === 'Once') {
+          isScheduled = true;
+        } else if (task.recurrence_rule) {
+          const options = parseRRule(task.recurrence_rule);
+          const baseDate = new Date(task.created_at || new Date());
+          const today = getTodayLocalStart();
+          isScheduled = isDateValid(today, options, baseDate);
+        }
+
+        if (!isScheduled) return false;
+
+        // Check if completed today
+        const log = childLogs.find(l =>
+          l.child_id === activeChildId &&
+          l.task_id === task.id &&
+          getLocalDateString(new Date(l.completed_at)) === todayStr
+        );
+
+        // If no log, it's incomplete.
+        if (!log) return true;
+        // If log exists, check status.
+        if (['VERIFIED', 'PENDING', 'PENDING_EXCUSE', 'EXCUSED'].includes(log.status)) return false;
+
+        return true;
+      }).length;
+
+      // Always call this to ensure we cancel if count is 0
+      notificationService.scheduleMissedChildNotification(incompleteCount);
+    };
+
+    checkAndSchedule();
+  }, [activeChildId, allTasks, childLogs]);
 
   // Helper to find log status for today
   const getTodayLog = (taskId: string) => {

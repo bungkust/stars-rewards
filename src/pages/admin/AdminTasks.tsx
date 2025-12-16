@@ -134,7 +134,7 @@ const AdminTasks = () => {
               <div className="flex-1">
                 <h3 className="font-bold text-neutral">{task.name}</h3>
                 <div className="flex flex-col gap-1 mt-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getBadgeStyle(task.recurrence_rule || 'Once')}`}>
                       {['Once', 'Daily', 'Weekly', 'Monthly'].includes(task.recurrence_rule || 'Once') ? (task.recurrence_rule || 'Once') : 'Custom'}
                     </span>

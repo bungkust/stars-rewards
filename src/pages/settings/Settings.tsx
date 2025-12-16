@@ -130,7 +130,14 @@ const Settings = () => {
               type="checkbox"
               className="toggle toggle-primary"
               checked={notificationsEnabled}
-              onChange={(event) => setNotificationsEnabled(event.target.checked)}
+              onChange={async (event) => {
+                const isChecked = event.target.checked;
+                setNotificationsEnabled(isChecked);
+                if (isChecked && Capacitor.isNativePlatform()) {
+                  const { notificationService } = await import('../../services/notificationService');
+                  await notificationService.init();
+                }
+              }}
             />
           </label>
         </div>

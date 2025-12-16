@@ -189,6 +189,14 @@ export const useAppStore = create<AppState>()(
 
           // Check for failed daily missions
           await get().checkMissedMissions();
+
+          // Schedule Admin Notification if there are pending items
+          const pendingCount = verifications.length + logs.filter(l => l.status === 'PENDING_EXCUSE').length;
+          if (pendingCount > 0) {
+            import('../services/notificationService').then(({ notificationService }) => {
+              notificationService.schedulePendingAdminNotification(pendingCount);
+            });
+          }
         } catch (error) {
           console.error('Error refreshing data:', error);
         } finally {
@@ -591,6 +599,13 @@ export const useAppStore = create<AppState>()(
             ]
           }));
 
+          // Schedule Admin Notification
+          const { pendingVerifications, childLogs } = get();
+          const pendingCount = pendingVerifications.length + childLogs.filter(l => l.status === 'PENDING_EXCUSE').length;
+          import('../services/notificationService').then(({ notificationService }) => {
+            notificationService.schedulePendingAdminNotification(pendingCount);
+          });
+
           return { error: null };
         } catch (error) {
           console.error('Error completing task:', error);
@@ -614,6 +629,13 @@ export const useAppStore = create<AppState>()(
           set((state) => ({
             childLogs: [newLog, ...state.childLogs]
           }));
+
+          // Schedule Admin Notification
+          const { pendingVerifications, childLogs } = get();
+          const pendingCount = pendingVerifications.length + childLogs.filter(l => l.status === 'PENDING_EXCUSE').length;
+          import('../services/notificationService').then(({ notificationService }) => {
+            notificationService.schedulePendingAdminNotification(pendingCount);
+          });
 
           return { error: null };
         } catch (error) {
@@ -949,6 +971,13 @@ export const useAppStore = create<AppState>()(
               set(state => ({
                 childLogs: [...newLogs, ...state.childLogs]
               }));
+            }
+
+            // Phase 3: Schedule Missed Daily Report
+            if (newLogs.length > 0) {
+              import('../services/notificationService').then(({ notificationService }) => {
+                notificationService.scheduleMissedDailyReport(newLogs.length);
+              });
             }
           }
         }

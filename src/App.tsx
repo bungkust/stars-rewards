@@ -30,6 +30,7 @@ import Playground from './pages/Playground'; // Design System Verification
 // Components
 import Layout from './components/layout/Layout';
 import ChildSelector from './components/ChildSelector';
+import { notificationService } from './services/notificationService';
 
 function App() {
   const { activeChildId, setActiveChild, isAdminMode, onboardingStep, userProfile, refreshData, fetchUserProfile } = useAppStore();
@@ -41,6 +42,11 @@ function App() {
     const initAuth = async () => {
       await fetchUserProfile();
       setIsCheckingAuth(false);
+
+      // Initialize Notifications (Check/Request Permissions)
+      if (Capacitor.isNativePlatform()) {
+        notificationService.init();
+      }
     };
     initAuth();
   }, [fetchUserProfile]);
