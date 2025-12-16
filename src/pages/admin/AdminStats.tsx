@@ -103,6 +103,7 @@ const AdminStats = () => {
 
   // Calculate Metrics
   const coinMetrics = useMemo(() => calculateCoinMetrics(filteredTransactions), [filteredTransactions]);
+  const missionCount = useMemo(() => filteredTransactions.filter(t => t.type === 'TASK_VERIFIED').length, [filteredTransactions]);
 
   const rawRecommendations = useMemo(() => getRecommendations(filteredLogs, tasks), [filteredLogs, tasks]);
 
@@ -326,7 +327,7 @@ const AdminStats = () => {
               <span className="text-sm font-bold text-neutral/40">stars</span>
             </div>
             <p className="text-xs text-neutral/50 mt-2">
-              Earned <span className="text-success font-bold">{coinMetrics.earned}</span> • Spent <span className="text-error font-bold">{coinMetrics.spent}</span>
+              Earned <span className="text-success font-bold">{coinMetrics.earned}</span> • Spent <span className="text-error font-bold">{coinMetrics.spent}</span> • from {missionCount} missions
             </p>
           </div>
           <div className="p-3 bg-primary/20 text-primary rounded-full">
