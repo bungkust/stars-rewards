@@ -1,12 +1,12 @@
 import { useState, useMemo, useEffect } from 'react';
-import { FaChartLine, FaCheckCircle, FaGift, FaSlidersH, FaTimesCircle, FaChild, FaTrophy, FaExclamationTriangle, FaLightbulb, FaTimes } from 'react-icons/fa';
+import { FaChartLine, FaCheckCircle, FaGift, FaSlidersH, FaTimesCircle, FaChild, FaLightbulb, FaTimes } from 'react-icons/fa';
 import { AppCard, H1Header, IconWrapper, ToggleButton } from '../../components/design-system';
 
 import { useAppStore } from '../../store/useAppStore';
-import { calculateCoinMetrics, getSuccessRatio, getTopTasks, getRecommendations, getCategoryPerformance } from '../../utils/analytics';
+import { calculateCoinMetrics, getRecommendations, getCategoryPerformance } from '../../utils/analytics';
 import { ICON_MAP } from '../../utils/icons';
 import type { TimeFilter } from '../../utils/analytics';
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+
 import { AnimatePresence, motion } from 'framer-motion';
 import TaskDetailsModal from '../../components/modals/TaskDetailsModal';
 
@@ -103,9 +103,7 @@ const AdminStats = () => {
 
   // Calculate Metrics
   const coinMetrics = useMemo(() => calculateCoinMetrics(filteredTransactions), [filteredTransactions]);
-  const successMetrics = useMemo(() => getSuccessRatio(filteredLogs, tasks, children, timeFilter, selectedChildId), [filteredLogs, tasks, children, timeFilter, selectedChildId]);
-  const topSuccessTasks = useMemo(() => getTopTasks(filteredLogs, tasks, 'success'), [filteredLogs, tasks]);
-  const topFailTasks = useMemo(() => getTopTasks(filteredLogs, tasks, 'fail'), [filteredLogs, tasks]);
+
   const rawRecommendations = useMemo(() => getRecommendations(filteredLogs, tasks), [filteredLogs, tasks]);
 
   const recommendations = useMemo(() =>
@@ -215,13 +213,7 @@ const AdminStats = () => {
   };
 
   // Donut Chart Data
-  const donutData = [
-    { name: 'Verified', value: successMetrics.verified, color: '#4ADE80' }, // success
-    { name: 'Failed', value: successMetrics.failed, color: '#F87171' }, // error
-    { name: 'Excused', value: successMetrics.excused, color: '#FBBF24' }, // warning
-    { name: 'Review', value: successMetrics.pendingReview, color: '#60A5FA' }, // blue-400
-    ...(timeFilter === 'today' ? [{ name: 'To Do', value: successMetrics.todo, color: '#E5E7EB' }] : []) // base-200
-  ];
+
 
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedTaskDetails, setSelectedTaskDetails] = useState<any>(null);
@@ -343,67 +335,7 @@ const AdminStats = () => {
         </div>
       </AppCard>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* M1: Success Ratio (Donut) */}
-        <AppCard>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-neutral">Success Rate</h3>
-            <div className={`badge ${successMetrics.rate >= 80 ? 'badge-success' : successMetrics.rate >= 50 ? 'badge-warning' : 'badge-error'} gap - 1`}>
-              {successMetrics.rate}%
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="h-24 w-24 relative">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={donutData}
-                    innerRadius={35}
-                    outerRadius={45}
-                    paddingAngle={2}
-                    dataKey="value"
-                    startAngle={90}
-                    endAngle={-270}
-                  >
-                    {donutData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-xs font-bold text-neutral/40">{successMetrics.verified}/{successMetrics.total}</span>
-              </div>
-            </div>
-            <div className="flex flex-col gap-1 text-xs">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-success"></div>
-                <span className="text-neutral/60">Verified ({successMetrics.verified})</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-error"></div>
-                <span className="text-neutral/60">Failed ({successMetrics.failed})</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-warning"></div>
-                <span className="text-neutral/60">Excused ({successMetrics.excused})</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-blue-400"></div>
-                <span className="text-neutral/60">Review ({successMetrics.pendingReview})</span>
-              </div>
-              {timeFilter === 'today' && (
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-base-200"></div>
-                  <span className="text-neutral/60">To Do ({successMetrics.todo})</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </AppCard>
 
-
-      </div>
 
       {/* Category Performance */}
       <AppCard>
@@ -449,50 +381,7 @@ const AdminStats = () => {
 
 
 
-      {/* M4: Top Tasks */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Top Success */}
-        <AppCard className="bg-success/5 border-success/10">
-          <div className="flex items-center gap-2 mb-3">
-            <FaTrophy className="text-success w-4 h-4" />
-            <h3 className="font-bold text-neutral">Most Completed</h3>
-          </div>
-          {topSuccessTasks.length === 0 ? (
-            <p className="text-xs text-neutral/40 italic">No data yet.</p>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {topSuccessTasks.map((t, i) => (
-                <div key={t.id} className="flex justify-between items-center text-sm">
-                  <span className="text-neutral font-medium truncate flex-1">{i + 1}. {t.name}</span>
-                  <span className="font-bold text-success">{t.percentage}%</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </AppCard>
 
-        {/* Top Failures */}
-        <AppCard className="bg-error/5 border-error/10">
-          <div className="flex items-center gap-2 mb-3">
-            <FaExclamationTriangle className="text-error w-4 h-4" />
-            <h3 className="font-bold text-neutral">Most Failed</h3>
-          </div>
-          {topFailTasks.length === 0 ? (
-            <p className="text-xs text-neutral/40 italic">Great job! No failures.</p>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {topFailTasks.map((t, i) => (
-                <div key={t.id} className="flex justify-between items-center text-sm">
-                  <span className="text-neutral font-medium truncate flex-1">{i + 1}. {t.name}</span>
-                  <span className="font-bold text-error">{t.percentage}%</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </AppCard>
-
-
-      </div>
 
 
 
