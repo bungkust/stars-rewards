@@ -25,6 +25,7 @@ const StarAdjustmentModal = ({ isOpen, childrenList, initialChildId, onClose, on
     const [type, setType] = useState<'add' | 'deduct'>('add');
     const [reason, setReason] = useState('');
     const [step, setStep] = useState<'input' | 'confirm'>('input');
+    const [error, setError] = useState<string | null>(null);
 
     // Reset state when modal opens or initialChildId changes
     useEffect(() => {
@@ -38,6 +39,7 @@ const StarAdjustmentModal = ({ isOpen, childrenList, initialChildId, onClose, on
             setReason('');
             setStep('input');
             setType('add');
+            setError(null);
         }
     }, [isOpen, initialChildId]);
 
@@ -47,19 +49,23 @@ const StarAdjustmentModal = ({ isOpen, childrenList, initialChildId, onClose, on
                 ? prev.filter(id => id !== childId)
                 : [...prev, childId]
         );
+        setError(null);
     };
 
     const handleNext = () => {
         const val = parseInt(amount);
         if (isNaN(val) || val <= 0) return;
-        if (!reason.trim()) {
-            alert('Please provide a reason for the adjustment.');
-            return;
-        }
+
         if (selectedChildIds.length === 0) {
-            alert('Please select at least one child.');
+            setError('Please select at least one child.');
             return;
         }
+
+        if (!reason.trim()) {
+            setError('Please provide a reason for the adjustment.');
+            return;
+        }
+
         setStep('confirm');
     };
 
@@ -175,7 +181,10 @@ const StarAdjustmentModal = ({ isOpen, childrenList, initialChildId, onClose, on
                                                 min="1"
                                                 className="input input-bordered w-full rounded-xl text-center text-2xl font-bold"
                                                 value={amount}
-                                                onChange={(e) => setAmount(e.target.value)}
+                                                onChange={(e) => {
+                                                    setAmount(e.target.value);
+                                                    setError(null);
+                                                }}
                                             />
                                         </div>
 
@@ -188,9 +197,19 @@ const StarAdjustmentModal = ({ isOpen, childrenList, initialChildId, onClose, on
                                                 placeholder="e.g. Extra chores, Misbehavior"
                                                 className="input input-bordered w-full rounded-xl"
                                                 value={reason}
-                                                onChange={(e) => setReason(e.target.value)}
+                                                onChange={(e) => {
+                                                    setReason(e.target.value);
+                                                    setError(null);
+                                                }}
                                             />
                                         </div>
+
+                                        {error && (
+                                            <div className="alert alert-error shadow-sm py-2 mb-4 text-sm rounded-xl">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                <span>{error}</span>
+                                            </div>
+                                        )}
 
                                         <div className="flex gap-3">
                                             <button

@@ -9,6 +9,7 @@ import type { TimeFilter } from '../../utils/analytics';
 
 import { AnimatePresence, motion } from 'framer-motion';
 import TaskDetailsModal from '../../components/modals/TaskDetailsModal';
+import TransactionDetailsModal from '../../components/modals/TransactionDetailsModal';
 
 const AdminStats = () => {
   const { children, transactions, childLogs, tasks, categories, isLoading } = useAppStore();
@@ -218,6 +219,8 @@ const AdminStats = () => {
 
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedTaskDetails, setSelectedTaskDetails] = useState<any>(null);
+  const [isTxModalOpen, setIsTxModalOpen] = useState(false);
+  const [selectedTxDetails, setSelectedTxDetails] = useState<any>(null);
 
   const handleHistoryItemClick = (item: any) => {
     let task = null;
@@ -229,6 +232,10 @@ const AdminStats = () => {
         if (log) {
           task = tasks.find(t => t.id === log.task_id);
         }
+      } else if (tx.type === 'MANUAL_ADJ') {
+        setSelectedTxDetails(tx);
+        setIsTxModalOpen(true);
+        return;
       }
     } else {
       const log = item.data;
@@ -442,7 +449,7 @@ const AdminStats = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
-                    className={`flex justify-between items-center border-b border-base-200 pb-3 last:border-0 last:pb-0 ${tx.type === 'TASK_VERIFIED' ? 'cursor-pointer hover:bg-base-200/50 transition-colors rounded-lg px-2 -mx-2' : ''}`}
+                    className={`flex justify-between items-center border-b border-base-200 pb-3 last:border-0 last:pb-0 ${tx.type === 'TASK_VERIFIED' || tx.type === 'MANUAL_ADJ' ? 'cursor-pointer hover:bg-base-200/50 transition-colors rounded-lg px-2 -mx-2' : ''}`}
                     onClick={() => handleHistoryItemClick(item)}
                   >
                     <div className="flex items-center gap-3">
@@ -517,6 +524,12 @@ const AdminStats = () => {
         isOpen={isDetailsModalOpen}
         task={selectedTaskDetails}
         onClose={() => setIsDetailsModalOpen(false)}
+      />
+
+      <TransactionDetailsModal
+        isOpen={isTxModalOpen}
+        transaction={selectedTxDetails}
+        onClose={() => setIsTxModalOpen(false)}
       />
     </div >
   );
