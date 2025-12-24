@@ -22,7 +22,7 @@ const StarAdjustmentModal = ({ isOpen, childrenList, initialChildId, onClose, on
     // State management for modal
     const [selectedChildIds, setSelectedChildIds] = useState<string[]>([]);
     const [amount, setAmount] = useState<string>('1');
-    const [type, setType] = useState<'add' | 'deduct'>('deduct');
+    const [type, setType] = useState<'add' | 'deduct'>('add');
     const [reason, setReason] = useState('');
     const [step, setStep] = useState<'input' | 'confirm'>('input');
 
@@ -37,7 +37,7 @@ const StarAdjustmentModal = ({ isOpen, childrenList, initialChildId, onClose, on
             setAmount('1');
             setReason('');
             setStep('input');
-            setType('deduct');
+            setType('add');
         }
     }, [isOpen, initialChildId]);
 
@@ -128,8 +128,8 @@ const StarAdjustmentModal = ({ isOpen, childrenList, initialChildId, onClose, on
                                                         <button
                                                             key={child.id}
                                                             className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all text-left ${isSelected
-                                                                    ? 'border-primary bg-primary/5'
-                                                                    : 'border-transparent bg-base-100 hover:bg-base-200'
+                                                                ? 'border-primary bg-primary/5'
+                                                                : 'border-transparent bg-base-100 hover:bg-base-200'
                                                                 }`}
                                                             onClick={() => toggleChildSelection(child.id)}
                                                         >
