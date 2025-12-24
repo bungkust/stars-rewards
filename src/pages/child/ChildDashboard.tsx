@@ -73,18 +73,44 @@ const ChildDashboard = () => {
     checkAndSchedule();
   }, [activeChildId, allTasks, childLogs]);
 
-  // Helper to find log status for today
-  const getTodayLog = (taskId: string) => {
-    if (!activeChildId) return null;
+  // Helper to find logs for today
+  const getTodayLogs = (taskId: string) => {
+    if (!activeChildId) return [];
     const todayStr = getLocalDateString();
 
-    return childLogs.find(log => {
+    return childLogs.filter(log => {
       if (log.child_id !== activeChildId || log.task_id !== taskId) return false;
 
       const logDate = new Date(log.completed_at);
       const logDateStr = getLocalDateString(logDate);
       return logDateStr === todayStr;
     });
+  };
+
+  const getTaskStatus = (task: any) => {
+    const logs = getTodayLogs(task.id);
+    const max = task.max_completions_per_day || 1;
+
+    // Count valid completions (Pending or Verified or Excused)
+    const validLogs = logs.filter(l => ['VERIFIED', 'PENDING', 'PENDING_EXCUSE', 'EXCUSED'].includes(l.status));
+    const count = validLogs.length;
+    const isFullyCompleted = count >= max;
+
+    // For sorting/display, we need a "primary" status.
+    // If fully completed, use the status of the last valid log.
+    // If not, it's "ACTIVE" (or "PARTIAL").
+
+    if (isFullyCompleted) {
+      // Return status of the latest valid log
+      // Sort logs by time desc? They come from store sorted? 
+      // childLogs in store might not be sorted by time for same day?
+      // Let's assume the last one added is at the top or we sort.
+      // logs is filtered from childLogs. childLogs in store is unshifted (newest first).
+      // So logs[0] is likely the newest.
+      return validLogs[0]?.status || 'VERIFIED';
+    }
+
+    return 'ACTIVE';
   };
 
   // Filter and Sort Tasks
@@ -124,11 +150,11 @@ const ChildDashboard = () => {
       }
 
       // Filter out tasks that have a pending exemption request for TODAY
-      const todayLog = getTodayLog(task.id);
-      if (todayLog && todayLog.status === 'PENDING_EXCUSE') return false;
+      const logs = getTodayLogs(task.id);
+      if (logs.some(l => l.status === 'PENDING_EXCUSE')) return false;
 
       // Filter out FAILED tasks (they should only appear in history)
-      if (todayLog && todayLog.status === 'FAILED') return false;
+      if (logs.some(l => l.status === 'FAILED')) return false;
 
       // Filter out tasks that are not due yet (if next_due_date is set and in future)
       if (task.next_due_date) {
@@ -148,24 +174,24 @@ const ChildDashboard = () => {
       // 3. Completed (VERIFIED, EXCUSED, REJECTED)
       // 4. Failed (FAILED)
 
-      const logA = getTodayLog(a.id);
-      const logB = getTodayLog(b.id);
 
-      const getStatusWeight = (log: typeof logA) => {
-        if (!log) return 0; // Not started
-        if (log.status === 'PENDING' || log.status === 'PENDING_EXCUSE') return 1;
+
+      const getStatusWeight = (task: any) => {
+        const status = getTaskStatus(task);
+        if (status === 'ACTIVE') return 0; // Not started or Partial
+        if (status === 'PENDING' || status === 'PENDING_EXCUSE') return 1;
 
         // Completed Status Sorting: Verified > Rejected > Excused
-        if (log.status === 'VERIFIED') return 2;
-        if (log.status === 'REJECTED') return 3;
-        if (log.status === 'EXCUSED') return 4;
-        if (log.status === 'FAILED') return 5;
+        if (status === 'VERIFIED') return 2;
+        if (status === 'REJECTED') return 3;
+        if (status === 'EXCUSED') return 4;
+        if (status === 'FAILED') return 5;
 
         return 6; // Fallback
       };
 
-      const weightA = getStatusWeight(logA);
-      const weightB = getStatusWeight(logB);
+      const weightA = getStatusWeight(a);
+      const weightB = getStatusWeight(b);
 
       if (weightA !== weightB) {
         return weightA - weightB;
@@ -182,9 +208,10 @@ const ChildDashboard = () => {
   console.log('[Dashboard] Active Child:', activeChildId);
   console.log('[Dashboard] All Tasks:', allTasks.length);
   console.log('[Dashboard] Filtered Tasks:', filteredTasks.length);
+
   filteredTasks.forEach(t => {
-    const log = getTodayLog(t.id);
-    console.log(`[Dashboard] Task: ${t.name}, Status: ${log?.status || 'Not Started'}, Recurrence: ${t.recurrence_rule}, Expiry: ${t.expiry_time || 'None'}, AssignedTo: ${t.assigned_to ? JSON.stringify(t.assigned_to) : 'ALL'}`);
+    const status = getTaskStatus(t);
+    console.log(`[Dashboard] Task: ${t.name}, Status: ${status}, Recurrence: ${t.recurrence_rule}, Expiry: ${t.expiry_time || 'None'}, AssignedTo: ${t.assigned_to ? JSON.stringify(t.assigned_to) : 'ALL'}`);
   });
 
   const visibleTasks = filteredTasks.slice(0, visibleCount);
@@ -211,9 +238,10 @@ const ChildDashboard = () => {
     }
   };
 
-  const handleTaskComplete = async (task: { id: string, name: string, reward_value: number }) => {
+  const handleTaskComplete = async (task: { id: string, name: string, reward_value: number, max_completions_per_day?: number }) => {
     // Check if already done today handled by UI state, but double check
-    if (getTodayLog(task.id)) return;
+    const status = getTaskStatus(task);
+    if (status !== 'ACTIVE') return;
 
     const { error } = await completeTask(task.id);
     if (!error) {
@@ -362,8 +390,25 @@ const ChildDashboard = () => {
         ) : (
           <>
             {visibleTasks.map((task) => {
-              const log = getTodayLog(task.id);
-              const status = log?.status; // PENDING, VERIFIED, REJECTED
+              const logs = getTodayLogs(task.id);
+              const max = task.max_completions_per_day || 1;
+              const validLogs = logs.filter(l => ['VERIFIED', 'PENDING', 'PENDING_EXCUSE', 'EXCUSED'].includes(l.status));
+              const count = validLogs.length;
+              const isFullyCompleted = count >= max;
+
+              // Determine display status
+              // If fully completed, use the status of the latest valid log
+              // If not, it's "ACTIVE" (show Done button)
+              const displayStatus = isFullyCompleted ? (validLogs[0]?.status || 'VERIFIED') : 'ACTIVE';
+
+              // For "Why?" button on rejected, we need to check if there are ANY rejected logs that are "fresh" (not retried)?
+              // Actually, if I have a REJECTED log, it doesn't count towards validLogs.
+              // So count is 0 (or lower than max).
+              // So displayStatus is ACTIVE.
+              // But we might want to show a "Rejected" badge or border if the *latest* log was rejected?
+              // Let's check the absolute latest log.
+              const latestLog = logs[0]; // Assuming logs are sorted new to old (from childLogs)
+              const isLatestRejected = latestLog?.status === 'REJECTED';
 
               return (
                 <div key={task.id} className="relative">
@@ -379,21 +424,21 @@ const ChildDashboard = () => {
                     onDragEnd={(e, info) => handleSwipe(e, info, task)}
                     whileDrag={{ scale: 1.02 }}
                     onClick={() => handleTaskClick(task)}
-                    className={`relative card bg-white shadow-sm rounded-xl p-4 flex flex-row items-center justify-between border-l-4 cursor-pointer active:scale-95 transition-transform ${status === 'VERIFIED' ? 'border-success' :
-                      status === 'REJECTED' ? 'border-error' :
-                        status === 'FAILED' ? 'border-error' :
-                          status === 'PENDING' ? 'border-warning' :
-                            status === 'PENDING_EXCUSE' ? 'border-warning' :
-                              status === 'EXCUSED' ? 'border-gray-300' : 'border-primary'
+                    className={`relative card bg-white shadow-sm rounded-xl p-4 flex flex-row items-center justify-between border-l-4 cursor-pointer active:scale-95 transition-transform ${displayStatus === 'VERIFIED' ? 'border-success' :
+                      displayStatus === 'FAILED' ? 'border-error' :
+                        displayStatus === 'PENDING' ? 'border-warning' :
+                          displayStatus === 'PENDING_EXCUSE' ? 'border-warning' :
+                            displayStatus === 'EXCUSED' ? 'border-gray-300' :
+                              isLatestRejected ? 'border-error' : 'border-primary'
                       }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`p-3 rounded-full ${status === 'VERIFIED' ? 'bg-success/10 text-success' :
-                        status === 'REJECTED' ? 'bg-error/10 text-error' :
-                          status === 'FAILED' ? 'bg-error/10 text-error' :
-                            status === 'PENDING' ? 'bg-warning/10 text-warning' :
-                              status === 'PENDING_EXCUSE' ? 'bg-warning/10 text-warning' :
-                                status === 'EXCUSED' ? 'bg-neutral/10 text-neutral' : 'bg-primary/10 text-primary'
+                      <div className={`p-3 rounded-full ${displayStatus === 'VERIFIED' ? 'bg-success/10 text-success' :
+                        displayStatus === 'FAILED' ? 'bg-error/10 text-error' :
+                          displayStatus === 'PENDING' ? 'bg-warning/10 text-warning' :
+                            displayStatus === 'PENDING_EXCUSE' ? 'bg-warning/10 text-warning' :
+                              displayStatus === 'EXCUSED' ? 'bg-neutral/10 text-neutral' :
+                                isLatestRejected ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'
                         }`}>
                         {task.recurrence_rule === 'Once' ? <FaBolt className="w-6 h-6" /> :
                           task.recurrence_rule === 'Daily' ? <FaRedo className="w-6 h-6" /> :
@@ -416,31 +461,39 @@ const ChildDashboard = () => {
                       </div>
                     </div>
 
-                    {status === 'VERIFIED' ? (
+                    {displayStatus === 'VERIFIED' ? (
                       <span className="badge badge-success text-white font-bold p-3">Approved</span>
-                    ) : status === 'REJECTED' ? (
-                      <button
-                        className="btn btn-sm btn-error btn-outline rounded-full"
-                        onClick={(e) => { e.stopPropagation(); handleViewRejection(task.name, log?.rejection_reason); }}
-                      >
-                        Why?
-                      </button>
-                    ) : status === 'FAILED' ? (
+                    ) : displayStatus === 'FAILED' ? (
                       <span className="badge badge-error text-white font-bold p-3">Failed</span>
-                    ) : status === 'PENDING' ? (
+                    ) : displayStatus === 'PENDING' ? (
                       <span className="badge badge-warning text-white font-bold p-3">Pending</span>
-                    ) : status === 'PENDING_EXCUSE' ? (
+                    ) : displayStatus === 'PENDING_EXCUSE' ? (
                       <span className="badge badge-warning text-white font-bold p-3">Pending</span>
-                    ) : status === 'EXCUSED' ? (
+                    ) : displayStatus === 'EXCUSED' ? (
                       <span className="badge badge-ghost text-gray-500 font-bold p-3">Skipped</span>
                     ) : (
-                      <button
-                        className="btn btn-sm btn-primary rounded-full text-white"
-                        onClick={(e) => { e.stopPropagation(); handleTaskComplete(task); }}
-                        disabled={isLoading}
-                      >
-                        Done
-                      </button>
+                      <div className="flex flex-col items-end gap-1">
+                        <button
+                          className={`btn btn-sm rounded-full text-white ${isLatestRejected ? 'btn-error' : 'btn-primary'}`}
+                          onClick={(e) => { e.stopPropagation(); handleTaskComplete(task); }}
+                          disabled={isLoading}
+                        >
+                          {isLatestRejected ? 'Try Again' : 'Done'}
+                        </button>
+                        {max > 1 && (
+                          <span className="text-[10px] font-bold text-gray-400">
+                            {count}/{max} completed
+                          </span>
+                        )}
+                        {isLatestRejected && (
+                          <button
+                            className="text-[10px] text-error underline"
+                            onClick={(e) => { e.stopPropagation(); handleViewRejection(task.name, latestLog?.rejection_reason); }}
+                          >
+                            Why rejected?
+                          </button>
+                        )}
+                      </div>
                     )}
                   </motion.div>
                 </div>

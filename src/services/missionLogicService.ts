@@ -13,9 +13,22 @@ export const missionLogicService = {
     /**
    * Increments the streak for a task and persists the change.
    */
-    incrementStreak: async (taskId: string, tasks: Task[]): Promise<Task[]> => {
+    incrementStreak: async (taskId: string, tasks: Task[], childLogs: ChildTaskLog[], currentLogId: string): Promise<Task[]> => {
         const taskIndex = tasks.findIndex(t => t.id === taskId);
         if (taskIndex === -1) return tasks;
+
+        // Check if streak was already incremented today by another log
+        const todayStr = getLocalDateString();
+        const alreadyIncremented = childLogs.some(l =>
+            l.task_id === taskId &&
+            l.id !== currentLogId &&
+            ['VERIFIED', 'EXCUSED'].includes(l.status) &&
+            getLocalDateString(new Date(l.completed_at)) === todayStr
+        );
+
+        if (alreadyIncremented) {
+            return tasks;
+        }
 
         const task = tasks[taskIndex];
         const currentStreak = (task.current_streak || 0) + 1;

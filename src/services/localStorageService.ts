@@ -197,7 +197,8 @@ export const localStorageService = {
             created_at: new Date().toISOString(),
             assigned_to: task.assigned_to || [],
             category_id: task.category_id,
-            expiry_time: task.expiry_time
+            expiry_time: task.expiry_time,
+            max_completions_per_day: task.max_completions_per_day
         };
         db.tasks.push(newTask);
         saveDB(db);

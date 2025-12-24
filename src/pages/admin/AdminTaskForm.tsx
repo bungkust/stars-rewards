@@ -41,6 +41,7 @@ const AdminTaskForm = () => {
   const [repetition, setRepetition] = useState('Once');
   const [selectedChildIds, setSelectedChildIds] = useState<string[]>([]);
   const [isActive, setIsActive] = useState(true);
+  const [maxCompletions, setMaxCompletions] = useState(1);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isCustomRecurrence, setIsCustomRecurrence] = useState(false);
   const [customOptions, setCustomOptions] = useState<RecurrenceOptions>({
@@ -58,6 +59,7 @@ const AdminTaskForm = () => {
         setCategoryId(taskToEdit.category_id || '');
         setReward(taskToEdit.reward_value);
         setExpiryTime(taskToEdit.expiry_time || '');
+        setMaxCompletions(taskToEdit.max_completions_per_day || 1);
         setIsActive(taskToEdit.is_active !== false);
         if (taskToEdit.assigned_to && taskToEdit.assigned_to.length > 0) {
           setSelectedChildIds(taskToEdit.assigned_to);
@@ -120,7 +122,8 @@ const AdminTaskForm = () => {
       recurrence_rule: finalRule,
       is_active: isActive,
       expiry_time: expiryTime,
-      assigned_to: selectedChildIds
+      assigned_to: selectedChildIds,
+      max_completions_per_day: maxCompletions
     };
 
     if (id) {
@@ -264,6 +267,34 @@ const AdminTaskForm = () => {
             </label>
           </div>
         </div>
+
+        {repetition !== 'Once' && (
+          <div className="form-control w-full">
+            <label className="label">
+              <span className="label-text font-bold">Max Completions per Day</span>
+            </label>
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                className="btn btn-circle btn-sm btn-ghost border-gray-300"
+                onClick={() => setMaxCompletions(Math.max(1, maxCompletions - 1))}
+              >
+                -
+              </button>
+              <span className="text-xl font-bold w-8 text-center">{maxCompletions}</span>
+              <button
+                type="button"
+                className="btn btn-circle btn-sm btn-ghost border-gray-300"
+                onClick={() => setMaxCompletions(maxCompletions + 1)}
+              >
+                +
+              </button>
+              <span className="text-xs text-gray-400 ml-2">
+                Child can claim this {maxCompletions} time{maxCompletions > 1 ? 's' : ''} per day.
+              </span>
+            </div>
+          </div>
+        )}
 
         <div className="form-control w-full">
           <label className="label">

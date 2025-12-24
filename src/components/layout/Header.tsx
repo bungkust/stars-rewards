@@ -120,10 +120,10 @@ const Header = ({ onParentLoginClick, onSettingsClick, onChildSelectClick }: Hea
                     className="justify-between text-sm font-medium"
                     onClick={() => {
                       closeMenu();
-                      if (onChildSelectClick) onChildSelectClick();
+                      onParentLoginClick();
                     }}
                   >
-                    Switch Profile
+                    Parent Login
                   </button>
                 </li>
                 <li>
@@ -131,10 +131,10 @@ const Header = ({ onParentLoginClick, onSettingsClick, onChildSelectClick }: Hea
                     className="justify-between text-sm font-medium"
                     onClick={() => {
                       closeMenu();
-                      onParentLoginClick();
+                      if (onChildSelectClick) onChildSelectClick();
                     }}
                   >
-                    Parent Login
+                    Switch Profile
                   </button>
                 </li>
               </>

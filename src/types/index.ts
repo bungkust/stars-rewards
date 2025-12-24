@@ -37,6 +37,7 @@ export interface Task {
   expiry_time?: string; // Format: "HH:mm"
   current_streak?: number;
   best_streak?: number;
+  max_completions_per_day?: number;
 }
 
 export interface Reward {

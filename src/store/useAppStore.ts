@@ -673,7 +673,7 @@ export const useAppStore = create<AppState>()(
           let updatedTasks = tasks;
 
           if (log) {
-            updatedTasks = await missionLogicService.incrementStreak(log.task_id, tasks);
+            updatedTasks = await missionLogicService.incrementStreak(log.task_id, tasks, childLogs, logId);
           }
 
           set((state) => ({
@@ -724,7 +724,7 @@ export const useAppStore = create<AppState>()(
           let updatedTasks = tasks;
 
           if (log) {
-            updatedTasks = await missionLogicService.incrementStreak(log.task_id, tasks);
+            updatedTasks = await missionLogicService.incrementStreak(log.task_id, tasks, childLogs, logId);
           }
 
           // Remove from local pendingVerifications
