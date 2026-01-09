@@ -57,8 +57,15 @@ const ChildRewards = () => {
       log.status === 'VERIFIED'
     ).length;
 
+    const pendingCount = childLogs.filter(log =>
+      log.child_id === activeChildId &&
+      log.task_id === reward.required_task_id &&
+      (log.status === 'PENDING' || log.status === 'PENDING_EXCUSE')
+    ).length;
+
     return {
       current: completedCount,
+      pending: pendingCount,
       required: reward.required_task_count || 1,
       isUnlocked: completedCount >= (reward.required_task_count || 1),
       taskName: tasks.find(t => t.id === reward.required_task_id)?.name || 'Unknown Task'
@@ -229,7 +236,12 @@ const ChildRewards = () => {
                         <FaLock className="mr-1 text-[10px]" /> Locked
                       </button>
                       <div className="text-[10px] text-neutral/50 leading-tight px-1">
-                        Complete "{progress?.taskName}" {progress?.required! - progress?.current!} more times
+                        Complete "{progress?.taskName}" {Math.max(0, progress?.required! - progress?.current!)} more times
+                        {progress?.pending! > 0 && (
+                          <span className="text-warning font-bold ml-1">
+                            (+{progress?.pending} pending)
+                          </span>
+                        )}
                       </div>
                       <progress
                         className="progress progress-primary w-full h-1.5 mt-1"
