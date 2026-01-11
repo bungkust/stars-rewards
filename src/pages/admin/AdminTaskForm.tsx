@@ -214,9 +214,9 @@ const AdminTaskForm = () => {
                 key={preset.label}
                 type="button"
                 onClick={() => setReward(preset.value)}
-                className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all duration-200 ${reward === preset.value
-                  ? `border-current ${preset.color.split(' ')[1]} bg-white shadow-sm ring-1 ring-current`
-                  : 'border-transparent bg-gray-50 hover:bg-gray-100 text-gray-400'
+                className={`flex flex-col items-center justify-center p-2 rounded-xl border-2 transition-all duration-200 ${reward === preset.value
+                  ? `border-current ${preset.color.split(' ')[1]} bg-white shadow-md ring-1 ring-current scale-105`
+                  : 'border-gray-200 bg-white shadow-sm hover:border-gray-300 hover:bg-gray-50 text-gray-400 hover:shadow-md'
                   }`}
               >
                 <span className={`text-[10px] font-bold uppercase tracking-wider mb-0.5 ${reward === preset.value ? 'text-gray-800' : 'text-gray-500'}`}>

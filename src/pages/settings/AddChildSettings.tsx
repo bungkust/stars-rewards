@@ -24,8 +24,15 @@ const AddChildSettings = () => {
     const [successMsg, setSuccessMsg] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
 
+    const today = new Date().toISOString().split('T')[0];
+
     const saveChild = async () => {
         setErrorMsg('');
+
+        if (dob > today) {
+            setErrorMsg('Date of birth cannot be in the future');
+            return false;
+        }
 
         // Check limit before saving (although UI should hide add button, double check here)
         // Note: We need to access children from store to check length
@@ -131,6 +138,7 @@ const AddChildSettings = () => {
                         <input
                             type="date"
                             value={dob}
+                            max={today}
                             onChange={(e) => setDob(e.target.value)}
                             className="input input-bordered w-full rounded-xl text-neutral"
                         />

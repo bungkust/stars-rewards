@@ -24,8 +24,16 @@ const AddChild = () => {
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
+  const today = new Date().toISOString().split('T')[0];
+
   const saveChild = async () => {
     setErrorMsg('');
+
+    if (dob > today) {
+      setErrorMsg('Date of birth cannot be in the future');
+      return false;
+    }
+
     const { error } = await addChild({
       name,
       birth_date: dob,
@@ -140,6 +148,7 @@ const AddChild = () => {
             <input
               type="date"
               value={dob}
+              max={today}
               onChange={(e) => setDob(e.target.value)}
               className="input input-bordered w-full rounded-xl text-neutral"
             />

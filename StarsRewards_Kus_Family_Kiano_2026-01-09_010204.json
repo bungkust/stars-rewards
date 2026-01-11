@@ -1,0 +1,1737 @@
+{
+  "version": 1,
+  "timestamp": "2026-01-09T18:02:04.712Z",
+  "data": {
+    "children": [
+      {
+        "id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "parent_id": "e191dd27-a446-41ab-a783-6479d3597251",
+        "name": "Kiano",
+        "current_balance": 443,
+        "avatar_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=Oliver",
+        "birth_date": "2018-08-27",
+        "deleted_at": null
+      }
+    ],
+    "tasks": [
+      {
+        "id": "d068f4d5-042f-4de3-8c21-e722c35eb4be",
+        "parent_id": "e191dd27-a446-41ab-a783-6479d3597251",
+        "name": "Makan Pagi, Under 30 min",
+        "reward_value": 10,
+        "type": "RECURRING",
+        "recurrence_rule": "Daily",
+        "is_active": true,
+        "created_at": "2025-12-01T08:07:55.981075+00:00",
+        "deleted_at": null,
+        "expiry_time": "23:59",
+        "assigned_to": [
+          "dfcd2874-ba18-4f71-8a0b-84a08b653bf7"
+        ],
+        "current_streak": 0,
+        "best_streak": 2,
+        "category_id": "4a60fcdc-d13e-4729-91d1-1ec52c844ced",
+        "max_completions_per_day": 1
+      },
+      {
+        "id": "4200e8c0-5374-4701-8151-f1aa6c888d9c",
+        "parent_id": "e191dd27-a446-41ab-a783-6479d3597251",
+        "name": "Bekal Habis",
+        "reward_value": 15,
+        "type": "RECURRING",
+        "recurrence_rule": "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR",
+        "is_active": true,
+        "created_at": "2025-12-01T08:35:08.959412+00:00",
+        "deleted_at": null,
+        "assigned_to": [
+          "dfcd2874-ba18-4f71-8a0b-84a08b653bf7"
+        ],
+        "current_streak": 0,
+        "expiry_time": "",
+        "category_id": "4a60fcdc-d13e-4729-91d1-1ec52c844ced"
+      },
+      {
+        "id": "3a6ca8de-a08d-46b7-ad19-1ba37d465745",
+        "parent_id": "e191dd27-a446-41ab-a783-6479d3597251",
+        "name": "Belajar ",
+        "reward_value": 2,
+        "type": "RECURRING",
+        "recurrence_rule": "Daily",
+        "is_active": true,
+        "created_at": "2025-12-01T08:49:14.842977+00:00",
+        "deleted_at": null,
+        "current_streak": 0,
+        "best_streak": 5,
+        "expiry_time": "23:59",
+        "assigned_to": [
+          "dfcd2874-ba18-4f71-8a0b-84a08b653bf7"
+        ],
+        "category_id": "794e0e15-d095-4ddb-b4a8-5ddb62d762c5"
+      },
+      {
+        "id": "6038e785-766a-4149-81ce-818ba68e3d37",
+        "parent_id": "e191dd27-a446-41ab-a783-6479d3597251",
+        "name": "Bangun Jam 6:00",
+        "reward_value": 10,
+        "type": "RECURRING",
+        "recurrence_rule": "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR",
+        "is_active": true,
+        "created_at": "2025-12-01T08:38:24.733567+00:00",
+        "deleted_at": null,
+        "assigned_to": [
+          "dfcd2874-ba18-4f71-8a0b-84a08b653bf7"
+        ],
+        "current_streak": 0,
+        "expiry_time": "",
+        "category_id": "955c699d-5bea-4234-b1ec-9d0f0e13ace7"
+      },
+      {
+        "id": "7eb03842-08cc-4196-b00e-7ccd975a38be",
+        "parent_id": "e191dd27-a446-41ab-a783-6479d3597251",
+        "name": "Gosok Gigi Sendiri",
+        "reward_value": 2,
+        "type": "RECURRING",
+        "recurrence_rule": "Daily",
+        "is_active": true,
+        "created_at": "2025-12-01T08:39:42.804747+00:00",
+        "deleted_at": null,
+        "expiry_time": "23:59",
+        "assigned_to": [
+          "dfcd2874-ba18-4f71-8a0b-84a08b653bf7"
+        ],
+        "category_id": "fb333e64-5def-4f16-9b93-6a3c6de9c273",
+        "current_streak": 0,
+        "best_streak": 2
+      },
+      {
+        "id": "76c99e95-3c3b-4f40-8bc1-1aa67cf1c272",
+        "parent_id": "e191dd27-a446-41ab-a783-6479d3597251",
+        "name": "Tidur jam 8:30",
+        "reward_value": 5,
+        "type": "RECURRING",
+        "recurrence_rule": "FREQ=WEEKLY;BYDAY=MO,WE,TU,TH,SU",
+        "is_active": true,
+        "created_at": "2025-12-01T08:39:13.905423+00:00",
+        "deleted_at": null,
+        "expiry_time": "23:59",
+        "assigned_to": [
+          "dfcd2874-ba18-4f71-8a0b-84a08b653bf7"
+        ],
+        "category_id": "955c699d-5bea-4234-b1ec-9d0f0e13ace7",
+        "current_streak": 0
+      },
+      {
+        "id": "ff8d2b09-17eb-4ae5-8ac1-c85e0a85b6c8",
+        "parent_id": "e191dd27-a446-41ab-a783-6479d3597251",
+        "name": "Makan Malam Habis",
+        "reward_value": 5,
+        "type": "RECURRING",
+        "recurrence_rule": "Daily",
+        "is_active": true,
+        "created_at": "2025-12-01T08:35:34.507917+00:00",
+        "deleted_at": null,
+        "current_streak": 0,
+        "best_streak": 4,
+        "expiry_time": "23:59",
+        "assigned_to": [
+          "dfcd2874-ba18-4f71-8a0b-84a08b653bf7"
+        ],
+        "category_id": "4a60fcdc-d13e-4729-91d1-1ec52c844ced"
+      },
+      {
+        "id": "bd944945-fd33-415c-ab41-7fc3f35f352f",
+        "parent_id": "e191dd27-a446-41ab-a783-6479d3597251",
+        "name": "Minum Susu Habis",
+        "reward_value": 2,
+        "type": "RECURRING",
+        "recurrence_rule": "Daily",
+        "is_active": true,
+        "created_at": "2025-12-01T08:37:02.757388+00:00",
+        "deleted_at": null,
+        "category_id": "4a60fcdc-d13e-4729-91d1-1ec52c844ced",
+        "expiry_time": "23:59",
+        "assigned_to": [
+          "dfcd2874-ba18-4f71-8a0b-84a08b653bf7"
+        ],
+        "current_streak": 0,
+        "best_streak": 2
+      },
+      {
+        "id": "5222d8c7-fd7e-4a0a-bf10-8548e6816424",
+        "parent_id": "e191dd27-a446-41ab-a783-6479d3597251",
+        "name": "Beresin Mainan",
+        "reward_value": 5,
+        "type": "RECURRING",
+        "recurrence_rule": "Daily",
+        "is_active": true,
+        "created_at": "2025-12-01T08:37:23.602309+00:00",
+        "deleted_at": null,
+        "expiry_time": "23:59",
+        "assigned_to": [
+          "dfcd2874-ba18-4f71-8a0b-84a08b653bf7"
+        ],
+        "category_id": "4a60fcdc-d13e-4729-91d1-1ec52c844ced",
+        "current_streak": 0,
+        "best_streak": 1
+      },
+      {
+        "id": "d67ea957-bb74-460a-9def-78cc3e9ac39f",
+        "parent_id": "e191dd27-a446-41ab-a783-6479d3597251",
+        "name": "Mengambar",
+        "reward_value": 2,
+        "type": "RECURRING",
+        "recurrence_rule": "Daily",
+        "is_active": true,
+        "created_at": "2025-12-03T12:33:07.947762+00:00",
+        "deleted_at": null,
+        "expiry_time": "23:59",
+        "assigned_to": [
+          "dfcd2874-ba18-4f71-8a0b-84a08b653bf7"
+        ],
+        "category_id": "794e0e15-d095-4ddb-b4a8-5ddb62d762c5",
+        "current_streak": 0,
+        "best_streak": 1
+      },
+      {
+        "id": "410b1c27-8cd2-43c4-a43e-67a284a764b6",
+        "parent_id": "local-user",
+        "name": "Makan Siang Habis",
+        "reward_value": 5,
+        "type": "RECURRING",
+        "recurrence_rule": "FREQ=DAILY",
+        "is_active": true,
+        "created_at": "2025-12-12T13:29:18.851Z",
+        "assigned_to": [
+          "dfcd2874-ba18-4f71-8a0b-84a08b653bf7"
+        ],
+        "expiry_time": "",
+        "current_streak": 0,
+        "best_streak": 5,
+        "category_id": "4a60fcdc-d13e-4729-91d1-1ec52c844ced"
+      },
+      {
+        "id": "332186b1-9fd0-4ae7-ad15-28a8beb3bdc1",
+        "parent_id": "local-user",
+        "name": "Latian Badminton ",
+        "reward_value": 0,
+        "type": "RECURRING",
+        "recurrence_rule": "FREQ=WEEKLY;BYDAY=TU,FR,WE,MO",
+        "is_active": true,
+        "created_at": "2025-12-12T13:30:59.976Z",
+        "assigned_to": [
+          "dfcd2874-ba18-4f71-8a0b-84a08b653bf7"
+        ],
+        "expiry_time": "",
+        "current_streak": 0,
+        "best_streak": 2,
+        "category_id": "794e0e15-d095-4ddb-b4a8-5ddb62d762c5"
+      },
+      {
+        "id": "acfda39e-1944-4e4c-85b2-70a0d9dfac75",
+        "parent_id": "local-user",
+        "name": "Mandi Sendiri",
+        "reward_value": 1,
+        "type": "RECURRING",
+        "recurrence_rule": "Daily",
+        "is_active": true,
+        "created_at": "2025-12-24T08:10:39.363Z",
+        "assigned_to": [
+          "dfcd2874-ba18-4f71-8a0b-84a08b653bf7"
+        ],
+        "category_id": "fb333e64-5def-4f16-9b93-6a3c6de9c273",
+        "expiry_time": "23:59",
+        "current_streak": 0,
+        "best_streak": 1,
+        "max_completions_per_day": 2
+      },
+      {
+        "id": "8e448a3e-e1d1-4613-9a0f-f67896ae9f04",
+        "parent_id": "local-user",
+        "name": "Kasih Makan Oreo",
+        "reward_value": 1,
+        "type": "RECURRING",
+        "recurrence_rule": "Daily",
+        "is_active": true,
+        "created_at": "2025-12-24T08:10:58.495Z",
+        "assigned_to": [
+          "dfcd2874-ba18-4f71-8a0b-84a08b653bf7"
+        ],
+        "category_id": "4a60fcdc-d13e-4729-91d1-1ec52c844ced",
+        "expiry_time": "23:59",
+        "current_streak": 0,
+        "best_streak": 2,
+        "max_completions_per_day": 4
+      },
+      {
+        "id": "9779f8ac-36b9-4d41-bc43-60ec17aa1b4a",
+        "parent_id": "local-user",
+        "name": "Bantuin Bunda",
+        "reward_value": 1,
+        "type": "RECURRING",
+        "recurrence_rule": "Daily",
+        "is_active": true,
+        "created_at": "2025-12-24T16:46:18.760Z",
+        "assigned_to": [
+          "dfcd2874-ba18-4f71-8a0b-84a08b653bf7"
+        ],
+        "category_id": "5835a8e2-97d7-4c5e-afa7-c994e973ae21",
+        "expiry_time": "23:59",
+        "max_completions_per_day": 10,
+        "current_streak": 0,
+        "best_streak": 4
+      }
+    ],
+    "rewards": [
+      {
+        "id": "dd73bca0-0cb7-450d-9ea3-6fa8fdca98af",
+        "parent_id": "e191dd27-a446-41ab-a783-6479d3597251",
+        "name": "Mainan Robot",
+        "cost_value": 580,
+        "category": "gift",
+        "created_at": "2025-12-01T08:09:12.887125+00:00",
+        "type": "ONE_TIME",
+        "required_task_id": null,
+        "required_task_count": 0,
+        "deleted_at": null
+      },
+      {
+        "id": "f1c87380-7505-4814-82d2-7a17ef0e1639",
+        "parent_id": "e191dd27-a446-41ab-a783-6479d3597251",
+        "name": "Nonton TV",
+        "cost_value": 3,
+        "category": "game",
+        "created_at": "2025-12-01T08:49:37.395263+00:00",
+        "type": "UNLIMITED",
+        "required_task_id": null,
+        "required_task_count": 0,
+        "deleted_at": null
+      },
+      {
+        "id": "7e2e3eef-9e14-4399-bb42-6eb3a54fe19f",
+        "parent_id": "e191dd27-a446-41ab-a783-6479d3597251",
+        "name": "Main IPad",
+        "cost_value": 3,
+        "category": "game",
+        "created_at": "2025-12-01T08:50:25.316148+00:00",
+        "type": "UNLIMITED",
+        "required_task_id": null,
+        "required_task_count": 0,
+        "deleted_at": null
+      },
+      {
+        "id": "b3ca86b6-e8df-4d2d-a1ea-13139932dc2a",
+        "parent_id": "e191dd27-a446-41ab-a783-6479d3597251",
+        "name": "Main Switch",
+        "cost_value": 3,
+        "category": "game",
+        "created_at": "2025-12-01T08:50:38.575887+00:00",
+        "type": "UNLIMITED",
+        "required_task_id": null,
+        "required_task_count": 0,
+        "deleted_at": null
+      },
+      {
+        "id": "79181a4f-e054-4aa6-8684-dfa4d9a5a0a9",
+        "parent_id": "local-user",
+        "name": "Racket Badminton 🏸",
+        "cost_value": 50,
+        "category": "gift",
+        "type": "ACCUMULATIVE",
+        "required_task_id": "332186b1-9fd0-4ae7-ad15-28a8beb3bdc1",
+        "required_task_count": 10
+      },
+      {
+        "id": "4cd46ef7-9261-4bcd-a2a1-788c03cc9f97",
+        "parent_id": "local-user",
+        "name": "Baju Kereta ambarawa",
+        "cost_value": 50,
+        "category": "gift",
+        "type": "ONE_TIME"
+      }
+    ],
+    "childLogs": [
+      {
+        "id": "e6cc6fb8-c772-4cd0-b208-c7e90dbbb018",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "d068f4d5-042f-4de3-8c21-e722c35eb4be",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-08T17:00:00.000Z"
+      },
+      {
+        "id": "a18db11f-299f-4e92-a714-9ee99fe1e770",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "4200e8c0-5374-4701-8151-f1aa6c888d9c",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-08T17:00:00.000Z"
+      },
+      {
+        "id": "56fb9143-7aeb-4b47-b13b-fd5f1e2101f7",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "3a6ca8de-a08d-46b7-ad19-1ba37d465745",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-08T17:00:00.000Z"
+      },
+      {
+        "id": "620fd4d0-7b20-4195-a4c6-9ead901d4349",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "6038e785-766a-4149-81ce-818ba68e3d37",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-08T17:00:00.000Z"
+      },
+      {
+        "id": "29246a81-31ee-4523-8d8c-892217a61afb",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "7eb03842-08cc-4196-b00e-7ccd975a38be",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-08T17:00:00.000Z"
+      },
+      {
+        "id": "53efc604-0331-4c93-98a3-6a5a742855f5",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "ff8d2b09-17eb-4ae5-8ac1-c85e0a85b6c8",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-08T17:00:00.000Z"
+      },
+      {
+        "id": "8e1be44c-6202-4392-b8ab-ecc4affee995",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "bd944945-fd33-415c-ab41-7fc3f35f352f",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-08T17:00:00.000Z"
+      },
+      {
+        "id": "adb1264a-fb6a-4b84-9da5-09c5bfc6f69f",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "5222d8c7-fd7e-4a0a-bf10-8548e6816424",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-08T17:00:00.000Z"
+      },
+      {
+        "id": "dcb8f472-6364-471d-a173-91def96e69a8",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "d67ea957-bb74-460a-9def-78cc3e9ac39f",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-08T17:00:00.000Z"
+      },
+      {
+        "id": "9b668c67-15f7-4165-bc03-8f02a4fa6f23",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "410b1c27-8cd2-43c4-a43e-67a284a764b6",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-08T17:00:00.000Z"
+      },
+      {
+        "id": "daaca5a8-fb96-4691-94eb-e57ec78f4aa8",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "332186b1-9fd0-4ae7-ad15-28a8beb3bdc1",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-08T17:00:00.000Z"
+      },
+      {
+        "id": "b228bc68-6155-4199-8ec8-201f810042bb",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "acfda39e-1944-4e4c-85b2-70a0d9dfac75",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-08T17:00:00.000Z"
+      },
+      {
+        "id": "1ba26e4f-75dc-4fb3-9010-1dd11f5a160d",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "8e448a3e-e1d1-4613-9a0f-f67896ae9f04",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-08T17:00:00.000Z"
+      },
+      {
+        "id": "c2ca19d0-ebcd-4870-af3d-7910db633869",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "9779f8ac-36b9-4d41-bc43-60ec17aa1b4a",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-08T17:00:00.000Z"
+      },
+      {
+        "id": "59618628-ff0d-4c2f-b5b1-3e21f4abc0f3",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "d068f4d5-042f-4de3-8c21-e722c35eb4be",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-07T17:00:00.000Z"
+      },
+      {
+        "id": "284e021c-7d0f-4045-8608-cdbdd1f4db3b",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "4200e8c0-5374-4701-8151-f1aa6c888d9c",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-07T17:00:00.000Z"
+      },
+      {
+        "id": "dde3aba1-02ce-4e98-ae3b-c73388cf7437",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "3a6ca8de-a08d-46b7-ad19-1ba37d465745",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-07T17:00:00.000Z"
+      },
+      {
+        "id": "d945c3a9-5e38-4c8a-ae12-3f877b0a6893",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "6038e785-766a-4149-81ce-818ba68e3d37",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-07T17:00:00.000Z"
+      },
+      {
+        "id": "0b9d38b6-83b2-4409-94d0-d90d783f9609",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "7eb03842-08cc-4196-b00e-7ccd975a38be",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-07T17:00:00.000Z"
+      },
+      {
+        "id": "fad999dc-7fee-4796-9df6-4e5dd88b3942",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "76c99e95-3c3b-4f40-8bc1-1aa67cf1c272",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-07T17:00:00.000Z"
+      },
+      {
+        "id": "88860d54-16bd-4e8a-a36d-363d8a0ea855",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "ff8d2b09-17eb-4ae5-8ac1-c85e0a85b6c8",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-07T17:00:00.000Z"
+      },
+      {
+        "id": "e77fc67c-6c67-4c2b-9517-6a6df769c0c9",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "bd944945-fd33-415c-ab41-7fc3f35f352f",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-07T17:00:00.000Z"
+      },
+      {
+        "id": "af35222a-a7e1-4ddf-97f4-46c2e02d0ca2",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "5222d8c7-fd7e-4a0a-bf10-8548e6816424",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-07T17:00:00.000Z"
+      },
+      {
+        "id": "d2941d18-247a-481b-b12c-af1fa78c793b",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "d67ea957-bb74-460a-9def-78cc3e9ac39f",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-07T17:00:00.000Z"
+      },
+      {
+        "id": "2ef6244c-839c-4524-b887-47533414fb5e",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "410b1c27-8cd2-43c4-a43e-67a284a764b6",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-07T17:00:00.000Z"
+      },
+      {
+        "id": "442e62ba-0a2c-4b16-8119-580d077eac09",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "acfda39e-1944-4e4c-85b2-70a0d9dfac75",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-07T17:00:00.000Z"
+      },
+      {
+        "id": "066e63b5-ac36-40de-97a0-2cd47bad7531",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "8e448a3e-e1d1-4613-9a0f-f67896ae9f04",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-07T17:00:00.000Z"
+      },
+      {
+        "id": "1e272b9e-3ab4-4a8e-b2ec-207db54c9ce6",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "9779f8ac-36b9-4d41-bc43-60ec17aa1b4a",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-07T17:00:00.000Z"
+      },
+      {
+        "id": "5bd2f0e9-46e1-48dd-b15a-eee68a60468f",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "ff8d2b09-17eb-4ae5-8ac1-c85e0a85b6c8",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-07T16:20:49.530Z"
+      },
+      {
+        "id": "9538bb78-4da4-42b5-ac6b-ef6e6e9112d8",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "3a6ca8de-a08d-46b7-ad19-1ba37d465745",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-07T16:20:39.259Z"
+      },
+      {
+        "id": "71e92ed9-5994-4043-8b86-36eac8b23a3f",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "332186b1-9fd0-4ae7-ad15-28a8beb3bdc1",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-07T16:20:32.212Z"
+      },
+      {
+        "id": "5dfde9be-56ea-4871-afc9-51918885be64",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "9779f8ac-36b9-4d41-bc43-60ec17aa1b4a",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-07T16:20:28.974Z"
+      },
+      {
+        "id": "b4e20b30-2260-491d-b0ca-34c8ec0e4f49",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "9779f8ac-36b9-4d41-bc43-60ec17aa1b4a",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-07T16:20:27.594Z"
+      },
+      {
+        "id": "d153b443-268b-423b-8e9f-190cf7ddc927",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "9779f8ac-36b9-4d41-bc43-60ec17aa1b4a",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-07T16:20:25.929Z"
+      },
+      {
+        "id": "bd828769-bd6b-48f8-95d1-906bd83e6c08",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "d068f4d5-042f-4de3-8c21-e722c35eb4be",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-06T17:00:00.000Z"
+      },
+      {
+        "id": "c66db7d9-923d-4744-9e4c-391e44b5544e",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "4200e8c0-5374-4701-8151-f1aa6c888d9c",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-06T17:00:00.000Z"
+      },
+      {
+        "id": "f877332e-5f78-43ab-be67-10c3fc1933ec",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "6038e785-766a-4149-81ce-818ba68e3d37",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-06T17:00:00.000Z"
+      },
+      {
+        "id": "4c87530f-6084-438b-beca-a4a36a59951c",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "7eb03842-08cc-4196-b00e-7ccd975a38be",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-06T17:00:00.000Z"
+      },
+      {
+        "id": "82fa5d39-d807-45f5-b66b-771c9da92eb0",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "76c99e95-3c3b-4f40-8bc1-1aa67cf1c272",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-06T17:00:00.000Z"
+      },
+      {
+        "id": "e044196b-8291-496a-8146-1334f263c064",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "bd944945-fd33-415c-ab41-7fc3f35f352f",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-06T17:00:00.000Z"
+      },
+      {
+        "id": "5d9bf786-48c9-400f-8c90-1bf0c8430309",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "5222d8c7-fd7e-4a0a-bf10-8548e6816424",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-06T17:00:00.000Z"
+      },
+      {
+        "id": "ecd3956b-e3ff-4cb4-a9de-6219613be2ae",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "d67ea957-bb74-460a-9def-78cc3e9ac39f",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-06T17:00:00.000Z"
+      },
+      {
+        "id": "ae6fd2a6-cf99-4360-8e3e-38095b221d10",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "410b1c27-8cd2-43c4-a43e-67a284a764b6",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-06T17:00:00.000Z"
+      },
+      {
+        "id": "fb64727f-13c5-43e7-a76c-d60a0a9b51c9",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "acfda39e-1944-4e4c-85b2-70a0d9dfac75",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-06T17:00:00.000Z"
+      },
+      {
+        "id": "1f86f3e8-55ac-4de3-a9ca-af53606e4c51",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "8e448a3e-e1d1-4613-9a0f-f67896ae9f04",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-06T17:00:00.000Z"
+      },
+      {
+        "id": "3e88729e-9590-48e8-aa91-1594f9e8cb99",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "bd944945-fd33-415c-ab41-7fc3f35f352f",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-06T14:24:22.701Z"
+      },
+      {
+        "id": "bd4e5b1c-77af-4f1f-a501-5fb0969018b3",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "ff8d2b09-17eb-4ae5-8ac1-c85e0a85b6c8",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-06T14:23:57.625Z"
+      },
+      {
+        "id": "935d6f42-b895-4d4a-8a27-8122aae2f825",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "d068f4d5-042f-4de3-8c21-e722c35eb4be",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-06T14:23:42.353Z"
+      },
+      {
+        "id": "ef0c7777-03a9-4015-a694-e461ac86107c",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "3a6ca8de-a08d-46b7-ad19-1ba37d465745",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-06T14:23:18.697Z"
+      },
+      {
+        "id": "e12438d1-1ca4-43a9-9e95-93f66586f150",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "332186b1-9fd0-4ae7-ad15-28a8beb3bdc1",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-06T14:23:05.410Z"
+      },
+      {
+        "id": "740e2122-1d89-497a-b237-5932410b887f",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "9779f8ac-36b9-4d41-bc43-60ec17aa1b4a",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-06T14:22:59.772Z"
+      },
+      {
+        "id": "9cfa741d-b83b-4b35-9500-826f46e112b9",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "9779f8ac-36b9-4d41-bc43-60ec17aa1b4a",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-06T14:22:58.487Z"
+      },
+      {
+        "id": "86bbb261-c157-4c4f-98f1-d618d72d9581",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "9779f8ac-36b9-4d41-bc43-60ec17aa1b4a",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-06T14:22:56.702Z"
+      },
+      {
+        "id": "88e5a579-abc9-435a-9c91-a41873e966f2",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "4200e8c0-5374-4701-8151-f1aa6c888d9c",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-05T17:00:00.000Z"
+      },
+      {
+        "id": "baf26aa4-5d51-486b-947d-d17ac8701225",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "6038e785-766a-4149-81ce-818ba68e3d37",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-05T17:00:00.000Z"
+      },
+      {
+        "id": "77d55553-4433-432d-b4a0-e7d8ba84ea90",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "7eb03842-08cc-4196-b00e-7ccd975a38be",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-05T17:00:00.000Z"
+      },
+      {
+        "id": "1065ea0d-b8a1-44da-a975-02129a6a581a",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "76c99e95-3c3b-4f40-8bc1-1aa67cf1c272",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-05T17:00:00.000Z"
+      },
+      {
+        "id": "d27d1fb1-ff43-427f-bc62-43cee49cadbe",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "5222d8c7-fd7e-4a0a-bf10-8548e6816424",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-05T17:00:00.000Z"
+      },
+      {
+        "id": "8b66e73b-d7fb-4e00-b043-bb45c272486e",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "d67ea957-bb74-460a-9def-78cc3e9ac39f",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-05T17:00:00.000Z"
+      },
+      {
+        "id": "7dd92ca9-485d-4b0f-aedc-dcfed99fd5b3",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "410b1c27-8cd2-43c4-a43e-67a284a764b6",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-05T17:00:00.000Z"
+      },
+      {
+        "id": "47a1235f-a50b-40ee-bc01-bcd43cf52a94",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "acfda39e-1944-4e4c-85b2-70a0d9dfac75",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-05T17:00:00.000Z"
+      },
+      {
+        "id": "958fdf1d-3f8a-4a70-bb23-38b90d2aafad",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "8e448a3e-e1d1-4613-9a0f-f67896ae9f04",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-05T17:00:00.000Z"
+      },
+      {
+        "id": "06034d7f-a088-48fb-8daa-a48f50a0475d",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "ff8d2b09-17eb-4ae5-8ac1-c85e0a85b6c8",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-05T15:05:47.848Z"
+      },
+      {
+        "id": "230cc030-805b-4bd4-917d-08ce58a2a061",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "bd944945-fd33-415c-ab41-7fc3f35f352f",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-05T15:05:40.919Z"
+      },
+      {
+        "id": "d6aa6549-ee65-4743-b87b-a05f1058bf4b",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "7eb03842-08cc-4196-b00e-7ccd975a38be",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-05T15:05:32.611Z"
+      },
+      {
+        "id": "8eecb207-16e3-457b-8e95-fb6b11552112",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "acfda39e-1944-4e4c-85b2-70a0d9dfac75",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-05T15:05:24.115Z"
+      },
+      {
+        "id": "f558d40e-5add-4221-ae68-d5a319bdb29d",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "9779f8ac-36b9-4d41-bc43-60ec17aa1b4a",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-05T15:05:17.414Z"
+      },
+      {
+        "id": "6e7489b3-06ef-4b40-bbf2-cb09a75770c9",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "9779f8ac-36b9-4d41-bc43-60ec17aa1b4a",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-05T15:05:15.827Z"
+      },
+      {
+        "id": "aa711049-fb10-47c9-b00a-86e0baa1c29a",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "9779f8ac-36b9-4d41-bc43-60ec17aa1b4a",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-05T15:05:14.605Z"
+      },
+      {
+        "id": "2b330ca2-025c-451f-b252-ed5a7c6c85ac",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "9779f8ac-36b9-4d41-bc43-60ec17aa1b4a",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-05T15:05:13.031Z"
+      },
+      {
+        "id": "2565347a-719b-4bd8-b303-2ba6a68f54b5",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "d068f4d5-042f-4de3-8c21-e722c35eb4be",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-04T17:00:00.000Z"
+      },
+      {
+        "id": "5354ac69-f1c6-41e7-ac9b-defa7c3030f7",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "4200e8c0-5374-4701-8151-f1aa6c888d9c",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-04T17:00:00.000Z"
+      },
+      {
+        "id": "1086c1b1-cd12-48ae-a2b3-1912121a9015",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "3a6ca8de-a08d-46b7-ad19-1ba37d465745",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-04T17:00:00.000Z"
+      },
+      {
+        "id": "59575e9f-e402-48a5-92d0-aa4f943225eb",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "6038e785-766a-4149-81ce-818ba68e3d37",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-04T17:00:00.000Z"
+      },
+      {
+        "id": "12c3eb7a-fdec-478e-80f3-f8865536f37d",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "76c99e95-3c3b-4f40-8bc1-1aa67cf1c272",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-04T17:00:00.000Z"
+      },
+      {
+        "id": "5dd8dfc1-d904-4822-b4e5-85b515dc145f",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "5222d8c7-fd7e-4a0a-bf10-8548e6816424",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-04T17:00:00.000Z"
+      },
+      {
+        "id": "54b91b27-d820-4a6b-b3bc-e3cde7d1e97c",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "d67ea957-bb74-460a-9def-78cc3e9ac39f",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-04T17:00:00.000Z"
+      },
+      {
+        "id": "d7e177ec-a52d-4812-82e6-5db844ac19ac",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "410b1c27-8cd2-43c4-a43e-67a284a764b6",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-04T17:00:00.000Z"
+      },
+      {
+        "id": "14c71d45-e6fe-460d-896d-c589ffce1b09",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "332186b1-9fd0-4ae7-ad15-28a8beb3bdc1",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-04T17:00:00.000Z"
+      },
+      {
+        "id": "42a82fee-3d72-40af-91c8-86dce10b8c52",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "8e448a3e-e1d1-4613-9a0f-f67896ae9f04",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-04T17:00:00.000Z"
+      },
+      {
+        "id": "246ba828-7d60-483a-804b-96dc48e01693",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "7eb03842-08cc-4196-b00e-7ccd975a38be",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-04T15:23:57.145Z"
+      },
+      {
+        "id": "706eadae-0b8b-4c6b-b935-8bfc56df5f29",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "9779f8ac-36b9-4d41-bc43-60ec17aa1b4a",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-04T15:23:43.334Z"
+      },
+      {
+        "id": "a1921286-c90b-4278-ac86-77f2f217c5fd",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "9779f8ac-36b9-4d41-bc43-60ec17aa1b4a",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-04T15:23:41.828Z"
+      },
+      {
+        "id": "23a37621-f41c-431a-b7d9-3ba81663a5e6",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "9779f8ac-36b9-4d41-bc43-60ec17aa1b4a",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-04T15:23:40.138Z"
+      },
+      {
+        "id": "00c44cc4-a787-4d46-bb2a-6c542ffdaa95",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "9779f8ac-36b9-4d41-bc43-60ec17aa1b4a",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-04T15:23:38.643Z"
+      },
+      {
+        "id": "d78f7919-f9bb-4003-b159-19eef528597a",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "9779f8ac-36b9-4d41-bc43-60ec17aa1b4a",
+        "status": "VERIFIED",
+        "completed_at": "2026-01-04T15:23:36.820Z"
+      },
+      {
+        "id": "23d51d76-50d4-4659-9832-b92ccd708f6b",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "d068f4d5-042f-4de3-8c21-e722c35eb4be",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-03T17:00:00.000Z"
+      },
+      {
+        "id": "278e52ad-dee7-41d1-8544-8f3a2ba32c78",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "3a6ca8de-a08d-46b7-ad19-1ba37d465745",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-03T17:00:00.000Z"
+      },
+      {
+        "id": "f702ae4c-d26e-4d68-b0b1-5897a481e8f8",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "76c99e95-3c3b-4f40-8bc1-1aa67cf1c272",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-03T17:00:00.000Z"
+      },
+      {
+        "id": "799eb555-2b40-4881-a96e-c1e4df06e84c",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "ff8d2b09-17eb-4ae5-8ac1-c85e0a85b6c8",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-03T17:00:00.000Z"
+      },
+      {
+        "id": "6016610f-483e-4d3e-983e-e21e66897c1b",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "bd944945-fd33-415c-ab41-7fc3f35f352f",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-03T17:00:00.000Z"
+      },
+      {
+        "id": "638c9db0-1fe6-46f2-b62e-6a3426eedfd4",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "5222d8c7-fd7e-4a0a-bf10-8548e6816424",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-03T17:00:00.000Z"
+      },
+      {
+        "id": "8cb03897-4055-48e9-abc2-94417dc796a5",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "d67ea957-bb74-460a-9def-78cc3e9ac39f",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-03T17:00:00.000Z"
+      },
+      {
+        "id": "c29d9753-8387-4e1c-b349-b080201fe34e",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "410b1c27-8cd2-43c4-a43e-67a284a764b6",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-03T17:00:00.000Z"
+      },
+      {
+        "id": "28e37877-ed6e-4027-8692-d26c9c3618c3",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "acfda39e-1944-4e4c-85b2-70a0d9dfac75",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-03T17:00:00.000Z"
+      },
+      {
+        "id": "f3620491-1e24-4e1b-886d-97f245d04179",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "8e448a3e-e1d1-4613-9a0f-f67896ae9f04",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-03T17:00:00.000Z"
+      },
+      {
+        "id": "be635e74-3c37-4e5b-9e08-90cc2ef2a80f",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "d068f4d5-042f-4de3-8c21-e722c35eb4be",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-02T17:00:00.000Z"
+      },
+      {
+        "id": "f65bd6f0-e58d-4a1d-9d57-5e706aab9c43",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "3a6ca8de-a08d-46b7-ad19-1ba37d465745",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-02T17:00:00.000Z"
+      },
+      {
+        "id": "e68e2b97-1256-48d6-88f9-59a4b96843ea",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "7eb03842-08cc-4196-b00e-7ccd975a38be",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-02T17:00:00.000Z"
+      },
+      {
+        "id": "36b9a7a1-b2fb-499f-9647-2e59d1a6e512",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "ff8d2b09-17eb-4ae5-8ac1-c85e0a85b6c8",
+        "status": "FAILED",
+        "rejection_reason": "Missed daily deadline",
+        "completed_at": "2026-01-02T17:00:00.000Z"
+      }
+    ],
+    "transactions": [
+      {
+        "id": "66651d96-0530-4558-bf01-4fe1e637a485",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 30,
+        "type": "MANUAL_ADJ",
+        "description": "Lupa masukin point",
+        "created_at": "2026-01-09T17:57:40.717Z"
+      },
+      {
+        "id": "4388c213-7dcf-4c85-b002-fadad7e729e5",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 5,
+        "type": "TASK_VERIFIED",
+        "reference_id": "5bd2f0e9-46e1-48dd-b15a-eee68a60468f",
+        "created_at": "2026-01-07T16:21:01.383Z"
+      },
+      {
+        "id": "844079d8-3242-4af6-a413-cac03c882e2e",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 2,
+        "type": "TASK_VERIFIED",
+        "reference_id": "9538bb78-4da4-42b5-ac6b-ef6e6e9112d8",
+        "created_at": "2026-01-07T16:21:00.874Z"
+      },
+      {
+        "id": "c984cc9e-e51b-4b2f-b8c9-326f090fd60d",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 0,
+        "type": "TASK_VERIFIED",
+        "reference_id": "71e92ed9-5994-4043-8b86-36eac8b23a3f",
+        "created_at": "2026-01-07T16:21:00.310Z"
+      },
+      {
+        "id": "85419928-1d5e-4fd0-8242-4849b7143470",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "5dfde9be-56ea-4871-afc9-51918885be64",
+        "created_at": "2026-01-07T16:20:59.775Z"
+      },
+      {
+        "id": "a778d58e-0d90-4c19-8275-28ed78c299db",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "b4e20b30-2260-491d-b0ca-34c8ec0e4f49",
+        "created_at": "2026-01-07T16:20:59.171Z"
+      },
+      {
+        "id": "15f0fcd9-036d-439b-895a-188470d2c80e",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "d153b443-268b-423b-8e9f-190cf7ddc927",
+        "created_at": "2026-01-07T16:20:57.550Z"
+      },
+      {
+        "id": "de0e4ada-3cf8-4171-ab02-f01cff762275",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 2,
+        "type": "TASK_VERIFIED",
+        "reference_id": "3e88729e-9590-48e8-aa91-1594f9e8cb99",
+        "created_at": "2026-01-06T14:24:35.074Z"
+      },
+      {
+        "id": "822fe8d8-bf9b-4a79-ab9e-eff99be2f470",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 5,
+        "type": "TASK_VERIFIED",
+        "reference_id": "bd4e5b1c-77af-4f1f-a501-5fb0969018b3",
+        "created_at": "2026-01-06T14:24:34.550Z"
+      },
+      {
+        "id": "f0f353a0-ef49-4189-bd98-91270563b6c3",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 10,
+        "type": "TASK_VERIFIED",
+        "reference_id": "935d6f42-b895-4d4a-8a27-8122aae2f825",
+        "created_at": "2026-01-06T14:24:34.032Z"
+      },
+      {
+        "id": "afe828bf-5d3b-4481-af6e-8234892d2ae0",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 2,
+        "type": "TASK_VERIFIED",
+        "reference_id": "ef0c7777-03a9-4015-a694-e461ac86107c",
+        "created_at": "2026-01-06T14:24:33.565Z"
+      },
+      {
+        "id": "c799fe94-061f-44e8-8dd8-9980bdcbe015",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 0,
+        "type": "TASK_VERIFIED",
+        "reference_id": "e12438d1-1ca4-43a9-9e95-93f66586f150",
+        "created_at": "2026-01-06T14:24:33.313Z"
+      },
+      {
+        "id": "d8ad7b01-4cd5-4530-a538-ea397f62bb12",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "740e2122-1d89-497a-b237-5932410b887f",
+        "created_at": "2026-01-06T14:24:33.089Z"
+      },
+      {
+        "id": "9a02f4aa-920f-49dc-83b7-d2ff31168869",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "9cfa741d-b83b-4b35-9500-826f46e112b9",
+        "created_at": "2026-01-06T14:24:32.640Z"
+      },
+      {
+        "id": "79588880-b646-4ef0-803b-d2d4e943c36a",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "86bbb261-c157-4c4f-98f1-d618d72d9581",
+        "created_at": "2026-01-06T14:24:32.070Z"
+      },
+      {
+        "id": "88511088-f7e5-4ff2-9a0a-c53dd746fe4c",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 2,
+        "type": "MANUAL_ADJ",
+        "description": "injek2 ayah",
+        "created_at": "2026-01-05T15:06:18.743Z"
+      },
+      {
+        "id": "49e0f425-bb9a-41c9-a2f8-7a8fa43a6c8e",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 5,
+        "type": "TASK_VERIFIED",
+        "reference_id": "06034d7f-a088-48fb-8daa-a48f50a0475d",
+        "created_at": "2026-01-05T15:06:05.154Z"
+      },
+      {
+        "id": "7c3bec8f-3efe-44f3-a6b3-a9d94efa0438",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 2,
+        "type": "TASK_VERIFIED",
+        "reference_id": "230cc030-805b-4bd4-917d-08ce58a2a061",
+        "created_at": "2026-01-05T15:06:04.598Z"
+      },
+      {
+        "id": "f4f63e77-dde1-4bcc-a924-4b9b2264fcfb",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 2,
+        "type": "TASK_VERIFIED",
+        "reference_id": "d6aa6549-ee65-4743-b87b-a05f1058bf4b",
+        "created_at": "2026-01-05T15:06:04.033Z"
+      },
+      {
+        "id": "e45a7da8-72e3-4ec6-adff-08df142f50ac",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "8eecb207-16e3-457b-8e95-fb6b11552112",
+        "created_at": "2026-01-05T15:06:03.510Z"
+      },
+      {
+        "id": "55f652ea-75e3-4626-8152-e7814cda5fc0",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "f558d40e-5add-4221-ae68-d5a319bdb29d",
+        "created_at": "2026-01-05T15:06:02.907Z"
+      },
+      {
+        "id": "335ae77b-b6ee-4d2e-aea6-b1c0598b05a9",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "6e7489b3-06ef-4b40-bbf2-cb09a75770c9",
+        "created_at": "2026-01-05T15:06:02.311Z"
+      },
+      {
+        "id": "f7bf9d74-dd6e-4098-b173-bee6d2321790",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "2b330ca2-025c-451f-b252-ed5a7c6c85ac",
+        "created_at": "2026-01-05T15:06:01.355Z"
+      },
+      {
+        "id": "938cb3e5-0bc6-4e79-825a-e830d604e3df",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "aa711049-fb10-47c9-b00a-86e0baa1c29a",
+        "created_at": "2026-01-05T15:06:00.785Z"
+      },
+      {
+        "id": "97c68569-70c8-4c54-8100-d45976d002ad",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 2,
+        "type": "TASK_VERIFIED",
+        "reference_id": "246ba828-7d60-483a-804b-96dc48e01693",
+        "created_at": "2026-01-04T15:24:26.387Z"
+      },
+      {
+        "id": "c6af165b-51cb-4a13-81f3-c821d9e152cc",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "706eadae-0b8b-4c6b-b935-8bfc56df5f29",
+        "created_at": "2026-01-04T15:24:26.142Z"
+      },
+      {
+        "id": "d3280499-93e7-4cec-a8e5-8597901d70ad",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "a1921286-c90b-4278-ac86-77f2f217c5fd",
+        "created_at": "2026-01-04T15:24:25.907Z"
+      },
+      {
+        "id": "e50029a7-00db-4e30-8152-0fd0cd0dbfbc",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "23a37621-f41c-431a-b7d9-3ba81663a5e6",
+        "created_at": "2026-01-04T15:24:25.627Z"
+      },
+      {
+        "id": "a9fa086a-7c5b-4ee7-979c-477a4b62b85f",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "00c44cc4-a787-4d46-bb2a-6c542ffdaa95",
+        "created_at": "2026-01-04T15:24:25.183Z"
+      },
+      {
+        "id": "4ef169ec-6420-4e37-9655-4d9e692e5951",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "d78f7919-f9bb-4003-b159-19eef528597a",
+        "created_at": "2026-01-04T15:24:24.591Z"
+      },
+      {
+        "id": "cd73b30e-c5a4-488f-90d1-bb487045fbbb",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 45,
+        "type": "MANUAL_ADJ",
+        "description": "Point Liburan",
+        "created_at": "2026-01-02T15:57:20.428Z"
+      },
+      {
+        "id": "013284d6-e2f8-45bd-bca8-c82732964029",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 5,
+        "type": "TASK_VERIFIED",
+        "reference_id": "568db9c1-6656-4ab0-bf3d-1197c4f3fb43",
+        "created_at": "2025-12-29T15:26:17.852Z"
+      },
+      {
+        "id": "9e896701-1aab-48cf-a266-62f7a0cfbfc7",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 2,
+        "type": "TASK_VERIFIED",
+        "reference_id": "6b28044b-9c5c-4153-9f10-99454fa79a1f",
+        "created_at": "2025-12-29T15:26:17.287Z"
+      },
+      {
+        "id": "438c1a4d-25cb-48d2-a77b-0808021191dd",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "aa7194a9-7491-41f1-b54a-50a3dbba2e15",
+        "created_at": "2025-12-29T15:26:16.763Z"
+      },
+      {
+        "id": "efc41a30-2d82-4214-b483-152f9368c3d2",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "33c72f56-00cb-44c7-a4a2-fad96089d6c1",
+        "created_at": "2025-12-29T15:26:16.241Z"
+      },
+      {
+        "id": "72689b58-8aa3-4681-90c4-fe1c63c7c647",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "ae1cb379-4fd1-494c-8831-7950d5c77abb",
+        "created_at": "2025-12-29T15:26:15.694Z"
+      },
+      {
+        "id": "df78b0bd-4ab9-4e39-883c-87bf9186393f",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "764f6880-246e-46c2-b4b1-921d936377d1",
+        "created_at": "2025-12-29T15:26:15.188Z"
+      },
+      {
+        "id": "e0b3bdd7-7a6d-4de5-839d-8b51f057020a",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "2dc7521f-ad29-421d-9607-5d990f5fdc06",
+        "created_at": "2025-12-29T15:26:14.545Z"
+      },
+      {
+        "id": "ef286518-b526-451b-bdba-37e84f83b64e",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": -50,
+        "type": "MANUAL_ADJ",
+        "description": "Mainin Yg bukan mainan",
+        "created_at": "2025-12-29T02:03:43.034Z"
+      },
+      {
+        "id": "47efc3ef-b75c-415d-9703-ea5dabb1e1f8",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": -2,
+        "type": "MANUAL_ADJ",
+        "description": "Di suapin",
+        "created_at": "2025-12-27T15:23:35.775Z"
+      },
+      {
+        "id": "0bc514bd-cba8-47be-8a78-3b21c7abd140",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 10,
+        "type": "TASK_VERIFIED",
+        "reference_id": "522ed1ce-113d-480c-bae8-95770aabeb8e",
+        "created_at": "2025-12-27T15:23:24.558Z"
+      },
+      {
+        "id": "976ef19e-d639-49e7-9252-296ebab739cd",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 5,
+        "type": "TASK_VERIFIED",
+        "reference_id": "5cef4b79-b5e9-4882-a16e-2830c4db6ba6",
+        "created_at": "2025-12-27T15:23:24.097Z"
+      },
+      {
+        "id": "4f3c5964-0d49-4acd-b57e-c4ba42174eab",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 2,
+        "type": "TASK_VERIFIED",
+        "reference_id": "c8daaaf5-b5ab-4bce-8be2-97cbc8298422",
+        "created_at": "2025-12-27T15:23:23.718Z"
+      },
+      {
+        "id": "bfb4cd92-1d89-4b3c-8f20-7d28dd839b68",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 2,
+        "type": "TASK_VERIFIED",
+        "reference_id": "e82e937a-b142-46d1-a6d2-7834b1b72ce5",
+        "created_at": "2025-12-27T15:23:23.375Z"
+      },
+      {
+        "id": "8f16f6de-3dbd-494c-973a-602ecb3a0e6f",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 5,
+        "type": "TASK_VERIFIED",
+        "reference_id": "deae68d6-3228-46b2-a0a8-6e284729ea27",
+        "created_at": "2025-12-27T15:23:23.165Z"
+      },
+      {
+        "id": "6560723b-6ffc-46c9-8191-112fb1ade937",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "53c11401-e93c-41a7-a64a-2340fa71f742",
+        "created_at": "2025-12-27T15:23:22.812Z"
+      },
+      {
+        "id": "d0c83cdb-c8bb-4d01-9ce8-c7d7498d1c2e",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "78962913-599e-49df-a645-bc28b83fae41",
+        "created_at": "2025-12-27T15:23:22.202Z"
+      },
+      {
+        "id": "48cd89ee-c0e7-4ef6-8b9f-b278cc0343a8",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "75c9e528-8e6b-4bcb-a151-d80c16501731",
+        "created_at": "2025-12-26T14:12:14.258Z"
+      },
+      {
+        "id": "ffb78c9f-1262-404d-adb1-83c964ef84d3",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "4701d918-ccc5-4abf-97d3-29cda7b3df45",
+        "created_at": "2025-12-26T14:12:13.676Z"
+      },
+      {
+        "id": "9d438ef6-ce8e-499f-b8a7-af1491581fb8",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "amount": 1,
+        "type": "TASK_VERIFIED",
+        "reference_id": "595c905a-596b-487b-ae35-f9c32b55c45b",
+        "created_at": "2025-12-26T14:12:13.080Z"
+      }
+    ],
+    "redeemedHistory": [
+      {
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "reward_id": "4cd46ef7-9261-4bcd-a2a1-788c03cc9f97"
+      }
+    ],
+    "pendingVerifications": [
+      {
+        "id": "37c58764-c740-4c0d-9f58-b8ad46fed932",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "410b1c27-8cd2-43c4-a43e-67a284a764b6",
+        "status": "PENDING",
+        "completed_at": "2025-12-14T14:55:36.212Z",
+        "task_title": "Makan Siang Habis",
+        "reward_value": 5,
+        "child_name": "Kiano"
+      },
+      {
+        "id": "997290f2-f12a-4b76-a104-db58006946a9",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "d67ea957-bb74-460a-9def-78cc3e9ac39f",
+        "status": "PENDING",
+        "completed_at": "2025-12-14T14:55:55.054Z",
+        "task_title": "Mengambar",
+        "reward_value": 2,
+        "child_name": "Kiano"
+      },
+      {
+        "id": "391b2465-285a-4a60-be42-a23f438168c0",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "3a6ca8de-a08d-46b7-ad19-1ba37d465745",
+        "status": "PENDING",
+        "completed_at": "2025-12-14T14:56:00.681Z",
+        "task_title": "Belajar ",
+        "reward_value": 2,
+        "child_name": "Kiano"
+      },
+      {
+        "id": "decf970a-63ec-4ce1-bbfc-fa1c10378380",
+        "parent_id": "local-user",
+        "child_id": "dfcd2874-ba18-4f71-8a0b-84a08b653bf7",
+        "task_id": "ff8d2b09-17eb-4ae5-8ac1-c85e0a85b6c8",
+        "status": "PENDING",
+        "completed_at": "2025-12-14T14:56:37.564Z",
+        "task_title": "Makan Malam Habis",
+        "reward_value": 5,
+        "child_name": "Kiano"
+      }
+    ],
+    "isAdminMode": true,
+    "notificationsEnabled": true,
+    "adminName": "ayah",
+    "familyName": "Kus Family",
+    "adminPin": "5555",
+    "onboardingStep": "completed"
+  }
+}

@@ -575,24 +575,44 @@ export const localStorageService = {
                     family_name: validData.familyName || 'My Family',
                     parent_name: validData.adminName || 'Parent'
                 };
+            } else if (profile) {
+                // Sanitize profile fields
+                profile = {
+                    ...profile,
+                    family_name: profile.family_name ?? undefined,
+                    parent_name: profile.parent_name ?? undefined,
+                    created_at: profile.created_at ?? undefined,
+                    pin_admin: profile.pin_admin ?? undefined
+                };
             }
 
             // Ensure structure matches LocalDB
             const validChildren = (validData.children || []).map(c => ({
                 ...c,
                 current_balance: c.current_balance ?? 0,
-                avatar_url: c.avatar_url || ''
+                avatar_url: c.avatar_url || '',
+                birth_date: c.birth_date ?? undefined
             }));
 
             const validTasks = (validData.tasks || []).map(t => ({
                 ...t,
                 type: t.type || 'ONE_TIME',
-                assigned_to: t.assigned_to || []
+                assigned_to: t.assigned_to || [],
+                recurrence_rule: t.recurrence_rule ?? undefined,
+                is_active: t.is_active ?? undefined,
+                created_at: t.created_at ?? undefined,
+                category_id: t.category_id ?? undefined,
+                expiry_time: t.expiry_time ?? undefined,
+                next_due_date: t.next_due_date ?? undefined
             }));
 
             const validRewards = (validData.rewards || []).map(r => ({
                 ...r,
-                type: r.type || 'UNLIMITED'
+                type: r.type || 'UNLIMITED',
+                category: r.category ?? undefined,
+                required_task_id: r.required_task_id ?? undefined,
+                required_task_count: r.required_task_count ?? undefined,
+                created_at: r.created_at ?? undefined
             }));
 
             // Filter logs to ensure referential integrity
@@ -601,20 +621,34 @@ export const localStorageService = {
                 const childExists = validChildren.some(c => c.id === log.child_id);
                 const taskExists = validTasks.some(t => t.id === log.task_id);
                 return childExists && taskExists;
-            });
+            }).map(l => ({
+                ...l,
+                rejection_reason: l.rejection_reason ?? undefined,
+                notes: l.notes ?? undefined,
+                verified_at: l.verified_at ?? undefined
+            }));
 
             const newDB: LocalDB = {
                 profile: profile ? {
-                    ...profile,
+                    id: profile.id,
                     created_at: profile.created_at || new Date().toISOString(),
-                    pin_admin: profile.pin_admin || '0000'
+                    pin_admin: profile.pin_admin || '0000',
+                    family_name: profile.family_name ?? undefined,
+                    parent_name: profile.parent_name ?? undefined
                 } : null,
                 children: validChildren,
                 tasks: validTasks,
                 rewards: validRewards,
                 logs: validLogs,
-                transactions: validData.transactions || [],
-                categories: validData.categories || []
+                transactions: (validData.transactions || []).map(t => ({
+                    ...t,
+                    reference_id: t.reference_id ?? undefined,
+                    description: t.description ?? undefined
+                })),
+                categories: (validData.categories || []).map(c => ({
+                    ...c,
+                    is_default: c.is_default ?? undefined
+                }))
             };
 
             saveDB(newDB);
