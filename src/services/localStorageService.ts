@@ -232,7 +232,8 @@ export const localStorageService = {
             category: reward.category,
             type: reward.type,
             required_task_id: reward.required_task_id,
-            required_task_count: reward.required_task_count
+            required_task_count: reward.required_task_count,
+            assigned_to: reward.assigned_to
         };
         db.rewards.push(newReward);
         saveDB(db);
@@ -402,7 +403,7 @@ export const localStorageService = {
 
     fetchChildLogs: async (): Promise<ChildTaskLog[]> => {
         const db = getDB();
-        return db.logs.sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime()).slice(0, 100);
+        return db.logs.sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime()).slice(0, 10000);
     },
 
     fetchPendingVerifications: async (): Promise<VerificationRequest[]> => {
@@ -427,6 +428,13 @@ export const localStorageService = {
         // 1. Update Log
         const logIndex = db.logs.findIndex(l => l.id === logId);
         if (logIndex === -1) return false;
+
+        // Prevent double verification at DB level
+        if (db.logs[logIndex].status === 'VERIFIED') {
+            console.warn('Task already verified in DB, skipping.');
+            return true; // Return true as it is "verified"
+        }
+
         db.logs[logIndex].status = 'VERIFIED';
 
         // 2. Update Balance
@@ -548,7 +556,7 @@ export const localStorageService = {
 
     fetchTransactions: async (): Promise<CoinTransaction[]> => {
         const db = getDB();
-        return db.transactions.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 50);
+        return db.transactions.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 10000);
     },
 
     // --- Backup / Restore ---

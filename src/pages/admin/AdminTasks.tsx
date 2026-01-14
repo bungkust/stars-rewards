@@ -29,7 +29,8 @@ const AdminTasks = () => {
       if (categoryFilter !== 'all' && task.category_id !== categoryFilter) return false;
 
       return true;
-    });
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const handleEditClick = (taskId: string) => {
     setSelectedTask(taskId);

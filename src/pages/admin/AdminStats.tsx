@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { FaChartLine, FaCheckCircle, FaGift, FaSlidersH, FaTimesCircle, FaChild, FaLightbulb, FaTimes } from 'react-icons/fa';
+import { FaChartLine, FaCheckCircle, FaExclamationTriangle, FaLightbulb, FaTimes } from 'react-icons/fa';
 import { AppCard, H1Header, IconWrapper, ToggleButton } from '../../components/design-system';
 
 import { useAppStore } from '../../store/useAppStore';
@@ -7,112 +7,154 @@ import { calculateCoinMetrics, getRecommendations, getCategoryPerformance } from
 import { ICON_MAP } from '../../utils/icons';
 import type { TimeFilter } from '../../utils/analytics';
 
-import { AnimatePresence, motion } from 'framer-motion';
-import TaskDetailsModal from '../../components/modals/TaskDetailsModal';
-import TransactionDetailsModal from '../../components/modals/TransactionDetailsModal';
-
 const AdminStats = () => {
-  const { children, transactions, childLogs, tasks, categories, isLoading } = useAppStore();
+  const { transactions, childLogs, children, tasks, categories, isLoading } = useAppStore();
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('week');
   const [selectedChildId, setSelectedChildId] = useState<string>('all');
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>('today');
-  const [specificDate, setSpecificDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [tempDate, setTempDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [visibleTxCount, setVisibleTxCount] = useState(10);
-  const [dismissedInsights, setDismissedInsights] = useState<string[]>([]);
+  const [tempDate, setTempDate] = useState(new Date().toISOString().split('T')[0]);
+  const [specificDate, setSpecificDate] = useState(new Date().toISOString().split('T')[0]);
+  const [dismissedInsights, setDismissedInsights] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem('dismissed_insights');
+      if (stored) {
+        const parsed: Record<string, string> = JSON.parse(stored);
+        const today = new Date().toISOString().split('T')[0];
+        // Only keep IDs dismissed TODAY
+        return Object.keys(parsed).filter(id => parsed[id] === today);
+      }
+    } catch (e) {
+      console.error('Failed to parse dismissed insights', e);
+    }
+    return [];
+  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
-  // Load dismissed state on mount
+  // Effect to clean up old dismissals from localStorage
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('dismissed_insights_v1');
+      const stored = localStorage.getItem('dismissed_insights');
       if (stored) {
-        const { date, ids } = JSON.parse(stored);
-        // Simple local date check (YYYY-MM-DD)
-        const today = new Date().toLocaleDateString('en-CA');
+        const parsed: Record<string, string> = JSON.parse(stored);
+        const today = new Date().toISOString().split('T')[0];
+        const newStorage: Record<string, string> = {};
+        let changed = false;
 
-        if (date === today) {
-          setDismissedInsights(ids);
-        } else {
-          // Reset if date changed (new day = show insights again)
-          localStorage.removeItem('dismissed_insights_v1');
+        Object.entries(parsed).forEach(([id, date]) => {
+          if (date === today) {
+            newStorage[id] = date;
+          } else {
+            changed = true;
+          }
+        });
+
+        if (changed) {
+          localStorage.setItem('dismissed_insights', JSON.stringify(newStorage));
         }
       }
     } catch (e) {
-      console.error('Failed to load dismissed insights', e);
+      // Ignore errors
     }
   }, []);
 
-  const handleDismiss = (id: string) => {
-    const newIds = [...dismissedInsights, id];
-    setDismissedInsights(newIds);
-
-    const today = new Date().toLocaleDateString('en-CA');
-    localStorage.setItem('dismissed_insights_v1', JSON.stringify({
-      date: today,
-      ids: newIds
-    }));
-  };
-
   const handleTimeFilterChange = (filter: TimeFilter) => {
     setTimeFilter(filter);
-    setVisibleTxCount(10);
+    setCurrentPage(1); // Reset pagination
+    if (filter === 'specific') {
+      setSpecificDate(tempDate);
+    }
   };
 
-  // Filter Data based on Time and Child
+  const handleDismiss = (id: string) => {
+    setDismissedInsights(prev => {
+      const newDismissed = [...prev, id];
+      // Update Local Storage
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const stored = localStorage.getItem('dismissed_insights');
+        const parsed = stored ? JSON.parse(stored) : {};
+        parsed[id] = today;
+        localStorage.setItem('dismissed_insights', JSON.stringify(parsed));
+      } catch (e) {
+        console.error('Failed to save dismissed insight', e);
+      }
+      return newDismissed;
+    });
+  };
+
+  // Filter Data
   const filteredData = useMemo(() => {
+    let filteredTx = transactions;
+    let filteredLogs = childLogs;
+
+    // 1. Filter by Child
+    if (selectedChildId !== 'all') {
+      filteredTx = filteredTx.filter(t => t.child_id === selectedChildId);
+      filteredLogs = filteredLogs.filter(l => l.child_id === selectedChildId);
+    } else {
+      // Only include active children to match Current Balance
+      const activeChildIds = children.map(c => c.id);
+      filteredTx = filteredTx.filter(t => activeChildIds.includes(t.child_id));
+      filteredLogs = filteredLogs.filter(l => activeChildIds.includes(l.child_id));
+    }
+
+    // 2. Filter by Time
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const oneDay = 24 * 60 * 60 * 1000;
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    let startTime = today;
-    if (timeFilter === 'week') startTime = today - (6 * oneDay);
-    if (timeFilter === 'month') startTime = today - (29 * oneDay);
-
-    const filterItem = (dateStr: string, childId: string, isLog: boolean = false, status?: string) => {
-      const date = new Date(dateStr).getTime();
-
+    const filterDate = (dateStr: string) => {
+      const date = new Date(dateStr);
+      if (timeFilter === 'all') {
+        return true;
+      }
+      if (timeFilter === 'today') {
+        return date >= today;
+      }
+      if (timeFilter === 'week') {
+        const weekAgo = new Date(today);
+        weekAgo.setDate(today.getDate() - 7);
+        return date >= weekAgo;
+      }
+      if (timeFilter === 'month') {
+        const monthAgo = new Date(today);
+        monthAgo.setMonth(today.getMonth() - 1);
+        return date >= monthAgo;
+      }
       if (timeFilter === 'specific') {
-        // Compare YYYY-MM-DD strings in local time
-        const itemDateStr = new Date(dateStr).toLocaleDateString('en-CA');
-        return specificDate === itemDateStr;
+        const target = new Date(specificDate);
+        return date.getDate() === target.getDate() &&
+          date.getMonth() === target.getMonth() &&
+          date.getFullYear() === target.getFullYear();
       }
-
-      // Special case: Show yesterday's failures/excused in 'Today' view
-      // This allows parents to see what happened yesterday without switching to 'Week'
-      if (timeFilter === 'today' && isLog && (status === 'FAILED' || status === 'EXCUSED')) {
-        const yesterday = today - oneDay;
-        // Check if it's exactly yesterday (or after yesterday start)
-        // We use >= yesterday because 'today' variable is start of today. 
-        // 'yesterday' variable is start of yesterday.
-        if (date >= yesterday) {
-          if (selectedChildId !== 'all' && childId !== selectedChildId) return false;
-          return true;
-        }
-      }
-
-      if (date < startTime) return false;
-      if (selectedChildId !== 'all' && childId !== selectedChildId) return false;
       return true;
     };
 
-    const filteredTransactions = transactions.filter(t => filterItem(t.created_at, t.child_id));
-    const filteredLogs = childLogs.filter(l => filterItem(l.completed_at, l.child_id, true, l.status));
+    filteredTx = filteredTx.filter(t => filterDate(t.created_at));
+    filteredLogs = filteredLogs.filter(l => filterDate(l.completed_at));
 
-    return { filteredTransactions, filteredLogs };
-  }, [transactions, childLogs, timeFilter, selectedChildId, specificDate]);
+    return { filteredTx, filteredLogs };
+  }, [transactions, childLogs, selectedChildId, timeFilter, specificDate]);
 
-  const { filteredTransactions, filteredLogs } = filteredData;
+  const { filteredTx: filteredTransactions, filteredLogs } = filteredData;
 
   // Calculate Metrics
   const coinMetrics = useMemo(() => calculateCoinMetrics(filteredTransactions), [filteredTransactions]);
-  const missionCount = useMemo(() => filteredTransactions.filter(t => t.type === 'TASK_VERIFIED').length, [filteredTransactions]);
+  const missionCount = filteredLogs.filter(l => l.status === 'VERIFIED').length;
 
-  const rawRecommendations = useMemo(() => getRecommendations(filteredLogs, tasks), [filteredLogs, tasks]);
+  // Calculate Current Balance
+  const currentBalance = useMemo(() => {
+    if (selectedChildId === 'all') {
+      return children.reduce((acc, child) => acc + child.current_balance, 0);
+    }
+    return children.find(c => c.id === selectedChildId)?.current_balance || 0;
+  }, [children, selectedChildId]);
 
-  const recommendations = useMemo(() =>
-    rawRecommendations.filter(r => !dismissedInsights.includes(r.id)),
-    [rawRecommendations, dismissedInsights]);
+  const recommendations = useMemo(() => {
+    const allRecs = getRecommendations(filteredLogs, tasks);
+    return allRecs.filter(rec => !dismissedInsights.includes(rec.id));
+  }, [filteredLogs, tasks, dismissedInsights]);
 
-  // Category Metrics
+  // Category Performance
   const categoryMetrics = useMemo(() =>
     getCategoryPerformance(categories, filteredLogs, filteredTransactions, tasks),
     [categories, filteredLogs, filteredTransactions, tasks]
@@ -173,6 +215,11 @@ const AdminStats = () => {
 
   const [statusFilter, setStatusFilter] = useState<'all' | 'earned' | 'spent' | 'failed'>('all');
 
+  // Reset pagination when status filter or child filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, selectedChildId]);
+
   // Filtered History based on Status
   const finalHistory = useMemo(() => {
     return visibleHistory.filter(item => {
@@ -193,6 +240,13 @@ const AdminStats = () => {
       return true;
     });
   }, [visibleHistory, statusFilter]);
+
+  const paginatedHistory = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return finalHistory.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [finalHistory, currentPage]);
+
+  const totalPages = Math.ceil(finalHistory.length / ITEMS_PER_PAGE);
 
   const getChildName = (childId: string) => children.find(c => c.id === childId)?.name || 'Unknown';
 
@@ -217,36 +271,7 @@ const AdminStats = () => {
   // Donut Chart Data
 
 
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [selectedTaskDetails, setSelectedTaskDetails] = useState<any>(null);
-  const [isTxModalOpen, setIsTxModalOpen] = useState(false);
-  const [selectedTxDetails, setSelectedTxDetails] = useState<any>(null);
 
-  const handleHistoryItemClick = (item: any) => {
-    let task = null;
-
-    if (item.type === 'transaction') {
-      const tx = item.data;
-      if (tx.type === 'TASK_VERIFIED') {
-        const log = childLogs.find(l => l.id === tx.reference_id);
-        if (log) {
-          task = tasks.find(t => t.id === log.task_id);
-        }
-      } else if (tx.type === 'MANUAL_ADJ') {
-        setSelectedTxDetails(tx);
-        setIsTxModalOpen(true);
-        return;
-      }
-    } else {
-      const log = item.data;
-      task = tasks.find(t => t.id === log.task_id);
-    }
-
-    if (task) {
-      setSelectedTaskDetails(task);
-      setIsDetailsModalOpen(true);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -277,8 +302,8 @@ const AdminStats = () => {
           ))}
         </div>
         <div className="flex flex-wrap gap-2 items-center">
-          {['today', 'week', 'month'].map((f) => (
-            <ToggleButton key={f} label={f.charAt(0).toUpperCase() + f.slice(1)} isActive={timeFilter === f} onClick={() => handleTimeFilterChange(f as TimeFilter)} />
+          {['today', 'week', 'month', 'all'].map((f) => (
+            <ToggleButton key={f} label={f === 'all' ? 'All Time' : f.charAt(0).toUpperCase() + f.slice(1)} isActive={timeFilter === f} onClick={() => handleTimeFilterChange(f as TimeFilter)} />
           ))}
           <ToggleButton label="Specific Date" isActive={timeFilter === 'specific'} onClick={() => handleTimeFilterChange('specific')} />
 
@@ -322,45 +347,66 @@ const AdminStats = () => {
         </div>
       )}
 
-      {/* M2: Net Gain (Large Card) */}
-      <AppCard className="bg-gradient-to-br from-primary/10 to-base-100 border-primary/20">
-        <div className="flex justify-between items-start">
-          <div>
-            <h2 className="text-neutral/60 font-bold text-sm uppercase mb-1">Net Star Gain</h2>
-            <div className="flex items-baseline gap-2">
-              <span className={`text-4xl font-black ${coinMetrics.net >= 0 ? 'text-primary' : 'text-error'}`}>
-                {coinMetrics.net > 0 ? '+' : ''}{coinMetrics.net}
-              </span>
-              <span className="text-sm font-bold text-neutral/40">stars</span>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Current Balance */}
+        <AppCard className="bg-gradient-to-br from-yellow-400/10 to-base-100 border-yellow-400/20">
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="text-neutral/60 font-bold text-sm uppercase mb-1">Current Balance</h2>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-black text-warning">
+                  {currentBalance}
+                </span>
+                <span className="text-sm font-bold text-neutral/40">stars</span>
+              </div>
+              <p className="text-xs text-neutral/50 mt-2">
+                Total available in wallet
+              </p>
             </div>
-            <p className="text-xs text-neutral/50 mt-2">
-              Earned <span className="text-success font-bold">{coinMetrics.earned}</span> • Spent <span className="text-error font-bold">{coinMetrics.spent}</span> • from {missionCount} missions
-            </p>
+            <div className="p-3 bg-warning/20 text-warning rounded-full">
+              <FaCheckCircle className="w-6 h-6" />
+            </div>
           </div>
-          <div className="p-3 bg-primary/20 text-primary rounded-full">
-            <FaChartLine className="w-6 h-6" />
+        </AppCard>
+
+        {/* M2: Net Gain */}
+        <AppCard className="bg-gradient-to-br from-primary/10 to-base-100 border-primary/20">
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="text-neutral/60 font-bold text-sm uppercase mb-1">Net Star Gain</h2>
+              <div className="flex items-baseline gap-2">
+                <span className={`text-4xl font-black ${coinMetrics.net >= 0 ? 'text-primary' : 'text-error'}`}>
+                  {coinMetrics.net > 0 ? '+' : ''}{coinMetrics.net}
+                </span>
+                <span className="text-sm font-bold text-neutral/40">stars</span>
+              </div>
+              <p className="text-xs text-neutral/50 mt-2">
+                Earned <span className="text-success font-bold">{coinMetrics.earned}</span> • Spent <span className="text-error font-bold">{coinMetrics.spent}</span> • from {missionCount} missions
+              </p>
+            </div>
+            <div className="p-3 bg-primary/20 text-primary rounded-full">
+              <FaChartLine className="w-6 h-6" />
+            </div>
           </div>
-        </div>
-      </AppCard>
+        </AppCard>
+      </div>
 
 
 
       {/* Category Performance */}
       <AppCard>
         <div className="flex items-center gap-3 mb-4">
-          <IconWrapper icon={FaChartLine} className="bg-primary/10 text-primary" />
+          <IconWrapper icon={FaChartLine} className="bg-info/10 text-info" />
           <h3 className="font-bold text-lg text-neutral">Category Performance</h3>
         </div>
-        {categoryMetrics.length === 0 ? (
-          <p className="text-center text-neutral/50 py-4">No data available for this period.</p>
-        ) : (
-          <div className="flex flex-col gap-4">
-            {categoryMetrics.map((cat) => {
-              const Icon = ICON_MAP[cat.icon] || ICON_MAP['default'];
-              const percentage = cat.total > 0 ? Math.round((cat.completed / cat.total) * 100) : 0;
+        <div className="flex flex-col gap-4">
+          {categoryMetrics.map((cat) => {
+            const Icon = ICON_MAP[cat.icon as keyof typeof ICON_MAP] || ICON_MAP['default'];
+            const percentage = cat.total > 0 ? Math.round((cat.completed / cat.total) * 100) : 0;
 
-              return (
-                <div key={cat.id} className="flex items-center gap-4">
+            return (
+              <div key={cat.id} className="flex flex-col gap-2">
+                <div className="flex items-center gap-4">
                   <div className="p-2 rounded-lg bg-base-200 text-neutral/60">
                     <Icon className="w-5 h-5" />
                   </div>
@@ -381,157 +427,129 @@ const AdminStats = () => {
                     </div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
+
+                {/* Child Breakdown (Only when 'All Children' is selected) */}
+                {selectedChildId === 'all' && Object.keys(cat.childStats || {}).length > 0 && (
+                  <div className="pl-14 pr-2 flex flex-col gap-1">
+                    {Object.entries(cat.childStats).map(([childId, stats]) => {
+                      if (stats.earned === 0 && stats.completed === 0) return null;
+                      const childName = children.find(c => c.id === childId)?.name || 'Unknown';
+                      return (
+                        <div key={childId} className="flex justify-between items-center text-[10px] text-neutral/50">
+                          <span>{childName}</span>
+                          <div className="flex gap-2">
+                            <span>{stats.completed} done</span>
+                            <span className="font-bold text-primary/70">{stats.earned} stars</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </AppCard>
 
-
-
-
-
-
-
       {/* Transaction History */}
-      <AppCard>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-          <div className="flex items-center gap-3">
-            <IconWrapper icon={FaChartLine} />
-            <h3 className="font-bold text-lg text-neutral">Transaction History</h3>
-          </div>
-
-          <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
-            {[
-              { id: 'all', label: 'All' },
-              { id: 'earned', label: 'Earned' },
-              { id: 'spent', label: 'Spent' },
-              { id: 'failed', label: 'Failed' }
-            ].map(filter => (
-              <button
-                key={filter.id}
-                onClick={() => setStatusFilter(filter.id as any)}
-                className={`btn btn-xs sm:btn-sm rounded-full normal-case ${statusFilter === filter.id
-                  ? 'btn-primary text-white'
-                  : 'btn-ghost bg-base-200 text-neutral/60'
-                  }`}
-              >
-                {filter.label}
-              </button>
-            ))}
+      <div className="flex flex-col gap-4">
+        <div className="flex justify-between items-center px-1">
+          <h3 className="font-bold text-neutral text-lg">History</h3>
+          <div className="flex gap-2">
+            <ToggleButton label="All" isActive={statusFilter === 'all'} onClick={() => setStatusFilter('all')} />
+            <ToggleButton label="Earned" isActive={statusFilter === 'earned'} onClick={() => setStatusFilter('earned')} />
+            <ToggleButton label="Spent" isActive={statusFilter === 'spent'} onClick={() => setStatusFilter('spent')} />
+            <ToggleButton label="Failed" isActive={statusFilter === 'failed'} onClick={() => setStatusFilter('failed')} />
           </div>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <AnimatePresence mode="popLayout">
-            {finalHistory.slice(0, visibleTxCount).map((item) => {
+        {finalHistory.length === 0 ? (
+          <div className="text-center py-8 text-neutral/40 bg-base-100 rounded-xl border border-base-200">
+            No history found for this period.
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {paginatedHistory.map((item) => {
               if (item.type === 'transaction') {
                 const tx = item.data;
-                let Icon = FaCheckCircle;
-                let iconBg = 'bg-success/10';
-                let iconColor = 'text-success';
-
-                if (tx.type === 'REWARD_REDEEMED') {
-                  Icon = FaGift;
-                  iconBg = 'bg-warning/10';
-                  iconColor = 'text-warning';
-                } else if (tx.type === 'MANUAL_ADJ') {
-                  Icon = FaSlidersH;
-                  iconBg = 'bg-info/10';
-                  iconColor = 'text-info';
-                }
-
+                const isPositive = tx.amount > 0;
                 return (
-                  <motion.div
+                  <div
                     key={item.id}
-                    layout
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                    className={`flex justify-between items-center border-b border-base-200 pb-3 last:border-0 last:pb-0 ${tx.type === 'TASK_VERIFIED' || tx.type === 'MANUAL_ADJ' ? 'cursor-pointer hover:bg-base-200/50 transition-colors rounded-lg px-2 -mx-2' : ''}`}
-                    onClick={() => handleHistoryItemClick(item)}
+                    className="bg-base-100 p-3 rounded-xl border border-base-200 shadow-sm flex justify-between items-center hover:bg-base-50 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-full ${iconBg} ${iconColor}`}>
-                        <Icon className="w-4 h-4" />
+                      <div className={`p-2 rounded-full ${isPositive ? 'bg-success/10 text-success' : 'bg-error/10 text-error'}`}>
+                        {isPositive ? <FaCheckCircle /> : <FaChartLine className="rotate-180" />}
                       </div>
                       <div>
-                        <p className="font-bold text-sm text-neutral">{getTxDescription(tx)}</p>
-                        <p className="text-xs text-neutral/60">
+                        <div className="font-bold text-neutral text-sm">{getTxDescription(tx)}</div>
+                        <div className="text-xs text-neutral/50">
                           {getChildName(tx.child_id)} • {new Date(tx.created_at).toLocaleDateString()}
-                        </p>
-                        {tx.description && <p className="text-xs text-neutral/50 italic mt-0.5">{tx.description}</p>}
+                        </div>
                       </div>
                     </div>
-                    <span className={`font-bold ${tx.amount > 0 ? 'text-success' : tx.amount < 0 ? 'text-error' : 'text-neutral/60'}`}>
-                      {tx.amount !== 0 ? <>{tx.amount > 0 ? '+' : ''}{tx.amount}</> : <span className="text-xs uppercase">{tx.type === 'TASK_VERIFIED' ? 'Done' : '-'}</span>}
-                    </span>
-                  </motion.div>
+                    <div className={`font-black ${isPositive ? 'text-success' : 'text-error'}`}>
+                      {isPositive ? '+' : ''}{tx.amount}
+                    </div>
+                  </div>
                 );
               } else {
                 const log = item.data;
-                const isFailed = log.status === 'FAILED';
-                const isExcused = log.status === 'EXCUSED';
                 return (
-                  <motion.div
+                  <div
                     key={item.id}
-                    layout
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                    className="flex justify-between items-center border-b border-base-200 pb-3 last:border-0 last:pb-0 cursor-pointer hover:bg-base-200/50 transition-colors rounded-lg px-2 -mx-2"
-                    onClick={() => handleHistoryItemClick(item)}
+                    className="bg-base-100 p-3 rounded-xl border border-base-200 shadow-sm flex justify-between items-center opacity-70 hover:bg-base-50 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-full ${isFailed ? 'bg-base-200 text-neutral/60' : isExcused ? 'bg-warning/10 text-warning' : 'bg-error/10 text-error'}`}>
-                        {isExcused ? <FaChild className="w-4 h-4" /> : <FaTimesCircle className="w-4 h-4" />}
+                      <div className="p-2 rounded-full bg-neutral/10 text-neutral/50">
+                        {log.status === 'EXCUSED' ? <FaCheckCircle /> : <FaExclamationTriangle />}
                       </div>
                       <div>
-                        <p className="font-bold text-sm text-neutral">{getRejectedMissionDetails(log)}</p>
-                        <p className="text-xs text-neutral/60">
-                          {getChildName(log.child_id)} • {new Date(log.completed_at).toLocaleDateString()}
-                        </p>
-                        {log.rejection_reason && !isExcused && (
-                          <p className={`text-xs italic mt-0.5 ${isFailed ? 'text-neutral/60' : 'text-error'}`}>
-                            {isFailed ? 'Missed Deadline' : `Reason: ${log.rejection_reason}`}
-                          </p>
-                        )}
-                        {isExcused && <p className="text-xs italic mt-0.5 text-warning">{log.notes || 'No reason provided'}</p>}
+                        <div className="font-bold text-neutral text-sm">{getRejectedMissionDetails(log)}</div>
+                        <div className="text-xs text-neutral/50">
+                          {getChildName(log.child_id)} • {log.status} • {new Date(log.completed_at).toLocaleDateString()}
+                        </div>
                       </div>
                     </div>
-                    <span className={`font-bold ${isFailed ? 'text-neutral/40' : isExcused ? 'text-warning' : 'text-error'}`}>
-                      <span className="text-xs uppercase">{isFailed ? 'Failed' : isExcused ? 'Excused' : 'Rejected'}</span>
-                    </span>
-                  </motion.div>
+                    <div className="font-bold text-neutral/40 text-xs uppercase">
+                      {log.status}
+                    </div>
+                  </div>
                 );
               }
             })}
-          </AnimatePresence>
+          </div>
+        )}
 
-          {visibleHistory.length === 0 && <p className="text-center text-neutral/50 py-4">No activity found.</p>}
-
-          {visibleHistory.length > visibleTxCount && (
-            <button className="btn btn-ghost btn-sm w-full text-neutral/60" onClick={() => setVisibleTxCount(prev => prev + 10)}>
-              Load More
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-4 mt-4">
+            <button
+              className="btn btn-sm btn-circle"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            >
+              ❮
             </button>
-          )}
-        </div>
-      </AppCard>
+            <span className="text-sm font-bold text-neutral/60">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              className="btn btn-sm btn-circle"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            >
+              ❯
+            </button>
+          </div>
+        )}
+      </div>
 
-      <TaskDetailsModal
-        isOpen={isDetailsModalOpen}
-        task={selectedTaskDetails}
-        onClose={() => setIsDetailsModalOpen(false)}
-      />
-
-      <TransactionDetailsModal
-        isOpen={isTxModalOpen}
-        transaction={selectedTxDetails}
-        onClose={() => setIsTxModalOpen(false)}
-      />
-    </div >
+      {/* Modals placeholders - In real app, we'd implement these */}
+      {/* For now, just simple alerts or logs if clicked, or we can reuse existing modals if available */}
+    </div>
   );
 };
 

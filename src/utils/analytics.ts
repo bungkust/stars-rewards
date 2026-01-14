@@ -2,7 +2,7 @@ import type { Task, ChildTaskLog, CoinTransaction, Child, Category } from '../ty
 import { parseRRule, isDateValid } from './recurrence';
 import { getLocalStartOfDay } from './timeUtils';
 
-export type TimeFilter = 'today' | 'week' | 'month' | 'specific';
+export type TimeFilter = 'today' | 'week' | 'month' | 'all' | 'specific';
 
 interface CoinMetrics {
     earned: number;
@@ -65,6 +65,24 @@ export const getSuccessRatio = (
         startDate.setDate(today.getDate() - 6);
     } else if (filter === 'month') {
         startDate.setDate(today.getDate() - 29);
+    } else if (filter === 'all') {
+        // Find earliest date from logs OR tasks
+        let minDate = new Date();
+
+        if (logs.length > 0) {
+            const sortedLogs = [...logs].sort((a, b) => new Date(a.completed_at).getTime() - new Date(b.completed_at).getTime());
+            minDate = new Date(sortedLogs[0].completed_at);
+        }
+
+        if (tasks.length > 0) {
+            const sortedTasks = [...tasks].sort((a, b) => new Date(a.created_at || new Date()).getTime() - new Date(b.created_at || new Date()).getTime());
+            const firstTaskDate = new Date(sortedTasks[0].created_at || new Date());
+            if (firstTaskDate < minDate) {
+                minDate = firstTaskDate;
+            }
+        }
+
+        startDate = minDate;
     }
 
     const activeTasks = tasks.filter(t => t.is_active !== false);
@@ -308,7 +326,7 @@ export const getTopTasks = (
         // Let's stick to sorting by COUNT (Volume) for "Top Success" and maybe PERCENTAGE for "Fail"?
         // The user just said "pake persentase aja" (use percentage).
         // Let's keep sorting by count (frequency) to highlight high-impact items, but display percentage.
-        .sort((a, b) => b.count - a.count)
+        .sort((a, b) => b.percentage - a.percentage)
         .slice(0, 3);
 };
 
@@ -471,6 +489,7 @@ export interface CategoryMetric {
     earned: number;
     total: number;
     completed: number;
+    childStats: Record<string, { earned: number, completed: number }>;
 }
 
 export const getCategoryPerformance = (
@@ -483,20 +502,27 @@ export const getCategoryPerformance = (
 
     // Initialize
     categories.forEach(c => {
-        metrics[c.id] = { id: c.id, name: c.name, icon: c.icon, earned: 0, total: 0, completed: 0 };
+        metrics[c.id] = { id: c.id, name: c.name, icon: c.icon, earned: 0, total: 0, completed: 0, childStats: {} };
     });
-    metrics['uncategorized'] = { id: 'uncategorized', name: 'Others', icon: 'default', earned: 0, total: 0, completed: 0 };
+    metrics['uncategorized'] = { id: 'uncategorized', name: 'Others', icon: 'default', earned: 0, total: 0, completed: 0, childStats: {} };
 
     // Process Logs (for completion rate)
     logs.forEach(log => {
         const task = tasks.find(t => t.id === log.task_id);
         const catId = task?.category_id || 'uncategorized';
 
-        if (!metrics[catId]) metrics[catId] = { id: catId, name: 'Unknown', icon: 'default', earned: 0, total: 0, completed: 0 };
+        if (!metrics[catId]) metrics[catId] = { id: catId, name: 'Unknown', icon: 'default', earned: 0, total: 0, completed: 0, childStats: {} };
 
         metrics[catId].total++;
+
+        // Init child stats if needed
+        if (!metrics[catId].childStats[log.child_id]) {
+            metrics[catId].childStats[log.child_id] = { earned: 0, completed: 0 };
+        }
+
         if (['VERIFIED', 'COMPLETED'].includes(log.status)) {
             metrics[catId].completed++;
+            metrics[catId].childStats[log.child_id].completed++;
         }
     });
 
@@ -511,6 +537,12 @@ export const getCategoryPerformance = (
 
             if (metrics[catId]) {
                 metrics[catId].earned += tx.amount;
+
+                // Init child stats if needed (might not exist if log wasn't processed in this batch, though unlikely)
+                if (!metrics[catId].childStats[tx.child_id]) {
+                    metrics[catId].childStats[tx.child_id] = { earned: 0, completed: 0 };
+                }
+                metrics[catId].childStats[tx.child_id].earned += tx.amount;
             }
         }
     });

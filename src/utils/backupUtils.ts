@@ -22,6 +22,7 @@ export const generateBackupData = (state: AppState): string => {
             transactions: state.transactions,
             redeemedHistory: state.redeemedHistory,
             pendingVerifications: state.pendingVerifications,
+            categories: state.categories,
             // Settings
             isAdminMode: state.isAdminMode,
             notificationsEnabled: state.notificationsEnabled,
@@ -29,6 +30,8 @@ export const generateBackupData = (state: AppState): string => {
             familyName: state.familyName,
             adminPin: state.adminPin,
             onboardingStep: state.onboardingStep,
+            lastMissedCheckDate: state.lastMissedCheckDate,
+            userProfile: state.userProfile,
         },
     };
 
@@ -44,7 +47,7 @@ export const validateBackupData = (data: any): boolean => {
     if (!data.data || typeof data.data !== 'object') return false;
 
     // Basic check for required arrays
-    const requiredArrays = ['children', 'tasks', 'rewards'];
+    const requiredArrays = ['children', 'tasks', 'rewards', 'categories'];
     for (const key of requiredArrays) {
         if (!Array.isArray(data.data[key])) return false;
     }

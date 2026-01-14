@@ -1,73 +1,67 @@
-# React + TypeScript + Vite
+# Star Habit 🌟
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Star Habit** is a scientifically-grounded, gamified habit tracker designed to help families build better routines, teach responsibility, and make daily tasks fun for kids.
 
-Currently, two official plugins are available:
+Built with privacy in mind, it runs completely offline on your device—no accounts, no tracking, just simple, effective parenting tools.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Why Parents Need This
 
-## React Compiler
+Parenting often involves a struggle between nagging for compliance and wanting to build a positive relationship. **Star Habit** bridges this gap by shifting the focus from **correction** to **connection**.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+*   **Eliminate Power Struggles:** Instead of "do this or else," it becomes "do this to earn stars." This simple shift gives children autonomy and reduces defiance.
+*   **Teach Financial Literacy:** Kids learn the fundamental concept of **Work = Reward**. They learn to save for big items (delayed gratification) vs. spending on small treats immediately.
+*   **Build Lasting Habits:** By externalizing the motivation (stars), you help children initiate tasks until they become internalized habits.
+*   **Focus on the Positive:** It forces you to catch your child doing *good*, rather than just correcting them when they do *bad*.
 
-## Expanding the ESLint configuration
+## 🧠 The Science Behind It
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+This app isn't just a sticker chart; it's a digital implementation of a **Token Economy System**, a behavior modification technique backed by decades of psychological research.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 1. Token Economy & Positive Reinforcement
+Research by **Alan E. Kazdin**, a professor of psychology and child psychiatry at Yale University, demonstrates that **positive reinforcement** (rewarding desired behavior) is significantly more effective for changing behavior than punishment.
+> *"Punishment can stop a behavior, but it cannot teach a new one. Positive reinforcement teaches the child what to do."*
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+**Star Habit** uses "Stars" as immediate tokens that bridge the gap between the behavior (cleaning room) and the backup reinforcer (screen time/toy). This immediate feedback loop is crucial for the developing child's brain.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### 2. Gamification & Dopamine
+Gamification taps into the brain's reward system. Earning a star releases a small amount of **dopamine**, the neurotransmitter associated with pleasure and motivation.
+*   **Research:** Studies in *Frontiers in Psychology* show that gamified elements (points, streaks, badges) increase intrinsic motivation and engagement in non-game contexts like chores and learning.
+*   **Benefit:** It turns "boring" tasks into "quests," reducing the friction of starting a task.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 3. Autonomy & Competence (Self-Determination Theory)
+By allowing children to *choose* which tasks to complete to earn their rewards, you support their need for **Autonomy**. Seeing their balance grow supports their need for **Competence**.
+*   **Benefit:** Children who feel autonomous and competent are more likely to cooperate and develop self-discipline.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## ✨ Key Features
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### 📋 For Parents (Admin Mode)
+*   **Custom Tasks & Missions:** Create one-time or recurring tasks (Daily, Weekly) with custom star values.
+*   **Flexible Rewards:** Set up a shop of rewards—from "30 mins Screen Time" to "New Toy" or "Family Pizza Night".
+*   **Verification System:** Kids mark tasks as done, but YOU approve them. Secure PIN protection ensures kids can't approve their own tasks.
+*   **Detailed Stats:** Track your child's progress, earnings, and completion rates over time.
+*   **Exemption Handling:** Fairly handle sick days or busy schedules by approving "Excuses" without breaking streaks—teaching flexibility, not rigidity.
+
+### 🧒 For Kids
+*   **Fun Dashboard:** A colorful, engaging interface showing their current balance and active missions.
+*   **Goal Setting:** See exactly what they need to do to earn that prize they want.
+*   **Streak Tracking:** Motivation to keep the chain going every day.
+*   **Shopping Experience:** A "Store" where they can spend their hard-earned stars on real-life rewards.
+
+## 🔒 Privacy & Offline First
+*   **100% Offline:** All data is stored locally on your device.
+*   **No Accounts Required:** No email sign-ups, no passwords to forget.
+*   **Safe:** Your family's data never leaves your phone.
+
+## 🛠️ How It Works
+1.  **Setup:** Create a family profile and add your children.
+2.  **Create:** Set up tasks (e.g., "Clean Room - 10 Stars") and rewards (e.g., "Ice Cream - 100 Stars").
+3.  **Do:** Your child logs in, sees their tasks, and marks them as "Done".
+4.  **Verify:** You enter your PIN to approve the work. Stars are added to their balance!
+5.  **Redeem:** Your child "buys" a reward, and you fulfill it.
+
+## 💻 Tech Stack
+*   **Framework:** React (Vite)
+*   **Language:** TypeScript
+*   **Styling:** TailwindCSS + DaisyUI
+*   **State Management:** Zustand (with persistence)
+*   **Mobile:** Capacitor (Android/iOS)

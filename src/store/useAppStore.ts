@@ -46,6 +46,7 @@ export interface AppState {
 
   // Data Actions
   refreshData: () => Promise<void>;
+  checkPendingAutoApprove: () => Promise<void>;
   getTasksByChildId: (childId: string) => Task[];
   addChild: (child: Omit<Child, 'id' | 'parent_id' | 'balance' | 'current_balance'>) => Promise<{ error: any }>;
   deleteChild: (childId: string) => Promise<{ error: any }>;
@@ -190,6 +191,9 @@ export const useAppStore = create<AppState>()(
 
           // Check for failed daily missions
           await get().checkMissedMissions();
+
+          // Check for auto-approve pending tasks (> 24h)
+          await get().checkPendingAutoApprove();
 
           // Schedule Admin Notification if there are pending items
           const pendingCount = verifications.length + logs.filter(l => l.status === 'PENDING_EXCUSE').length;
@@ -714,12 +718,20 @@ export const useAppStore = create<AppState>()(
       verifyTask: async (logId: string, childId: string, rewardValue: number) => {
         set({ isLoading: true });
         try {
+          // Prevent double-verification
+          const { childLogs } = get();
+          const existingLog = childLogs.find(l => l.id === logId);
+          if (existingLog && existingLog.status === 'VERIFIED') {
+            console.warn('Task already verified, skipping double-credit');
+            return { error: null };
+          }
+
           const success = await dataService.verifyTask(logId, childId, rewardValue);
 
           if (!success) throw new Error('Failed to verify task');
 
           // Update Streak Logic
-          const { tasks, childLogs } = get();
+          const { tasks } = get();
           const log = childLogs.find(l => l.id === logId);
           let updatedTasks = tasks;
 
@@ -886,6 +898,25 @@ export const useAppStore = create<AppState>()(
         }
       },
 
+      checkPendingAutoApprove: async () => {
+        const { childLogs, tasks, verifyTask } = get();
+        const now = new Date().getTime();
+        const oneDay = 24 * 60 * 60 * 1000;
+
+        const pendingLogs = childLogs.filter(l => l.status === 'PENDING');
+
+        for (const log of pendingLogs) {
+          const logTime = new Date(log.completed_at).getTime();
+          if (now - logTime > oneDay) {
+            const task = tasks.find(t => t.id === log.task_id);
+            if (task) {
+              console.log(`Auto-approving task ${task.name} for child ${log.child_id}`);
+              await verifyTask(log.id, log.child_id, task.reward_value);
+            }
+          }
+        }
+      },
+
       logout: async () => {
         // Non-destructive logout: Just clear active session state
         set({
@@ -944,6 +975,9 @@ export const useAppStore = create<AppState>()(
 
           if (data.onboardingStep) {
             set({ onboardingStep: data.onboardingStep });
+          }
+          if (data.lastMissedCheckDate) {
+            set({ lastMissedCheckDate: data.lastMissedCheckDate });
           }
 
           return { error: null };
