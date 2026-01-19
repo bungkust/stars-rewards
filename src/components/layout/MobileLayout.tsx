@@ -21,16 +21,16 @@ const MobileLayout = ({ children }: MobileLayoutProps) => {
         onParentLoginClick={() => setIsPinModalOpen(true)}
         onSettingsClick={() => navigate('/settings')}
       />
-      
-      <main className="flex-1 w-full pt-24 pb-24 px-4 overflow-y-auto scroll-smooth">
+
+      <main className="flex-1 w-full pt-24 pb-36 px-4 overflow-y-auto scroll-smooth">
         {children}
       </main>
 
       <BottomNav />
 
-      <AdminPinModal 
-        isOpen={isPinModalOpen} 
-        onClose={() => setIsPinModalOpen(false)} 
+      <AdminPinModal
+        isOpen={isPinModalOpen}
+        onClose={() => setIsPinModalOpen(false)}
       />
     </div>
   );

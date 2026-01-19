@@ -180,33 +180,7 @@ const AdminStats = () => {
         child_id: log.child_id
       }))
     ].sort((a, b) => {
-      // Sort Priority:
-      // 1. Approve (TASK_VERIFIED)
-      // 2. Manual Add (MANUAL_ADJ > 0)
-      // 3. Reduction (REWARD_REDEEMED or MANUAL_ADJ < 0)
-      // 4. Rejected (REJECTED or FAILED)
-      // 5. Excused (EXCUSED)
-
-      const getWeight = (item: typeof a) => {
-        if (item.type === 'transaction') {
-          const tx = item.data;
-          if (tx.type === 'TASK_VERIFIED') return 1;
-          if (tx.type === 'MANUAL_ADJ' && tx.amount > 0) return 2;
-          if (tx.amount < 0) return 3;
-          return 6;
-        } else {
-          const log = item.data;
-          if (log.status === 'REJECTED' || log.status === 'FAILED') return 4;
-          if (log.status === 'EXCUSED') return 5;
-          return 6;
-        }
-      };
-
-      const weightA = getWeight(a);
-      const weightB = getWeight(b);
-
-      if (weightA !== weightB) return weightA - weightB;
-
+      // Sort by Date DESC (Newest First)
       return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
 
@@ -410,10 +384,10 @@ const AdminStats = () => {
                   <div className="p-2 rounded-lg bg-base-200 text-neutral/60">
                     <Icon className="w-5 h-5" />
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center mb-1">
-                      <span className="font-bold text-neutral text-sm">{cat.name}</span>
-                      <span className="text-xs font-bold text-primary">{cat.earned} Stars</span>
+                      <span className="font-bold text-neutral text-sm truncate pr-2">{cat.name}</span>
+                      <span className="text-xs font-bold text-primary flex-shrink-0">{cat.earned} Stars</span>
                     </div>
                     <div className="w-full bg-base-200 rounded-full h-2 overflow-hidden">
                       <div
@@ -483,8 +457,8 @@ const AdminStats = () => {
                       <div className={`p-2 rounded-full ${isPositive ? 'bg-success/10 text-success' : 'bg-error/10 text-error'}`}>
                         {isPositive ? <FaCheckCircle /> : <FaChartLine className="rotate-180" />}
                       </div>
-                      <div>
-                        <div className="font-bold text-neutral text-sm">{getTxDescription(tx)}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-neutral text-sm truncate">{getTxDescription(tx)}</div>
                         <div className="text-xs text-neutral/50">
                           {getChildName(tx.child_id)} • {new Date(tx.created_at).toLocaleDateString()}
                         </div>
@@ -506,8 +480,8 @@ const AdminStats = () => {
                       <div className="p-2 rounded-full bg-neutral/10 text-neutral/50">
                         {log.status === 'EXCUSED' ? <FaCheckCircle /> : <FaExclamationTriangle />}
                       </div>
-                      <div>
-                        <div className="font-bold text-neutral text-sm">{getRejectedMissionDetails(log)}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-neutral text-sm truncate">{getRejectedMissionDetails(log)}</div>
                         <div className="text-xs text-neutral/50">
                           {getChildName(log.child_id)} • {log.status} • {new Date(log.completed_at).toLocaleDateString()}
                         </div>

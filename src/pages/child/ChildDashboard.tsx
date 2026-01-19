@@ -432,8 +432,8 @@ const ChildDashboard = () => {
                               isLatestRejected ? 'border-error' : 'border-primary'
                       }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`p-3 rounded-full ${displayStatus === 'VERIFIED' ? 'bg-success/10 text-success' :
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className={`p-3 rounded-full flex-shrink-0 ${displayStatus === 'VERIFIED' ? 'bg-success/10 text-success' :
                         displayStatus === 'FAILED' ? 'bg-error/10 text-error' :
                           displayStatus === 'PENDING' ? 'bg-warning/10 text-warning' :
                             displayStatus === 'PENDING_EXCUSE' ? 'bg-warning/10 text-warning' :
@@ -446,8 +446,8 @@ const ChildDashboard = () => {
                               task.recurrence_rule === 'Monthly' ? <FaCalendarAlt className="w-6 h-6" /> :
                                 <FaClock className="w-6 h-6" />}
                       </div>
-                      <div>
-                        <h4 className="font-bold text-gray-800">{task.name}</h4>
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-gray-800 truncate">{task.name}</h4>
                         <div className="flex items-center gap-2 text-sm text-gray-500">
                           {task.reward_value > 0 && (
                             <span className="flex items-center gap-1 text-warning font-bold">

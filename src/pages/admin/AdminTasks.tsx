@@ -10,7 +10,7 @@ import { AlertModal, ToggleButton } from '../../components/design-system';
 
 const AdminTasks = () => {
   const navigate = useNavigate();
-  const { tasks, updateTask, categories } = useAppStore();
+  const { tasks, updateTask, categories, activeChildId } = useAppStore();
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -21,6 +21,14 @@ const AdminTasks = () => {
   const filteredTasks = tasks
     .filter(task => task.is_active !== false)
     .filter(task => {
+      // Create a copy of assigned_to to ensure it's treated as an array if it exists
+      const assignedTo = task.assigned_to;
+
+      // Filter by Active Child
+      if (activeChildId && assignedTo && assignedTo.length > 0 && !assignedTo.includes(activeChildId)) {
+        return false;
+      }
+
       // Recurrence Filter
       if (filter === 'once' && task.recurrence_rule !== 'Once') return false;
       if (filter === 'daily' && task.recurrence_rule === 'Once') return false;
@@ -123,7 +131,7 @@ const AdminTasks = () => {
           </div>
         ) : (
           filteredTasks.map((task) => (
-            <AppCard key={task.id} className="flex flex-row items-center gap-4 !p-4">
+            <AppCard key={task.id} className="flex flex-row items-center gap-4 !p-4 min-w-0">
               <div className={`p-3 rounded-lg ${task.recurrence_rule === 'Once' ? 'bg-accent/10 text-accent' :
                 task.recurrence_rule === 'Daily' ? 'bg-primary/10 text-primary' :
                   task.recurrence_rule === 'Weekly' ? 'bg-secondary/10 text-secondary' :
@@ -132,8 +140,8 @@ const AdminTasks = () => {
                 }`}>
                 <IconWrapper icon={getTaskIcon(task.recurrence_rule || 'Once')} className="" />
               </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-neutral">{task.name}</h3>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-neutral truncate">{task.name}</h3>
                 <div className="flex flex-col gap-1 mt-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getBadgeStyle(task.recurrence_rule || 'Once')}`}>

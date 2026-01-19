@@ -21,11 +21,19 @@ const getIconComponent = (iconId: string | undefined) => {
 
 const AdminRewards = () => {
   const navigate = useNavigate();
-  const { rewards, deleteReward } = useAppStore();
+  const { rewards, deleteReward, activeChildId } = useAppStore();
   const [selectedReward, setSelectedReward] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [rewardToDelete, setRewardToDelete] = useState<string | null>(null);
+
+  const filteredRewards = rewards.filter(reward => {
+    // Filter by Active Child
+    if (activeChildId && reward.assigned_to && reward.assigned_to.length > 0 && !reward.assigned_to.includes(activeChildId)) {
+      return false;
+    }
+    return true;
+  });
 
   const handleEditClick = (rewardId: string) => {
     setSelectedReward(rewardId);
@@ -58,20 +66,20 @@ const AdminRewards = () => {
       </div>
 
       <div className="grid gap-4">
-        {rewards.length === 0 ? (
+        {filteredRewards.length === 0 ? (
           <div className="text-center py-10 text-neutral/50">
             No rewards created yet. Click below to add one!
           </div>
         ) : (
-          rewards.map((reward) => {
+          filteredRewards.map((reward) => {
             const IconComponent = getIconComponent(reward.category);
             return (
-              <AppCard key={reward.id} className="flex flex-row items-center gap-4 !p-4">
+              <AppCard key={reward.id} className="flex flex-row items-center gap-4 !p-4 min-w-0">
                 <div className="p-3 bg-primary/10 text-primary rounded-lg">
                   <IconWrapper icon={IconComponent} className="text-primary" />
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-neutral">{reward.name}</h3>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-neutral truncate">{reward.name}</h3>
                   <p className="text-sm text-neutral/60">{reward.cost_value} Stars</p>
                 </div>
                 <div className="flex gap-2">

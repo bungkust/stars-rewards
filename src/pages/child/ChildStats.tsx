@@ -102,40 +102,11 @@ const ChildStats = () => {
 
     const allItems = [...transactionItems, ...rejectedItems]
       .sort((a, b) => {
-        // Sort Priority:
-        // 1. Approve (TASK_VERIFIED)
-        // 2. Manual Add (MANUAL_ADJ > 0)
-        // 3. Reduction (REWARD_REDEEMED or MANUAL_ADJ < 0)
-        // 4. Rejected (REJECTED or FAILED)
-        // 5. Excused (EXCUSED)
-
-        const getWeight = (item: typeof a) => {
-          if (item.type === 'transaction') {
-            const tx = item.data;
-            if (tx.type === 'TASK_VERIFIED') return 1;
-            if (tx.type === 'MANUAL_ADJ' && tx.amount > 0) return 2;
-            if (tx.amount < 0) return 3; // Reduction (Redeem or Penalty)
-            return 6; // Fallback
-          } else {
-            const log = item.data;
-            if (log.status === 'REJECTED' || log.status === 'FAILED') return 4;
-            if (log.status === 'EXCUSED') return 5;
-            return 6; // Fallback
-          }
-        };
-
-        // Sort by Date DESC first (Recent History)
+        // Sort by Date DESC (Recent History)
         const dateA = new Date(a.date).getTime();
         const dateB = new Date(b.date).getTime();
 
-        if (dateA !== dateB) {
-          return dateB - dateA;
-        }
-
-        // Then by Weight (if dates are identical)
-        const weightA = getWeight(a);
-        const weightB = getWeight(b);
-        return weightA - weightB;
+        return dateB - dateA;
       });
 
     // Apply Time Filter
@@ -461,12 +432,12 @@ const ChildStats = () => {
                     className={`flex justify-between items-center border-b border-base-200 pb-3 last:border-none last:pb-0 ${transaction.type === 'TASK_VERIFIED' ? 'cursor-pointer hover:bg-base-200/50 transition-colors rounded-lg px-2 -mx-2' : ''}`}
                     onClick={() => handleHistoryItemClick(item)}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div className={`p-2 rounded-full ${iconBg} ${iconColor}`}>
                         <Icon className="w-4 h-4" />
                       </div>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-neutral text-sm">{details.name}</span>
+                      <div className="flex flex-col flex-1 min-w-0">
+                        <span className="font-bold text-neutral text-sm truncate">{details.name}</span>
                         <span className="text-xs text-neutral/40">{formatDate(transaction.created_at)}</span>
                         {details.description && (
                           <span className="text-xs text-neutral/50 italic mt-0.5">
@@ -503,12 +474,12 @@ const ChildStats = () => {
                     className="flex justify-between items-center border-b border-base-200 pb-3 last:border-none last:pb-0 cursor-pointer hover:bg-base-200/50 transition-colors rounded-lg px-2 -mx-2"
                     onClick={() => handleHistoryItemClick(item)}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div className={`p-2 rounded-full ${isFailed ? 'bg-base-200 text-neutral/60' : isExcused ? 'bg-warning/10 text-warning' : 'bg-error/10 text-error'}`}>
                         {isExcused ? <FaChild className="w-4 h-4" /> : <FaTimesCircle className="w-4 h-4" />}
                       </div>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-neutral text-sm">{details.name}</span>
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <span className="font-bold text-neutral text-sm truncate">{details.name}</span>
                         <span className="text-xs text-neutral/40">{formatDate(log.completed_at)}</span>
                         {log.rejection_reason && !isExcused && (
                           <span className={`text-xs italic mt-0.5 ${isFailed ? 'text-neutral/60' : 'text-error'}`}>
