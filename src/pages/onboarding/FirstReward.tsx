@@ -120,8 +120,12 @@ const FirstReward = () => {
                 type="number"
                 className="input input-bordered w-full rounded-xl pl-12 font-bold text-lg"
                 value={cost}
-                onChange={(e) => setCost(Number(e.target.value))}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  if (val <= 9999) setCost(val);
+                }}
                 min={0}
+                max={9999}
               />
               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                 <span className="text-xs font-bold">STAR</span>

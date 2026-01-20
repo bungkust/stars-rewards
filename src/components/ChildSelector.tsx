@@ -31,7 +31,7 @@ const ChildSelector = ({ onSelect }: ChildSelectorProps) => {
                                     className="w-full h-full object-cover"
                                 />
                             </div>
-                            <span className="text-lg font-bold text-base-content">{child.name}</span>
+                            <span className="text-lg font-bold text-base-content w-full text-center truncate px-1">{child.name}</span>
                         </button>
                     ))}
                 </div>

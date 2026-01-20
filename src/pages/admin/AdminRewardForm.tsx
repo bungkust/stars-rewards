@@ -147,8 +147,12 @@ const AdminRewardForm = () => {
               type="number"
               className="input input-bordered w-full rounded-xl pl-12 font-bold text-lg"
               value={cost}
-              onChange={(e) => setCost(Number(e.target.value))}
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                if (val <= 9999) setCost(val);
+              }}
               min={0}
+              max={9999}
             />
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
               <span className="text-xs font-bold">STAR</span>
@@ -224,7 +228,7 @@ const AdminRewardForm = () => {
                       <FaChevronDown className="h-3 w-3 text-gray-400" aria-hidden="true" />
                     </span>
                   </ListboxButton>
-                  <ListboxOptions className="absolute mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm z-50">
+                  <ListboxOptions modal={false} className="absolute mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm z-50">
                     <div className="sticky top-0 z-10 bg-white px-2 py-2 border-b border-gray-100">
                       <input
                         type="text"
