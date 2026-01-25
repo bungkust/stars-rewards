@@ -11,6 +11,7 @@ import RestoreConfirmationModal from '../../components/modals/RestoreConfirmatio
 import BackupConfirmationModal from '../../components/modals/BackupConfirmationModal';
 import ResetConfirmationModal from '../../components/modals/ResetConfirmationModal';
 import AlertModal from '../../components/design-system/AlertModal';
+import { browserService } from '../../services/browserService';
 
 const Settings = () => {
   const {
@@ -50,12 +51,12 @@ const Settings = () => {
       {
         label: 'Privacy Policy',
         description: 'Learn how we protect your family data and account information.',
-        href: '/privacy',
+        href: 'https://star-habit.kulino.tech/privacy',
       },
       {
         label: 'Terms & Conditions',
         description: 'Understand the rules for using Star Habit as a parent or child.',
-        href: '/terms',
+        href: 'https://star-habit.kulino.tech/terms',
       },
     ],
     []
@@ -247,17 +248,17 @@ const Settings = () => {
         </div>
         <div className="flex flex-col gap-1">
           {policyLinks.map((link) => (
-            <Link
+            <div
               key={link.label}
-              className="flex items-center justify-between p-3 hover:bg-base-200 rounded-lg transition-colors group"
-              to={link.href}
+              className="flex items-center justify-between p-3 hover:bg-base-200 rounded-lg transition-colors group cursor-pointer"
+              onClick={() => browserService.openUrl(link.href)}
             >
               <div>
                 <p className="font-medium text-neutral group-hover:text-primary transition-colors">{link.label}</p>
                 <p className="text-xs text-neutral/60">{link.description}</p>
               </div>
               <FaChevronRight className="text-neutral/20 group-hover:text-primary w-3 h-3" />
-            </Link>
+            </div>
           ))}
         </div>
       </AppCard>
