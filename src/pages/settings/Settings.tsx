@@ -196,8 +196,8 @@ const Settings = () => {
               <div className="p-2 bg-warning/10 text-warning rounded-full">
                 <FaFileUpload />
               </div>
-              <div>
-                <p className="font-bold text-neutral">Restore Data</p>
+              <div className="flex-1">
+                <h3 className="font-bold text-neutral">Restore Data</h3>
                 <p className="text-xs text-neutral/60">Overwrite with backup file</p>
               </div>
             </div>

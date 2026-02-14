@@ -58,9 +58,9 @@ const Header = ({ onParentLoginClick, onSettingsClick, onChildSelectClick }: Hea
             <span className={`text-lg font-bold ${titleColor}`}>{activeChild.name}</span>
           </div>
         ) : (
-          <a className={`btn btn-ghost text-xl font-bold hover:bg-transparent ${titleColor}`}>
-            {isAdminMode ? 'Parent Dashboard' : 'Stars Rewards'}
-          </a>
+          <p className="text-lg font-bold text-primary truncate">
+            {isAdminMode ? 'Parent Dashboard' : (activeChild ? activeChild.name : 'Stars Rewards')}
+          </p>
         )}
       </div>
       <div className="flex-none">

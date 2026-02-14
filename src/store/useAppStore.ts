@@ -40,7 +40,7 @@ export interface AppState {
   setActiveChild: (childId: string | null) => void;
   toggleAdminMode: (isAdmin: boolean) => void;
   verifyPin: (pin: string) => boolean;
-  setAdminPin: (pin: string) => void;
+  setParentPin: (pin: string) => void;
   setAdminName: (name: string) => void;
   setFamilyName: (name: string) => void;
 
@@ -64,7 +64,7 @@ export interface AppState {
   // Auth Actions
   fetchUserProfile: () => Promise<Profile | null>;
   createFamily: (familyName: string, pin: string, parentName: string) => Promise<{ error: any }>;
-  updateAdminPin: (familyName: string, pin: string) => Promise<{ error: any }>;
+  updateParentPin: (familyName: string, pin: string) => Promise<{ error: any }>;
   updateParentName: (name: string) => Promise<{ error: any }>;
   updateChildAvatar: (childId: string, avatarUrl: string) => Promise<{ error: any }>;
   completeTask: (taskId: string) => Promise<{ error: any }>;
@@ -95,7 +95,7 @@ export const useAppStore = create<AppState>()(
     (set, get) => ({
       activeChildId: null,
       isAdminMode: false,
-      adminPin: null,
+      parentPin: null,
       notificationsEnabled: true,
       children: [],
       categories: [],
@@ -115,7 +115,7 @@ export const useAppStore = create<AppState>()(
       toggleAdminMode: (isAdmin) => set({ isAdminMode: isAdmin }),
 
       verifyPin: (pin) => {
-        const currentPin = get().adminPin;
+        const currentPin = get().parentPin;
         // Fallback to profile pin if state is lost but profile exists
         const profilePin = get().userProfile?.pin_admin;
 
@@ -130,7 +130,7 @@ export const useAppStore = create<AppState>()(
         return isValid;
       },
 
-      setAdminPin: (pin) => set({ adminPin: pin }),
+      setParentPin: (pin) => set({ parentPin: pin }),
       setAdminName: (name) => set({ adminName: name }),
       setFamilyName: (name) => set({ familyName: name }),
       setNotificationsEnabled: (value) => set({ notificationsEnabled: value }),
@@ -486,7 +486,7 @@ export const useAppStore = create<AppState>()(
 
           set({ userProfile: profile });
           if (profile) {
-            if (profile.pin_admin) set({ adminPin: profile.pin_admin });
+            if (profile.pin_admin) set({ parentPin: profile.pin_admin });
             if (profile.family_name) set({ familyName: profile.family_name });
             if (profile.parent_name) set({ adminName: profile.parent_name });
           }
@@ -507,7 +507,7 @@ export const useAppStore = create<AppState>()(
 
           set({
             userProfile: profile,
-            adminPin: pin,
+            parentPin: pin,
             familyName: familyName,
             adminName: parentName,
           });
@@ -521,13 +521,13 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      updateAdminPin: async (familyName: string, pin: string) => {
+      updateParentPin: async (familyName: string, pin: string) => {
         set({ isLoading: true });
         try {
           await localStorageService.updateProfile({ family_name: familyName, pin_admin: pin });
 
           set({
-            adminPin: pin,
+            parentPin: pin,
             familyName: familyName,
           });
 
@@ -1171,7 +1171,7 @@ export const useAppStore = create<AppState>()(
     {
       name: 'stars-rewards-storage',
       partialize: (state) => ({
-        adminPin: state.adminPin,
+        parentPin: state.parentPin,
         adminName: state.adminName,
         familyName: state.familyName,
         onboardingStep: state.onboardingStep,

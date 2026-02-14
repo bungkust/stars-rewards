@@ -202,7 +202,7 @@ const AdminHistory = () => {
                     <FaArrowLeft />
                 </button>
                 <div className="flex-1">
-                    <H1Header>History Log</H1Header>
+                    <H1Header>Parent History</H1Header>
                 </div>
             </div>
 

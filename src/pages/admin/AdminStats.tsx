@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { FaChartLine, FaCheckCircle, FaLightbulb, FaTimes } from 'react-icons/fa';
+import { useNavigate, Link } from 'react-router-dom';
+import { FaChartLine, FaCheckCircle, FaLightbulb, FaTimes, FaArrowLeft } from 'react-icons/fa';
 import { AppCard, H1Header, IconWrapper, ToggleButton } from '../../components/design-system';
 import HistoryList, { type HistoryItemType, type HistoryItemEntry } from '../../components/shared/HistoryList';
 import AdminHistoryDetailModal from '../../components/modals/AdminHistoryDetailModal';
@@ -11,6 +11,7 @@ import { ICON_MAP } from '../../utils/icons';
 import type { TimeFilter } from '../../utils/analytics';
 
 const AdminStats = () => {
+  const navigate = useNavigate();
   const { transactions, childLogs, children, tasks, categories, isLoading, deleteTransaction, deleteChildLog } = useAppStore();
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('week');
   const [selectedChildId, setSelectedChildId] = useState<string>('all');
@@ -304,8 +305,19 @@ const AdminStats = () => {
 
   return (
     <div className="flex flex-col gap-6 pb-20">
-      <div className="flex justify-between items-center">
-        <H1Header>Reports & Audit</H1Header>
+      <div className="flex items-center gap-4">
+        <button onClick={() => navigate(-1)} className="btn btn-ghost btn-circle btn-sm">
+          <FaArrowLeft />
+        </button>
+        <div className="flex-1">
+          <H1Header>Parent Stats</H1Header>
+        </div>
+        <button
+          onClick={() => navigate('/admin/history')}
+          className="btn btn-ghost btn-sm text-primary font-bold"
+        >
+          Parent History
+        </button>
       </div>
 
       {/* Filters */}
