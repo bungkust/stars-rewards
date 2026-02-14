@@ -131,6 +131,17 @@ const Header = ({ onParentLoginClick, onSettingsClick, onChildSelectClick }: Hea
                     className="justify-between text-sm font-medium"
                     onClick={() => {
                       closeMenu();
+                      onSettingsClick(); // This is now handleProtectedSettings from Layout
+                    }}
+                  >
+                    Settings
+                  </button>
+                </li>
+                <li>
+                  <button
+                    className="justify-between text-sm font-medium"
+                    onClick={() => {
+                      closeMenu();
                       if (onChildSelectClick) onChildSelectClick();
                     }}
                   >

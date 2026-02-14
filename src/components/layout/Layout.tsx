@@ -11,13 +11,26 @@ interface LayoutProps {
 
 const Layout = ({ children, onChildSelect }: LayoutProps) => {
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [pinSuccessAction, setPinSuccessAction] = useState<(() => void) | undefined>(undefined);
   const navigate = useNavigate();
+
+  const handleParentLogin = () => {
+    setPinSuccessAction(undefined); // Default to navigate('/parent') logic inside modal if undefined, OR explicitly set it.
+    // Actually AdminPinModal defaults to navigate('/parent') if onSuccess is undefined.
+    // But we might want to be explicit.
+    setIsPinModalOpen(true);
+  };
+
+  const handleProtectedSettings = () => {
+    setPinSuccessAction(() => () => navigate('/settings'));
+    setIsPinModalOpen(true);
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-base-100">
       <Header
-        onParentLoginClick={() => setIsPinModalOpen(true)}
-        onSettingsClick={() => navigate('/settings')}
+        onParentLoginClick={handleParentLogin}
+        onSettingsClick={handleProtectedSettings}
         onChildSelectClick={onChildSelect}
       />
 
@@ -29,7 +42,11 @@ const Layout = ({ children, onChildSelect }: LayoutProps) => {
 
       <AdminPinModal
         isOpen={isPinModalOpen}
-        onClose={() => setIsPinModalOpen(false)}
+        onClose={() => {
+          setIsPinModalOpen(false);
+          setPinSuccessAction(undefined);
+        }}
+        onSuccess={pinSuccessAction}
       />
     </div>
   );

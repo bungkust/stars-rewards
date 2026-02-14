@@ -6,9 +6,10 @@ import { useAppStore } from '../../store/useAppStore';
 interface AdminPinModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-const AdminPinModal = ({ isOpen, onClose }: AdminPinModalProps) => {
+const AdminPinModal = ({ isOpen, onClose, onSuccess }: AdminPinModalProps) => {
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
   const { verifyPin } = useAppStore();
@@ -21,7 +22,11 @@ const AdminPinModal = ({ isOpen, onClose }: AdminPinModalProps) => {
       setPin('');
       setError(false);
       onClose();
-      navigate('/parent');
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        navigate('/parent');
+      }
     } else {
       setError(true);
       setPin('');
