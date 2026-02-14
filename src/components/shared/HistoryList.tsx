@@ -14,6 +14,18 @@ export interface HistoryItemEntry {
     amountLabel?: string; // fallback if amount is 0/undefined (e.g. "FAILED")
     status: 'success' | 'warning' | 'error' | 'neutral'; // determines color
     onClick?: () => void;
+    // Metadata for detailed view
+    categoryName?: string;
+    notes?: string;
+    rejectionReason?: string;
+    targetValue?: number;
+    currentValue?: number;
+    unit?: string;
+    childName?: string;
+    dateLabel?: string;
+    childId?: string;
+    taskId?: string;
+    referenceId?: string;
 }
 
 interface HistoryListProps {

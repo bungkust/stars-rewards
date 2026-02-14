@@ -157,7 +157,7 @@ export const dataService = {
   /**
    * Verifies a task.
    */
-  verifyTask: async (logId: string, childId: string, rewardValue: number): Promise<boolean> => {
+  verifyTask: async (logId: string, childId: string, rewardValue: number): Promise<CoinTransaction | null> => {
     return localStorageService.verifyTask(logId, childId, rewardValue);
   },
 
@@ -185,14 +185,14 @@ export const dataService = {
   /**
    * Redeems a reward.
    */
-  redeemReward: async (childId: string, cost: number, rewardId?: string): Promise<boolean> => {
+  redeemReward: async (childId: string, cost: number, rewardId?: string): Promise<CoinTransaction | null> => {
     return localStorageService.redeemReward(childId, cost, rewardId);
   },
 
   /**
    * Manually adjusts a child's balance.
    */
-  manualAdjustment: async (_parentId: string, childId: string, amount: number, reason?: string): Promise<boolean> => {
+  manualAdjustment: async (_parentId: string, childId: string, amount: number, reason?: string): Promise<CoinTransaction | null> => {
     return localStorageService.manualAdjustment(childId, amount, reason);
   },
 
@@ -213,6 +213,22 @@ export const dataService = {
     } catch (error) {
       return { success: false, error };
     }
+  },
+
+  deleteTransaction: async (transactionId: string): Promise<boolean> => {
+    return localStorageService.deleteTransaction(transactionId);
+  },
+
+  deleteChildLog: async (logId: string): Promise<boolean> => {
+    return localStorageService.deleteChildLog(logId);
+  },
+
+  updateTransaction: async (txId: string, updates: Partial<CoinTransaction>): Promise<CoinTransaction | null> => {
+    return localStorageService.updateTransaction(txId, updates);
+  },
+
+  updateChildLog: async (logId: string, updates: Partial<ChildTaskLog>): Promise<ChildTaskLog | null> => {
+    return localStorageService.updateChildLog(logId, updates);
   },
 
   /**

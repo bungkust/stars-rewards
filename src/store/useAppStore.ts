@@ -79,6 +79,11 @@ export interface AppState {
   redeemReward: (childId: string, cost: number, rewardId: string) => Promise<{ error: any }>;
   manualAdjustment: (childId: string, amount: number, reason?: string) => Promise<{ error: any }>;
   checkMissedMissions: () => Promise<void>;
+  deleteTransaction: (transactionId: string) => Promise<{ error: any }>;
+  deleteChildLog: (logId: string) => Promise<{ error: any }>;
+  updateTransaction: (txId: string, updates: Partial<CoinTransaction>) => Promise<{ error: any }>;
+  updateChildLog: (logId: string, updates: Partial<ChildTaskLog>) => Promise<{ error: any }>;
+  markVerifiedTaskAsFailed: (transactionId: string, logId: string) => Promise<{ error: any }>;
   importData: (data: Partial<AppState>) => Promise<{ error: any }>;
   logout: () => Promise<void>;
   resetApp: () => Promise<void>;
@@ -627,7 +632,6 @@ export const useAppStore = create<AppState>()(
           const { activeChildId } = get();
           if (!activeChildId) throw new Error('Missing child ID');
 
-          const userId = 'local-user'; // Not used in localStorageService but consistent with others
           // Call service
           const updatedLog = await localStorageService.updateTaskProgress(activeChildId, taskId, value, target);
 
@@ -797,49 +801,175 @@ export const useAppStore = create<AppState>()(
             return { error: null };
           }
 
-          const success = await dataService.verifyTask(logId, childId, rewardValue);
-
-          if (!success) throw new Error('Failed to verify task');
+          const newTx = await dataService.verifyTask(logId, childId, rewardValue);
+          if (!newTx) throw new Error('Verify task failed');
 
           // Update Streak Logic
-          const { tasks } = get();
-          const log = childLogs.find(l => l.id === logId);
+          const { tasks, children, transactions } = get();
           let updatedTasks = tasks;
-
-          if (log) {
-            updatedTasks = await missionLogicService.incrementStreak(log.task_id, tasks, childLogs, logId);
+          // Optimistically update if log exists locally
+          if (existingLog) {
+            updatedTasks = await missionLogicService.incrementStreak(existingLog.task_id, tasks, childLogs, logId);
           }
 
-          // Remove from local pendingVerifications
-          set((state) => ({
+          // Update State
+          // 1. Update Log Status
+          const updatedLogs = childLogs.map(l => l.id === logId ? { ...l, status: 'VERIFIED' as const, verified_at: new Date().toISOString() } : l);
+
+          // 2. Update Balance
+          const updatedChildren = children.map(c => c.id === childId ? { ...c, current_balance: (c.current_balance || 0) + rewardValue } : c);
+
+
+          set({
             tasks: updatedTasks,
-            pendingVerifications: state.pendingVerifications.filter(v => v.id !== logId),
-            // Also update the child balance locally
-            children: state.children.map(c =>
-              c.id === childId ? { ...c, current_balance: (c.current_balance || 0) + rewardValue } : c
-            ),
-            // Update the specific log in childLogs
-            childLogs: state.childLogs.map(log =>
-              log.id === logId ? { ...log, status: 'VERIFIED', verified_at: new Date().toISOString() } : log
-            ),
-            // Add to transactions
-            transactions: [
-              {
-                id: crypto.randomUUID(),
-                parent_id: 'local-user',
-                child_id: childId,
-                amount: rewardValue,
-                type: 'TASK_VERIFIED',
-                reference_id: logId,
-                created_at: new Date().toISOString()
-              },
-              ...state.transactions
-            ]
-          }));
+            childLogs: updatedLogs,
+            children: updatedChildren,
+            transactions: [newTx, ...transactions],
+            pendingVerifications: get().pendingVerifications.filter(v => v.id !== logId)
+          });
 
           return { error: null };
         } catch (error) {
           console.error('Error verifying task:', error);
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      deleteTransaction: async (transactionId: string) => {
+        set({ isLoading: true });
+        try {
+          const { transactions, children, childLogs } = get();
+          const tx = transactions.find(t => t.id === transactionId);
+          if (!tx) throw new Error('Transaction not found');
+
+          const success = await dataService.deleteTransaction(transactionId);
+          if (!success) throw new Error('Failed to delete transaction');
+
+          // 1. Revert balance
+          const updatedChildren = children.map(c =>
+            c.id === tx.child_id
+              ? { ...c, current_balance: (c.current_balance || 0) - tx.amount }
+              : c
+          );
+
+          // 2. Update logs if needed
+          let updatedLogs = childLogs;
+          let newPending = get().pendingVerifications;
+
+          if (tx.type === 'TASK_VERIFIED' && tx.reference_id) {
+            updatedLogs = childLogs.map(l => {
+              if (l.id === tx.reference_id) {
+                return { ...l, status: 'PENDING' as const };
+              }
+              return l;
+            });
+
+            // Add back to pending
+            const log = childLogs.find(l => l.id === tx.reference_id);
+            if (log) {
+              const task = get().tasks.find(t => t.id === log.task_id);
+              const child = children.find(c => c.id === log.child_id);
+              newPending = [...newPending, {
+                ...log,
+                status: 'PENDING',
+                task_title: task?.name || 'Unknown',
+                reward_value: task?.reward_value || 0,
+                child_name: child?.name || 'Unknown'
+              }];
+            }
+          }
+
+          set({
+            transactions: transactions.filter(t => t.id !== transactionId),
+            children: updatedChildren,
+            childLogs: updatedLogs,
+            pendingVerifications: newPending
+          });
+
+          return { error: null };
+        } catch (error) {
+          console.error('Error deleting transaction:', error);
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      deleteChildLog: async (logId: string) => {
+        set({ isLoading: true });
+        try {
+          const success = await dataService.deleteChildLog(logId);
+          if (!success) throw new Error('Failed to delete log');
+
+          set((state) => ({
+            childLogs: state.childLogs.filter(l => l.id !== logId),
+            pendingVerifications: state.pendingVerifications.filter(v => v.id !== logId)
+          }));
+
+          return { error: null };
+        } catch (error) {
+          console.error('Error deleting log:', error);
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      updateTransaction: async (txId: string, updates: Partial<CoinTransaction>) => {
+        set({ isLoading: true });
+        try {
+          const result = await dataService.updateTransaction(txId, updates);
+          if (result) {
+            set((state) => ({
+              transactions: state.transactions.map(t => t.id === txId ? { ...t, ...updates } : t)
+            }));
+          }
+          return { error: null };
+        } catch (error) {
+          console.error('Error updating transaction:', error);
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      updateChildLog: async (logId: string, updates: Partial<ChildTaskLog>) => {
+        set({ isLoading: true });
+        try {
+          const result = await dataService.updateChildLog(logId, updates);
+          if (result) {
+            set((state) => ({
+              childLogs: state.childLogs.map(l => l.id === logId ? { ...l, ...updates } : l)
+            }));
+          }
+          return { error: null };
+        } catch (error) {
+          console.error('Error updating child log:', error);
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      markVerifiedTaskAsFailed: async (transactionId: string, logId: string) => {
+        set({ isLoading: true });
+        try {
+          // 1. Delete the transaction (handles balance revert and streak logic in some cases)
+          // Actually deleteTransaction resets log to PENDING.
+          const { deleteTransaction, rejectTask } = get();
+
+          const delResult = await deleteTransaction(transactionId);
+          if (delResult.error) throw delResult.error;
+
+          // 2. Reject the task
+          const rejectResult = await rejectTask(logId, 'Status changed manually from Parent History');
+          if (rejectResult.error) throw rejectResult.error;
+
+          return { error: null };
+        } catch (error) {
+          console.error('Error marking verified task as failed:', error);
           return { error };
         } finally {
           set({ isLoading: false });
@@ -874,9 +1004,9 @@ export const useAppStore = create<AppState>()(
       redeemReward: async (childId: string, cost: number, rewardId: string) => {
         set({ isLoading: true });
         try {
-          const success = await dataService.redeemReward(childId, cost, rewardId);
+          const newTx = await dataService.redeemReward(childId, cost, rewardId);
 
-          if (!success) throw new Error('Failed to redeem reward');
+          if (!newTx) throw new Error('Failed to redeem reward');
 
           set((state) => ({
             children: state.children.map(c =>
@@ -887,18 +1017,7 @@ export const useAppStore = create<AppState>()(
               ? [...state.redeemedHistory, { child_id: childId, reward_id: rewardId }]
               : state.redeemedHistory,
             // Add to transactions
-            transactions: [
-              {
-                id: crypto.randomUUID(),
-                parent_id: 'local-user',
-                child_id: childId,
-                amount: -cost,
-                type: rewardId ? 'REWARD_REDEEMED' : 'MANUAL_ADJ',
-                reference_id: rewardId,
-                created_at: new Date().toISOString()
-              },
-              ...state.transactions
-            ]
+            transactions: [newTx, ...state.transactions]
           }));
 
           return { error: null };
@@ -914,27 +1033,16 @@ export const useAppStore = create<AppState>()(
         set({ isLoading: true });
         try {
           const userId = 'local-user';
-          const success = await dataService.manualAdjustment(userId, childId, amount, reason);
+          const newTx = await dataService.manualAdjustment(userId, childId, amount, reason);
 
-          if (!success) throw new Error('Failed to update balance');
+          if (!newTx) throw new Error('Failed to update balance');
 
           set((state) => ({
             children: state.children.map(c =>
               c.id === childId ? { ...c, current_balance: (c.current_balance || 0) + amount } : c
             ),
             // Add to transactions
-            transactions: [
-              {
-                id: crypto.randomUUID(),
-                parent_id: 'local-user',
-                child_id: childId,
-                amount: amount,
-                type: 'MANUAL_ADJ',
-                description: reason,
-                created_at: new Date().toISOString()
-              },
-              ...state.transactions
-            ]
+            transactions: [newTx, ...state.transactions]
           }));
 
           return { error: null };

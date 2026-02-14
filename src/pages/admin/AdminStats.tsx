@@ -2,7 +2,8 @@ import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FaChartLine, FaCheckCircle, FaLightbulb, FaTimes } from 'react-icons/fa';
 import { AppCard, H1Header, IconWrapper, ToggleButton } from '../../components/design-system';
-import HistoryList, { type HistoryItemType } from '../../components/shared/HistoryList';
+import HistoryList, { type HistoryItemType, type HistoryItemEntry } from '../../components/shared/HistoryList';
+import AdminHistoryDetailModal from '../../components/modals/AdminHistoryDetailModal';
 
 import { useAppStore } from '../../store/useAppStore';
 import { calculateCoinMetrics, getRecommendations, getCategoryPerformance } from '../../utils/analytics';
@@ -10,7 +11,7 @@ import { ICON_MAP } from '../../utils/icons';
 import type { TimeFilter } from '../../utils/analytics';
 
 const AdminStats = () => {
-  const { transactions, childLogs, children, tasks, categories, isLoading } = useAppStore();
+  const { transactions, childLogs, children, tasks, categories, isLoading, deleteTransaction, deleteChildLog } = useAppStore();
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('week');
   const [selectedChildId, setSelectedChildId] = useState<string>('all');
   const [tempDate, setTempDate] = useState(new Date().toISOString().split('T')[0]);
@@ -30,6 +31,10 @@ const AdminStats = () => {
     return [];
   });
   const visibleCount = 10;
+
+  // Modal State
+  const [selectedItem, setSelectedItem] = useState<HistoryItemEntry | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   // Effect to clean up old dismissals from localStorage
   useEffect(() => {
@@ -81,6 +86,28 @@ const AdminStats = () => {
       }
       return newDismissed;
     });
+  };
+
+  const handleItemClick = (item: HistoryItemEntry) => {
+    setSelectedItem(item);
+    setIsDetailOpen(true);
+  };
+
+  const handleDelete = async (item: HistoryItemEntry) => {
+    if (!item) return;
+
+    let result;
+    // Basic logic based on type to determine if it's transaction or log
+    if (['verified', 'redeemed', 'manual'].includes(item.type)) {
+      result = await deleteTransaction(item.id);
+    } else {
+      result = await deleteChildLog(item.id);
+    }
+
+    if (result.error) {
+      console.error('Failed to delete item:', result.error);
+      alert('Failed to delete item');
+    }
   };
 
   // Filter Data
@@ -221,22 +248,39 @@ const AdminStats = () => {
 
   const getChildName = (childId: string) => children.find(c => c.id === childId)?.name || 'Unknown';
 
-  const getTxDescription = (tx: typeof transactions[0]) => {
+  // Enhanced description helpers
+  const getTxDetails = (tx: typeof transactions[0]) => {
+    let title = 'Transaction';
+    let description = '';
+
     switch (tx.type) {
       case 'TASK_VERIFIED': {
         const log = childLogs.find(l => l.id === tx.reference_id);
         const task = log ? tasks.find(t => t.id === log.task_id) : null;
-        return task ? task.name : 'Mission Completed';
+        title = task ? task.name : 'Mission Completed';
+        description = 'Earned Stars';
+        break;
       }
-      case 'REWARD_REDEEMED': return 'Reward Redeemed';
-      case 'MANUAL_ADJ': return 'Manual Adjustment';
-      default: return 'Transaction';
+      case 'REWARD_REDEEMED': {
+        title = 'Reward Redeemed';
+        const desc = tx.description || '';
+        const rewardIdx = desc.indexOf(':');
+        description = rewardIdx > -1 ? desc.substring(rewardIdx + 2) : 'Spent Stars';
+        break;
+      }
+      case 'MANUAL_ADJ':
+        title = 'Manual Adjustment';
+        description = tx.description || (tx.amount > 0 ? 'Bonus' : 'Penalty');
+        break;
     }
+    return { title, description };
   };
 
   const getRejectedMissionDetails = (log: typeof childLogs[0]) => {
     const task = tasks.find(tsk => tsk.id === log.task_id);
-    return task?.name || 'Unknown Mission';
+    const title = task?.name || 'Unknown Mission';
+    const description = log.status === 'FAILED' ? 'Missed Deadline' : log.status === 'EXCUSED' ? (log.notes || 'Excused') : (log.rejection_reason || 'Rejected');
+    return { title, description };
   };
 
   // Donut Chart Data
@@ -445,16 +489,34 @@ const AdminStats = () => {
                 if (tx.type === 'REWARD_REDEEMED') type = 'redeemed';
                 else if (tx.type === 'MANUAL_ADJ') type = 'manual';
 
-                return {
+                const { title, description } = getTxDetails(tx);
+
+                // metadata
+                const log = tx.reference_id ? childLogs.find(l => l.id === tx.reference_id) : null;
+                const task = log ? tasks.find(t => t.id === log.task_id) : null;
+                const category = task ? categories.find(c => c.id === task.category_id) : null;
+
+                const entry: HistoryItemEntry = {
                   id: item.id,
                   type,
-                  title: getTxDescription(tx),
+                  title,
                   subtitle: `${getChildName(tx.child_id)} • ${new Date(tx.created_at).toLocaleDateString()}`,
+                  description,
                   amount: tx.amount,
                   amountLabel: tx.type === 'TASK_VERIFIED' ? 'Done' : tx.type === 'REWARD_REDEEMED' ? 'Redeemed' : '-',
                   status: isPositive ? 'success' : 'error',
-                  // onClick: () => ... (Admin could open details later)
+                  categoryName: category?.name,
+                  notes: log?.notes,
+                  targetValue: task?.total_target_value,
+                  currentValue: log?.current_value,
+                  unit: task?.target_unit,
+                  childName: getChildName(tx.child_id),
+                  dateLabel: new Date(tx.created_at).toLocaleDateString(),
+                  childId: tx.child_id,
+                  taskId: task?.id,
+                  referenceId: tx.reference_id
                 };
+                return { ...entry, onClick: () => handleItemClick(entry) };
               } else {
                 const log = item.data;
                 let type: HistoryItemType = 'rejected';
@@ -468,15 +530,30 @@ const AdminStats = () => {
                   status = 'warning';
                 }
 
-                return {
+                const { title, description } = getRejectedMissionDetails(log);
+                const task = tasks.find(tsk => tsk.id === log.task_id);
+                const category = task ? categories.find(c => c.id === task.category_id) : null;
+
+                const entry: HistoryItemEntry = {
                   id: item.id,
                   type,
-                  title: getRejectedMissionDetails(log),
+                  title,
                   subtitle: `${getChildName(log.child_id)} • ${log.status} • ${new Date(log.completed_at).toLocaleDateString()}`,
+                  description,
                   amountLabel: log.status,
                   status,
-                  // onClick: ...
+                  categoryName: category?.name,
+                  notes: log.notes,
+                  rejectionReason: log.rejection_reason,
+                  targetValue: task?.total_target_value,
+                  currentValue: log.current_value,
+                  unit: task?.target_unit,
+                  childName: getChildName(log.child_id),
+                  dateLabel: new Date(log.completed_at).toLocaleDateString(),
+                  childId: log.child_id,
+                  taskId: log.task_id
                 };
+                return { ...entry, onClick: () => handleItemClick(entry) };
               }
             })}
             emptyMessage="No history found for this period."
@@ -491,8 +568,12 @@ const AdminStats = () => {
         </div>
       </div>
 
-      {/* Modals placeholders - In real app, we'd implement these */}
-      {/* For now, just simple alerts or logs if clicked, or we can reuse existing modals if available */}
+      <AdminHistoryDetailModal
+        isOpen={isDetailOpen}
+        item={selectedItem}
+        onClose={() => setIsDetailOpen(false)}
+        onDelete={handleDelete}
+      />
     </div>
   );
 };

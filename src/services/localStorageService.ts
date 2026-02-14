@@ -424,17 +424,18 @@ export const localStorageService = {
             });
     },
 
-    verifyTask: async (logId: string, childId: string, rewardValue: number): Promise<boolean> => {
+    verifyTask: async (logId: string, childId: string, rewardValue: number): Promise<CoinTransaction | null> => {
         const db = getDB();
 
         // 1. Update Log
         const logIndex = db.logs.findIndex(l => l.id === logId);
-        if (logIndex === -1) return false;
+        if (logIndex === -1) return null;
 
         // Prevent double verification at DB level
         if (db.logs[logIndex].status === 'VERIFIED') {
             console.warn('Task already verified in DB, skipping.');
-            return true; // Return true as it is "verified"
+            // Find existing transaction to return
+            return db.transactions.find(t => t.type === 'TASK_VERIFIED' && t.reference_id === logId) || null;
         }
 
         db.logs[logIndex].status = 'VERIFIED';
@@ -446,7 +447,7 @@ export const localStorageService = {
         }
 
         // 3. Add Transaction
-        db.transactions.push({
+        const newTx: CoinTransaction = {
             id: generateId(),
             parent_id: 'local-user',
             child_id: childId,
@@ -454,10 +455,11 @@ export const localStorageService = {
             type: 'TASK_VERIFIED',
             reference_id: logId,
             created_at: new Date().toISOString()
-        });
+        };
+        db.transactions.push(newTx);
 
         saveDB(db);
-        return true;
+        return newTx;
     },
 
     rejectTask: async (logId: string, reason: string): Promise<boolean> => {
@@ -563,19 +565,19 @@ export const localStorageService = {
 
     // --- Transactions / Redemption ---
 
-    redeemReward: async (childId: string, cost: number, rewardId?: string): Promise<boolean> => {
+    redeemReward: async (childId: string, cost: number, rewardId?: string): Promise<CoinTransaction | null> => {
         const db = getDB();
         const childIndex = db.children.findIndex(c => c.id === childId);
-        if (childIndex === -1) return false;
+        if (childIndex === -1) return null;
 
         const child = db.children[childIndex];
-        if ((child.current_balance || 0) < cost) return false;
+        if ((child.current_balance || 0) < cost) return null;
 
         // 1. Deduct Balance
         child.current_balance = (child.current_balance || 0) - cost;
 
         // 2. Add Transaction
-        db.transactions.push({
+        const newTx: CoinTransaction = {
             id: generateId(),
             parent_id: 'local-user',
             child_id: childId,
@@ -583,22 +585,23 @@ export const localStorageService = {
             type: rewardId ? 'REWARD_REDEEMED' : 'MANUAL_ADJ',
             reference_id: rewardId,
             created_at: new Date().toISOString()
-        });
+        };
+        db.transactions.push(newTx);
 
         saveDB(db);
-        return true;
+        return newTx;
     },
 
-    manualAdjustment: async (childId: string, amount: number, reason?: string): Promise<boolean> => {
+    manualAdjustment: async (childId: string, amount: number, reason?: string): Promise<CoinTransaction | null> => {
         const db = getDB();
         const childIndex = db.children.findIndex(c => c.id === childId);
-        if (childIndex === -1) return false;
+        if (childIndex === -1) return null;
 
         // 1. Update Balance
         db.children[childIndex].current_balance = (db.children[childIndex].current_balance || 0) + amount;
 
         // 2. Add Transaction
-        db.transactions.push({
+        const newTx: CoinTransaction = {
             id: generateId(),
             parent_id: 'local-user',
             child_id: childId,
@@ -606,10 +609,11 @@ export const localStorageService = {
             type: 'MANUAL_ADJ',
             description: reason,
             created_at: new Date().toISOString()
-        });
+        };
+        db.transactions.push(newTx);
 
         saveDB(db);
-        return true;
+        return newTx;
     },
 
     fetchTransactions: async (): Promise<CoinTransaction[]> => {
@@ -727,6 +731,65 @@ export const localStorageService = {
             if (error instanceof AppError) throw error;
             throw new AppError('Failed to restore backup', 'STORAGE_ERROR', error);
         }
+    },
+
+    deleteTransaction: async (transactionId: string): Promise<boolean> => {
+        const db = getDB();
+        const txIndex = db.transactions.findIndex(t => t.id === transactionId);
+        if (txIndex === -1) return false;
+
+        const tx = db.transactions[txIndex];
+
+        // 1. Revert Balance
+        const childIndex = db.children.findIndex(c => c.id === tx.child_id);
+        if (childIndex !== -1) {
+            // Subtract the amount (since we are undoing, we subtract the added amount. 
+            // If amount was positive (income), we subtract. If negative (spend), we add (subtracting negative)).
+            db.children[childIndex].current_balance = (db.children[childIndex].current_balance || 0) - tx.amount;
+        }
+
+        // 2. Handle specific types
+        if (tx.type === 'TASK_VERIFIED' && tx.reference_id) {
+            // Revert log status to PENDING
+            const logIndex = db.logs.findIndex(l => l.id === tx.reference_id);
+            if (logIndex !== -1) {
+                db.logs[logIndex].status = 'PENDING';
+            }
+        }
+
+        // 3. Remove Transaction
+        db.transactions.splice(txIndex, 1);
+        saveDB(db);
+        return true;
+    },
+
+    deleteChildLog: async (logId: string): Promise<boolean> => {
+        const db = getDB();
+        const initialLength = db.logs.length;
+        db.logs = db.logs.filter(l => l.id !== logId);
+        if (db.logs.length !== initialLength) {
+            saveDB(db);
+            return true;
+        }
+        return false;
+    },
+
+    updateTransaction: async (txId: string, updates: Partial<CoinTransaction>): Promise<CoinTransaction | null> => {
+        const db = getDB();
+        const index = db.transactions.findIndex(t => t.id === txId);
+        if (index === -1) return null;
+        db.transactions[index] = { ...db.transactions[index], ...updates };
+        saveDB(db);
+        return db.transactions[index];
+    },
+
+    updateChildLog: async (logId: string, updates: Partial<ChildTaskLog>): Promise<ChildTaskLog | null> => {
+        const db = getDB();
+        const index = db.logs.findIndex(l => l.id === logId);
+        if (index === -1) return null;
+        db.logs[index] = { ...db.logs[index], ...updates };
+        saveDB(db);
+        return db.logs[index];
     },
 
     clearAll: async (): Promise<void> => {

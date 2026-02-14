@@ -4,7 +4,8 @@ import { ToggleButton, H1Header } from '../../components/design-system';
 import { FaArrowLeft, FaFilter, FaSearch } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import HistoryList, { type HistoryItemType } from '../../components/shared/HistoryList';
+import HistoryList, { type HistoryItemType, type HistoryItemEntry } from '../../components/shared/HistoryList';
+import AdminHistoryDetailModal from '../../components/modals/AdminHistoryDetailModal';
 
 type SortOption = 'date_desc' | 'date_asc';
 type DateFilter = 'all' | 'today' | 'week' | 'month' | 'specific';
@@ -12,7 +13,7 @@ type TypeFilter = 'all' | 'earned' | 'spent' | 'manual' | 'failed';
 
 const AdminHistory = () => {
     const navigate = useNavigate();
-    const { children, transactions, childLogs, tasks, rewards } = useAppStore();
+    const { children, transactions, childLogs, tasks, rewards, categories, deleteTransaction, deleteChildLog } = useAppStore();
 
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedChildId, setSelectedChildId] = useState<string>('all');
@@ -26,6 +27,10 @@ const AdminHistory = () => {
     const [specificDate, setSpecificDate] = useState<string>(new Date().toISOString().split('T')[0]);
     const [visibleCount, setVisibleCount] = useState(10);
     const LOAD_MORE_INCREMENT = 10;
+
+    // Modal State
+    const [selectedItem, setSelectedItem] = useState<HistoryItemEntry | null>(null);
+    const [isDetailOpen, setIsDetailOpen] = useState(false);
 
     // Helper to get transaction details
     const getTransactionDetails = (t: any) => {
@@ -155,6 +160,40 @@ const AdminHistory = () => {
 
     const hasMore = visibleCount < filteredHistory.length;
 
+    const handleItemClick = (item: HistoryItemEntry) => {
+        setSelectedItem(item);
+        setIsDetailOpen(true);
+    };
+
+    const handleDelete = async (item: HistoryItemEntry) => {
+        if (!item) return;
+
+        // Determine if it's a transaction or log based on type
+        // This is a bit indirect because HistoryItemEntry type is 'verified' etc.
+        // But we know 'verified', 'redeemed', 'manual' are likely transactions
+        // and 'failed', 'rejected', 'excused' are logs.
+        // More robustly: we could store the 'sourceType' ('transaction' | 'log') in the HistoryItemEntry but 
+        // passing it through might be cleaner.
+        // However, `deleteTransaction` handles `TASK_VERIFIED` logic.
+
+        let result;
+        if (['verified', 'redeemed', 'manual'].includes(item.type)) {
+            // It's a transaction
+            result = await deleteTransaction(item.id);
+        } else {
+            // It's a log
+            result = await deleteChildLog(item.id);
+        }
+
+        if (result.error) {
+            console.error('Failed to delete item:', result.error);
+            alert('Failed to delete item');
+        }
+
+        // Modal will close automatically via props if we managed state there, 
+        // but here we just await and close.
+    };
+
     return (
         <div className="flex flex-col gap-6 pb-24">
             {/* Header */}
@@ -255,11 +294,15 @@ const AdminHistory = () => {
                         if (item.type === 'transaction') {
                             const tx = item.data;
                             const details = item.details;
+                            const log = tx.reference_id ? childLogs.find(l => l.id === tx.reference_id) : null;
+                            const task = log ? tasks.find(tsk => tsk.id === log.task_id) : null;
+                            const category = task ? categories.find(c => c.id === task.category_id) : null;
+
                             let type: HistoryItemType = 'verified';
                             if (tx.type === 'REWARD_REDEEMED') type = 'redeemed';
                             else if (tx.type === 'MANUAL_ADJ') type = 'manual';
 
-                            return {
+                            const entry: HistoryItemEntry = {
                                 id: item.id,
                                 type,
                                 title: details.name,
@@ -268,7 +311,18 @@ const AdminHistory = () => {
                                 amount: tx.amount,
                                 amountLabel: tx.type === 'TASK_VERIFIED' ? 'Done' : tx.type === 'REWARD_REDEEMED' ? 'Redeemed' : '-',
                                 status: tx.amount > 0 ? 'success' : tx.amount < 0 ? 'error' : 'neutral',
+                                categoryName: category?.name,
+                                notes: log?.notes,
+                                targetValue: task?.total_target_value,
+                                currentValue: log?.current_value,
+                                unit: task?.target_unit,
+                                childName,
+                                dateLabel: new Date(tx.created_at).toLocaleDateString(),
+                                childId: tx.child_id,
+                                taskId: task?.id,
+                                referenceId: tx.reference_id
                             };
+                            return { ...entry, onClick: () => handleItemClick(entry) };
                         } else {
                             const log = item.data;
                             const details = item.details;
@@ -278,7 +332,10 @@ const AdminHistory = () => {
                             if (isFailed) type = 'failed';
                             else if (isExcused) type = 'excused';
 
-                            return {
+                            const task = tasks.find(tsk => tsk.id === log.task_id);
+                            const category = task ? categories.find(c => c.id === task.category_id) : null;
+
+                            const entry: HistoryItemEntry = {
                                 id: item.id,
                                 type,
                                 title: details.name,
@@ -286,7 +343,18 @@ const AdminHistory = () => {
                                 description: isFailed ? 'Missed Deadline' : isExcused ? (log.notes || 'No reason provided') : `Reason: ${log.rejection_reason}`,
                                 amountLabel: log.status,
                                 status: isFailed ? 'neutral' : isExcused ? 'warning' : 'error',
+                                categoryName: category?.name,
+                                notes: log.notes,
+                                rejectionReason: log.rejection_reason,
+                                targetValue: task?.total_target_value,
+                                currentValue: log.current_value,
+                                unit: task?.target_unit,
+                                childName,
+                                dateLabel: new Date(log.completed_at).toLocaleDateString(),
+                                childId: log.child_id,
+                                taskId: log.task_id
                             };
+                            return { ...entry, onClick: () => handleItemClick(entry) };
                         }
                     })}
                     emptyMessage="No history found matching your filters."
@@ -302,6 +370,13 @@ const AdminHistory = () => {
                     }
                 />
             </div>
+
+            <AdminHistoryDetailModal
+                isOpen={isDetailOpen}
+                item={selectedItem}
+                onClose={() => setIsDetailOpen(false)}
+                onDelete={handleDelete}
+            />
         </div>
     );
 };
