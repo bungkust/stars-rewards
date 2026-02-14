@@ -38,6 +38,8 @@ export interface Task {
   current_streak?: number;
   best_streak?: number;
   max_completions_per_day?: number;
+  total_target_value?: number;
+  target_unit?: string;
 }
 
 export interface Reward {
@@ -57,7 +59,8 @@ export interface ChildTaskLog {
   parent_id: string;
   child_id: string;
   task_id: string;
-  status: 'PENDING' | 'VERIFIED' | 'REJECTED' | 'FAILED' | 'PENDING_EXCUSE' | 'EXCUSED';
+  status: 'PENDING' | 'VERIFIED' | 'REJECTED' | 'FAILED' | 'PENDING_EXCUSE' | 'EXCUSED' | 'IN_PROGRESS';
+  current_value?: number;
   rejection_reason?: string;
   notes?: string;
   parentDecisionDate?: string | null;

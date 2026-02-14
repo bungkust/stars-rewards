@@ -56,7 +56,7 @@ const Welcome = () => {
                     {/* FR 1.2a: Primary Option */}
                     <PrimaryButton
                         onClick={() => navigate('/onboarding/family-setup')}
-                        className="w-full text-lg py-4 rounded-2xl shadow-xl shadow-primary/20 transform transition active:scale-95 border-none"
+                        className="w-full text-lg py-4 h-auto min-h-0 rounded-2xl shadow-xl shadow-primary/20 transform transition active:scale-95 border-none flex justify-center items-center"
                     >
                         Start New Family
                     </PrimaryButton>

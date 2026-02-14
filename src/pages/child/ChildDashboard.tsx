@@ -12,7 +12,7 @@ import ExemptionModal from '../../components/modals/ExemptionModal';
 import TaskDetailsModal from '../../components/modals/TaskDetailsModal';
 
 const ChildDashboard = () => {
-  const { activeChildId, children, getTasksByChildId, updateChildAvatar, completeTask, isLoading, childLogs } = useAppStore();
+  const { activeChildId, children, getTasksByChildId, updateChildAvatar, completeTask, updateTaskProgress, isLoading, childLogs } = useAppStore();
   const child = children.find(c => c.id === activeChildId);
   const allTasks = activeChildId ? getTasksByChildId(activeChildId) : [];
 
@@ -94,21 +94,19 @@ const ChildDashboard = () => {
     // Count valid completions (Pending or Verified or Excused)
     const validLogs = logs.filter(l => ['VERIFIED', 'PENDING', 'PENDING_EXCUSE', 'EXCUSED'].includes(l.status));
     const count = validLogs.length;
+
+    // For progress tasks, check if *latest* log (if any) is completed
+    // Actually standard logic works: if it became PENDING/VERIFIED it counts.
     const isFullyCompleted = count >= max;
 
     // For sorting/display, we need a "primary" status.
-    // If fully completed, use the status of the last valid log.
-    // If not, it's "ACTIVE" (or "PARTIAL").
-
     if (isFullyCompleted) {
-      // Return status of the latest valid log
-      // Sort logs by time desc? They come from store sorted? 
-      // childLogs in store might not be sorted by time for same day?
-      // Let's assume the last one added is at the top or we sort.
-      // logs is filtered from childLogs. childLogs in store is unshifted (newest first).
-      // So logs[0] is likely the newest.
       return validLogs[0]?.status || 'VERIFIED';
     }
+
+    // Check for IN_PROGRESS
+    const inProgressLog = logs.find(l => l.status === 'IN_PROGRESS');
+    if (inProgressLog) return 'IN_PROGRESS';
 
     return 'ACTIVE';
   };
@@ -169,25 +167,25 @@ const ChildDashboard = () => {
       return true;
     }).sort((a, b) => {
       // Sort Priority:
-      // 1. Not Started (No Log)
-      // 2. Pending (PENDING, PENDING_EXCUSE)
-      // 3. Completed (VERIFIED, EXCUSED, REJECTED)
-      // 4. Failed (FAILED)
-
-
+      // 1. In Progress (IN_PROGRESS)
+      // 2. Not Started (ACTIVE)
+      // 3. Pending (PENDING, PENDING_EXCUSE)
+      // 4. Completed (VERIFIED, EXCUSED, REJECTED)
+      // 5. Failed (FAILED)
 
       const getStatusWeight = (task: any) => {
         const status = getTaskStatus(task);
-        if (status === 'ACTIVE') return 0; // Not started or Partial
-        if (status === 'PENDING' || status === 'PENDING_EXCUSE') return 1;
+        if (status === 'IN_PROGRESS') return 0;
+        if (status === 'ACTIVE') return 1;
+        if (status === 'PENDING' || status === 'PENDING_EXCUSE') return 2;
 
         // Completed Status Sorting: Verified > Rejected > Excused
-        if (status === 'VERIFIED') return 2;
-        if (status === 'REJECTED') return 3;
-        if (status === 'EXCUSED') return 4;
-        if (status === 'FAILED') return 5;
+        if (status === 'VERIFIED') return 3;
+        if (status === 'REJECTED') return 4;
+        if (status === 'EXCUSED') return 5;
+        if (status === 'FAILED') return 6;
 
-        return 6; // Fallback
+        return 7; // Fallback
       };
 
       const weightA = getStatusWeight(a);
@@ -241,7 +239,7 @@ const ChildDashboard = () => {
   const handleTaskComplete = async (task: { id: string, name: string, reward_value: number, max_completions_per_day?: number }) => {
     // Check if already done today handled by UI state, but double check
     const status = getTaskStatus(task);
-    if (status !== 'ACTIVE') return;
+    if (status !== 'ACTIVE' && status !== 'IN_PROGRESS') return;
 
     const { error } = await completeTask(task.id);
     if (!error) {
@@ -249,6 +247,24 @@ const ChildDashboard = () => {
       setIsCompletionModalOpen(true);
     } else {
       alert('Something went wrong. Please try again.');
+    }
+  };
+
+  const handleTaskProgressIncrement = async (task: any, currentVal: number) => {
+    const increment = 1;
+    const target = task.total_target_value;
+    const newVal = Math.min(currentVal + increment, target);
+
+    const { error } = await updateTaskProgress(task.id, newVal, target);
+
+    if (error) {
+      alert('Failed to update progress');
+      return;
+    }
+
+    if (newVal >= target) {
+      setLastCompletedTask({ name: task.name, value: task.reward_value });
+      setIsCompletionModalOpen(true);
     }
   };
 
@@ -401,14 +417,21 @@ const ChildDashboard = () => {
               // If not, it's "ACTIVE" (show Done button)
               const displayStatus = isFullyCompleted ? (validLogs[0]?.status || 'VERIFIED') : 'ACTIVE';
 
-              // For "Why?" button on rejected, we need to check if there are ANY rejected logs that are "fresh" (not retried)?
-              // Actually, if I have a REJECTED log, it doesn't count towards validLogs.
-              // So count is 0 (or lower than max).
-              // So displayStatus is ACTIVE.
-              // But we might want to show a "Rejected" badge or border if the *latest* log was rejected?
-              // Let's check the absolute latest log.
-              const latestLog = logs[0]; // Assuming logs are sorted new to old (from childLogs)
+              const latestLog = logs[0]; // Assuming logs are sorted new to old
               const isLatestRejected = latestLog?.status === 'REJECTED';
+
+              // Progress Task Logic
+              const isProgressTask = (task.total_target_value || 0) > 0;
+              const currentProgress = latestLog?.current_value || 0;
+
+              // If in progress, override status mostly for border/style?
+              // If displayStatus is ACTIVE but we have progress logs, it might be IN_PROGRESS?
+              // getTaskStatus already handles this but `displayStatus` above overwrote it simplistically.
+              // Let's refine displayStatus
+              let finalDisplayStatus = displayStatus;
+              if (displayStatus === 'ACTIVE' && latestLog?.status === 'IN_PROGRESS') {
+                finalDisplayStatus = 'IN_PROGRESS';
+              }
 
               return (
                 <div key={task.id} className="relative">
@@ -424,21 +447,23 @@ const ChildDashboard = () => {
                     onDragEnd={(e, info) => handleSwipe(e, info, task)}
                     whileDrag={{ scale: 1.02 }}
                     onClick={() => handleTaskClick(task)}
-                    className={`relative card bg-white shadow-sm rounded-xl p-4 flex flex-row items-center justify-between border-l-4 cursor-pointer active:scale-95 transition-transform ${displayStatus === 'VERIFIED' ? 'border-success' :
-                      displayStatus === 'FAILED' ? 'border-error' :
-                        displayStatus === 'PENDING' ? 'border-warning' :
-                          displayStatus === 'PENDING_EXCUSE' ? 'border-warning' :
-                            displayStatus === 'EXCUSED' ? 'border-gray-300' :
-                              isLatestRejected ? 'border-error' : 'border-primary'
+                    className={`relative card bg-white shadow-sm rounded-xl p-4 flex flex-row items-center justify-between border-l-4 cursor-pointer active:scale-95 transition-transform ${finalDisplayStatus === 'VERIFIED' ? 'border-success' :
+                      finalDisplayStatus === 'FAILED' ? 'border-error' :
+                        finalDisplayStatus === 'PENDING' ? 'border-warning' :
+                          finalDisplayStatus === 'PENDING_EXCUSE' ? 'border-warning' :
+                            finalDisplayStatus === 'EXCUSED' ? 'border-gray-300' :
+                              finalDisplayStatus === 'IN_PROGRESS' ? 'border-blue-400' :
+                                isLatestRejected ? 'border-error' : 'border-primary'
                       }`}
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className={`p-3 rounded-full flex-shrink-0 ${displayStatus === 'VERIFIED' ? 'bg-success/10 text-success' :
-                        displayStatus === 'FAILED' ? 'bg-error/10 text-error' :
-                          displayStatus === 'PENDING' ? 'bg-warning/10 text-warning' :
-                            displayStatus === 'PENDING_EXCUSE' ? 'bg-warning/10 text-warning' :
-                              displayStatus === 'EXCUSED' ? 'bg-neutral/10 text-neutral' :
-                                isLatestRejected ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'
+                      <div className={`p-3 rounded-full flex-shrink-0 ${finalDisplayStatus === 'VERIFIED' ? 'bg-success/10 text-success' :
+                        finalDisplayStatus === 'FAILED' ? 'bg-error/10 text-error' :
+                          finalDisplayStatus === 'PENDING' ? 'bg-warning/10 text-warning' :
+                            finalDisplayStatus === 'PENDING_EXCUSE' ? 'bg-warning/10 text-warning' :
+                              finalDisplayStatus === 'EXCUSED' ? 'bg-neutral/10 text-neutral' :
+                                finalDisplayStatus === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-600' :
+                                  isLatestRejected ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'
                         }`}>
                         {task.recurrence_rule === 'Once' ? <FaBolt className="w-6 h-6" /> :
                           task.recurrence_rule === 'Daily' ? <FaRedo className="w-6 h-6" /> :
@@ -454,33 +479,56 @@ const ChildDashboard = () => {
                               <FaStar className="w-3 h-3" /> {task.reward_value}
                             </span>
                           )}
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getBadgeStyle(task.recurrence_rule || '')}`}>
-                            {['Once', 'Daily', 'Weekly', 'Monthly'].includes(task.recurrence_rule || '') ? task.recurrence_rule : 'Custom'}
-                          </span>
+                          {!isProgressTask && (
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getBadgeStyle(task.recurrence_rule || '')}`}>
+                              {['Once', 'Daily', 'Weekly', 'Monthly'].includes(task.recurrence_rule || '') ? task.recurrence_rule : 'Custom'}
+                            </span>
+                          )}
+                          {isProgressTask && (
+                            <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                              {currentProgress}/{task.total_target_value || 1} {task.target_unit}
+                            </span>
+                          )}
                         </div>
+                        {isProgressTask && finalDisplayStatus !== 'VERIFIED' && finalDisplayStatus !== 'PENDING' && (
+                          <div className="mt-2 w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-700">
+                            <div className="bg-primary h-1.5 rounded-full" style={{ width: `${Math.min((currentProgress / (task.total_target_value || 1)) * 100, 100)}%` }}></div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {displayStatus === 'VERIFIED' ? (
+                    {finalDisplayStatus === 'VERIFIED' ? (
                       <span className="badge badge-success text-white font-bold p-3">Approved</span>
-                    ) : displayStatus === 'FAILED' ? (
+                    ) : finalDisplayStatus === 'FAILED' ? (
                       <span className="badge badge-error text-white font-bold p-3">Failed</span>
-                    ) : displayStatus === 'PENDING' ? (
+                    ) : finalDisplayStatus === 'PENDING' ? (
                       <span className="badge badge-warning text-white font-bold p-3">Pending</span>
-                    ) : displayStatus === 'PENDING_EXCUSE' ? (
+                    ) : finalDisplayStatus === 'PENDING_EXCUSE' ? (
                       <span className="badge badge-warning text-white font-bold p-3">Pending</span>
-                    ) : displayStatus === 'EXCUSED' ? (
+                    ) : finalDisplayStatus === 'EXCUSED' ? (
                       <span className="badge badge-ghost text-gray-500 font-bold p-3">Skipped</span>
                     ) : (
                       <div className="flex flex-col items-end gap-1">
-                        <button
-                          className={`btn btn-sm rounded-full text-white ${isLatestRejected ? 'btn-error' : 'btn-primary'}`}
-                          onClick={(e) => { e.stopPropagation(); handleTaskComplete(task); }}
-                          disabled={isLoading}
-                        >
-                          {isLatestRejected ? 'Try Again' : 'Done'}
-                        </button>
-                        {max > 1 && (
+                        {!isProgressTask ? (
+                          <button
+                            className={`btn btn-sm rounded-full text-white ${isLatestRejected ? 'btn-error' : 'btn-primary'}`}
+                            onClick={(e) => { e.stopPropagation(); handleTaskComplete(task); }}
+                            disabled={isLoading}
+                          >
+                            {isLatestRejected ? 'Try Again' : 'Done'}
+                          </button>
+                        ) : (
+                          <button
+                            className="btn btn-sm btn-circle btn-primary text-white"
+                            onClick={(e) => { e.stopPropagation(); handleTaskProgressIncrement(task, currentProgress); }}
+                            disabled={isLoading}
+                          >
+                            <span className="text-xl font-bold">+</span>
+                          </button>
+                        )}
+
+                        {max > 1 && !isProgressTask && (
                           <span className="text-[10px] font-bold text-gray-400">
                             {count}/{max} completed
                           </span>

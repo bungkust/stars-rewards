@@ -68,6 +68,7 @@ export interface AppState {
   updateParentName: (name: string) => Promise<{ error: any }>;
   updateChildAvatar: (childId: string, avatarUrl: string) => Promise<{ error: any }>;
   completeTask: (taskId: string) => Promise<{ error: any }>;
+  updateTaskProgress: (taskId: string, value: number, target: number) => Promise<{ error: any }>;
   submitExemptionRequest: (taskId: string, reason: string) => Promise<{ error: any }>;
   getPendingExcuses: () => ChildTaskLog[];
   approveExcuse: (logId: string) => Promise<{ error: any }>;
@@ -614,6 +615,76 @@ export const useAppStore = create<AppState>()(
           return { error: null };
         } catch (error) {
           console.error('Error completing task:', error);
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      updateTaskProgress: async (taskId: string, value: number, target: number) => {
+        set({ isLoading: true });
+        try {
+          const { activeChildId } = get();
+          if (!activeChildId) throw new Error('Missing child ID');
+
+          const userId = 'local-user'; // Not used in localStorageService but consistent with others
+          // Call service
+          const updatedLog = await localStorageService.updateTaskProgress(activeChildId, taskId, value, target);
+
+          if (!updatedLog) throw new Error('Failed to update progress');
+
+          // Update local state
+          set((state) => {
+            // Remove existing log for this task/day if exists to replace with new one, or just update it
+            // Implementation: Filter out the specific log by ID if we know it, or find by task+date?
+            // Easier: just replace in childLogs list.
+            const existingLogIndex = state.childLogs.findIndex(l => l.id === updatedLog.id);
+            let newLogs = [...state.childLogs];
+
+            if (existingLogIndex !== -1) {
+              newLogs[existingLogIndex] = updatedLog;
+            } else {
+              newLogs = [updatedLog, ...newLogs];
+            }
+
+            // If it became PENDING, add to pendingVerifications
+            let newPending = [...state.pendingVerifications];
+            if (updatedLog.status === 'PENDING') {
+              // Check if already in pending
+              const isPending = newPending.some(p => p.id === updatedLog.id);
+              if (!isPending) {
+                const task = state.tasks.find(t => t.id === taskId);
+                const child = state.children.find(c => c.id === activeChildId);
+                newPending.push({
+                  ...updatedLog,
+                  task_title: task?.name || 'Unknown',
+                  reward_value: task?.reward_value || 0,
+                  child_name: child?.name || 'Unknown'
+                });
+              }
+            } else {
+              // Remove from pending if it went back to IN_PROGRESS
+              newPending = newPending.filter(p => p.id !== updatedLog.id);
+            }
+
+            return {
+              childLogs: newLogs,
+              pendingVerifications: newPending
+            };
+          });
+
+          // If completed (PENDING), Schedule Admin Notification
+          if (updatedLog.status === 'PENDING') {
+            const { pendingVerifications, childLogs } = get();
+            const pendingCount = pendingVerifications.length + childLogs.filter(l => l.status === 'PENDING_EXCUSE').length;
+            import('../services/notificationService').then(({ notificationService }) => {
+              notificationService.schedulePendingAdminNotification(pendingCount);
+            });
+          }
+
+          return { error: null };
+        } catch (error) {
+          console.error('Error updating progress:', error);
           return { error };
         } finally {
           set({ isLoading: false });

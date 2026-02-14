@@ -198,7 +198,9 @@ export const localStorageService = {
             assigned_to: task.assigned_to || [],
             category_id: task.category_id,
             expiry_time: task.expiry_time,
-            max_completions_per_day: task.max_completions_per_day
+            max_completions_per_day: task.max_completions_per_day,
+            total_target_value: task.total_target_value,
+            target_unit: task.target_unit
         };
         db.tasks.push(newTask);
         saveDB(db);
@@ -501,6 +503,62 @@ export const localStorageService = {
         db.logs.push(...newLogs);
         saveDB(db);
         return newLogs;
+    },
+
+    updateTaskProgress: async (childId: string, taskId: string, value: number, target: number): Promise<ChildTaskLog | null> => {
+        const db = getDB();
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        // Find existing log for today
+        let logIndex = db.logs.findIndex(l =>
+            l.child_id === childId &&
+            l.task_id === taskId &&
+            l.completed_at.startsWith(todayStr)
+        );
+
+        let log: ChildTaskLog;
+
+        if (logIndex === -1) {
+            // Create new log with IN_PROGRESS status
+            log = {
+                id: generateId(),
+                parent_id: 'local-user',
+                child_id: childId,
+                task_id: taskId,
+                status: 'IN_PROGRESS',
+                current_value: value,
+                completed_at: new Date().toISOString()
+            };
+            db.logs.push(log);
+        } else {
+            // Update existing log
+            db.logs[logIndex].current_value = value;
+            db.logs[logIndex].completed_at = new Date().toISOString(); // Update timestamp
+            log = db.logs[logIndex];
+        }
+
+        // Check if target reached
+        if (value >= target) {
+            // Create/Update log to PENDING (completed)
+            if (logIndex === -1) {
+                // It was just pushed, need to find it or just mutate 'log' which is ref? 
+                // 'log' object is in the array now.
+                log.status = 'PENDING';
+            } else {
+                db.logs[logIndex].status = 'PENDING';
+                log = db.logs[logIndex];
+            }
+        } else {
+            // Ensure status is IN_PROGRESS if it was PENDING (e.g. undoing?)
+            // Only if it's not VERIFIED/REJECTED/etc.
+            if (log.status === 'PENDING' || log.status === 'IN_PROGRESS') {
+                if (logIndex !== -1) db.logs[logIndex].status = 'IN_PROGRESS';
+                else log.status = 'IN_PROGRESS';
+            }
+        }
+
+        saveDB(db);
+        return log;
     },
 
     // --- Transactions / Redemption ---

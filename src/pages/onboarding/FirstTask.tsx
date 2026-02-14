@@ -31,6 +31,9 @@ const FirstTask = () => {
     interval: 1,
     byDay: ['MO', 'WE', 'FR']
   });
+  const [isProgressTask, setIsProgressTask] = useState(false);
+  const [targetValue, setTargetValue] = useState(1);
+  const [targetUnit, setTargetUnit] = useState('');
   const [error, setError] = useState('');
 
   // Initialize selected children (select all by default for onboarding convenience)
@@ -84,6 +87,8 @@ const FirstTask = () => {
       is_active: true,
       expiry_time: expiryTime,
       assigned_to: selectedChildIds,
+      total_target_value: isProgressTask ? targetValue : undefined,
+      target_unit: isProgressTask ? targetUnit : undefined,
     });
 
     if (taskError) {
@@ -95,7 +100,7 @@ const FirstTask = () => {
     navigate('/onboarding/first-reward');
   };
 
-  const isFormValid = title.trim().length > 0 && categoryId && selectedChildIds.length > 0 && reward >= 0;
+  const isFormValid = title.trim().length > 0 && categoryId && selectedChildIds.length > 0 && reward >= 0 && (!isProgressTask || (targetValue > 0 && targetUnit.trim().length > 0));
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center app-gradient p-6 py-12">
@@ -146,6 +151,56 @@ const FirstTask = () => {
               })}
             </div>
           </div>
+
+          {/* Mission Style Selector */}
+          <div className="form-control w-full">
+            <label className="label">
+              <span className="label-text font-bold">Mission Style</span>
+            </label>
+            <div className="flex gap-2">
+              <ToggleButton
+                label="Simple (Checklist)"
+                isActive={!isProgressTask}
+                onClick={() => setIsProgressTask(false)}
+                className="flex-1"
+              />
+              <ToggleButton
+                label="Progress (Target)"
+                isActive={isProgressTask}
+                onClick={() => setIsProgressTask(true)}
+                className="flex-1"
+              />
+            </div>
+          </div>
+
+          {isProgressTask && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="form-control w-full">
+                <label className="label">
+                  <span className="label-text font-bold">Target Amount</span>
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  className="input input-bordered w-full rounded-xl"
+                  value={targetValue}
+                  onChange={(e) => setTargetValue(Math.max(1, parseInt(e.target.value) || 1))}
+                />
+              </div>
+              <div className="form-control w-full">
+                <label className="label">
+                  <span className="label-text font-bold">Unit</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Cups, Pages"
+                  className="input input-bordered w-full rounded-xl"
+                  value={targetUnit}
+                  onChange={(e) => setTargetUnit(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
 
           <div className="form-control w-full">
             <label className="label">
