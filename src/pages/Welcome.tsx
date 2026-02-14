@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Star } from '@phosphor-icons/react';
 import { PrimaryButton } from '../components/design-system/PrimaryButton';
 import RestoreDataModal from '../components/modals/RestoreDataModal';
 
@@ -29,9 +28,7 @@ const Welcome = () => {
                 <div className="flex flex-col items-center justify-center">
                     <div className="relative">
                         <div className="absolute inset-0 bg-blue-400 blur-xl opacity-40 animate-pulse" />
-                        <div className="relative w-32 h-32 bg-gradient-to-br from-blue-300 to-blue-500 rounded-3xl rotate-3 flex items-center justify-center shadow-xl border-4 border-white">
-                            <Star weight="fill" className="text-white w-20 h-20 drop-shadow-md" />
-                        </div>
+                        <img src="/star-icon.png" alt="Star Habit" className="w-32 h-32 object-cover rounded-3xl shadow-xl rotate-3 border-4 border-white" />
                     </div>
                 </div>
 
@@ -70,7 +67,7 @@ const Welcome = () => {
                     </button>
 
                     <p className="text-xs text-center text-slate-300 pt-4">
-                        v1.0.0 • Designed for Kids {APP_MOCK_DATA.target_age}
+                        v1.1.2 • Designed for Kids {APP_MOCK_DATA.target_age}
                     </p>
                 </div>
             </div>

@@ -22,6 +22,8 @@ export const taskSchema = z.object({
     category_id: z.string().nullish(),
     expiry_time: z.string().nullish(),
     next_due_date: z.string().nullish(),
+    total_target_value: z.number().nullish(),
+    target_unit: z.string().nullish(),
 });
 
 export const rewardSchema = z.object({
@@ -41,7 +43,8 @@ export const logSchema = z.object({
     parent_id: z.string(),
     child_id: z.string(),
     task_id: z.string(),
-    status: z.enum(['PENDING', 'VERIFIED', 'REJECTED', 'FAILED', 'PENDING_EXCUSE', 'EXCUSED']),
+    status: z.enum(['PENDING', 'VERIFIED', 'REJECTED', 'FAILED', 'PENDING_EXCUSE', 'EXCUSED', 'IN_PROGRESS']),
+    current_value: z.number().nullish(),
     rejection_reason: z.string().nullish(),
     notes: z.string().nullish(),
     completed_at: z.string(),

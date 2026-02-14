@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 import { H1Header, ToggleButton } from '../../components/design-system';
-import { FaStar, FaTrophy, FaChartPie, FaCheckCircle, FaGift, FaSlidersH, FaTimesCircle, FaChild } from 'react-icons/fa';
+import { FaStar, FaTrophy, FaCheckCircle, FaGift, FaSlidersH, FaTimesCircle, FaChild } from 'react-icons/fa';
 import {
   CartesianGrid,
   Line,
@@ -48,16 +49,6 @@ const ChildStats = () => {
     () => childLogs.filter(log => log.child_id === child?.id && (log.status === 'REJECTED' || log.status === 'FAILED' || log.status === 'EXCUSED')),
     [childLogs, child?.id]
   );
-
-  const [historyFilter, setHistoryFilter] = useState<'today' | 'week' | 'month' | 'specific'>('today');
-  const [specificDate, setSpecificDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [tempDate, setTempDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [visibleHistoryCount, setVisibleHistoryCount] = useState(10);
-
-  const handleHistoryFilterChange = (filter: 'today' | 'week' | 'month' | 'specific') => {
-    setHistoryFilter(filter);
-    setVisibleHistoryCount(10);
-  };
 
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedTaskDetails, setSelectedTaskDetails] = useState<any>(null);
@@ -109,38 +100,10 @@ const ChildStats = () => {
         return dateB - dateA;
       });
 
-    // Apply Time Filter
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const oneDay = 24 * 60 * 60 * 1000;
+    return allItems;
+  }, [childTransactions, rejectedMissions]);
 
-    return allItems.filter(item => {
-      const itemDate = new Date(item.date).getTime();
-
-      if (historyFilter === 'specific') {
-        // Compare YYYY-MM-DD strings in local time
-        const itemDateStr = new Date(item.date).toLocaleDateString('en-CA');
-        return specificDate === itemDateStr;
-      }
-
-      if (historyFilter === 'today') {
-        return itemDate >= today;
-      }
-
-      if (historyFilter === 'week') {
-        return itemDate >= today - (6 * oneDay); // Last 7 days including today
-      }
-
-      if (historyFilter === 'month') {
-        return itemDate >= today - (29 * oneDay); // Last 30 days
-      }
-
-      return true;
-    });
-  }, [childTransactions, rejectedMissions, historyFilter, specificDate]);
-
-  const visibleHistory = combinedHistory.slice(0, visibleHistoryCount);
-  const hasMoreHistory = visibleHistory.length < combinedHistory.length;
+  const visibleHistory = combinedHistory.slice(0, 10);
 
   // Calculate basic stats from transactions
   const earned = childTransactions
@@ -314,43 +277,49 @@ const ChildStats = () => {
         </div>
       </div>
 
-      {/* Balance Chart Representation */}
+      {/* Claimed Rewards Section */}
       <div className="card bg-base-100 shadow-md rounded-xl p-6">
-        <div className="flex items-center gap-2 mb-6">
-          <FaChartPie className="text-neutral/40" />
-          <h3 className="text-lg font-bold text-neutral">Balance Breakdown</h3>
+        <div className="flex items-center gap-2 mb-4">
+          <h3 className="text-lg font-bold text-neutral">Claimed Rewards</h3>
         </div>
 
-        <div className="flex flex-col gap-4">
-          {/* Current Balance Bar */}
-          <div>
-            <div className="flex justify-between text-sm mb-1">
-              <span className="text-neutral/60">Current Balance</span>
-              <span className="font-bold text-primary">{child.current_balance} Stars</span>
-            </div>
-            <div className="w-full bg-base-200 rounded-full h-4 overflow-hidden">
-              <div
-                className="bg-primary h-4 rounded-full transition-all duration-500"
-                style={{ width: `${Math.min((child.current_balance / (earned || 1)) * 100, 100)}%` }}
-              ></div>
-            </div>
-          </div>
+        <div className="flex flex-col gap-3">
+          {childTransactions
+            .filter(t => t.type === 'REWARD_REDEEMED')
+            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) // Recent first
+            .slice(0, 3) // Limit to 3 for preview
+            .map(transaction => {
+              const details = getTransactionDetails(transaction);
+              return (
+                <div key={transaction.id} className="flex justify-between items-center border-b border-base-200 pb-3 last:border-none last:pb-0">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-warning/10 text-warning rounded-full">
+                      <FaGift className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-bold text-neutral text-sm">{details.name}</span>
+                      <span className="text-xs text-neutral/40">{formatDate(transaction.created_at)}</span>
+                    </div>
+                  </div>
+                  <span className="font-bold text-error">
+                    {Math.abs(transaction.amount)} Stars
+                  </span>
+                </div>
+              );
+            })}
+          {childTransactions.filter(t => t.type === 'REWARD_REDEEMED').length === 0 && (
+            <p className="text-neutral/40 text-center text-sm py-4">No rewards claimed yet.</p>
+          )}
 
-          {/* Spending Bar */}
-          <div>
-            <div className="flex justify-between text-sm mb-1">
-              <span className="text-neutral/60">Total Spent</span>
-              <span className="font-bold text-error">{spent} Stars</span>
-            </div>
-            <div className="w-full bg-base-200 rounded-full h-4 overflow-hidden">
-              <div
-                className="bg-error h-4 rounded-full transition-all duration-500"
-                style={{ width: `${Math.min((spent / (earned || 1)) * 100, 100)}%` }}
-              ></div>
-            </div>
-          </div>
+          {childTransactions.filter(t => t.type === 'REWARD_REDEEMED').length > 3 && (
+            <Link to="/child/claimed-rewards" className="btn btn-ghost btn-sm w-full text-neutral/60 mt-1">
+              Load More
+            </Link>
+          )}
         </div>
       </div>
+
+
 
 
 
@@ -358,46 +327,6 @@ const ChildStats = () => {
       <div className="card bg-base-100 shadow-md rounded-xl p-6">
         <div className="flex flex-col gap-3 mb-4">
           <h3 className="text-lg font-bold text-neutral">Recent History</h3>
-
-          {/* History Filter Tabs */}
-          <div className="flex flex-wrap gap-2 items-center">
-            <ToggleButton
-              label="Today"
-              isActive={historyFilter === 'today'}
-              onClick={() => handleHistoryFilterChange('today')}
-            />
-            <ToggleButton
-              label="Week"
-              isActive={historyFilter === 'week'}
-              onClick={() => handleHistoryFilterChange('week')}
-            />
-            <ToggleButton
-              label="Month"
-              isActive={historyFilter === 'month'}
-              onClick={() => handleHistoryFilterChange('month')}
-            />
-            <ToggleButton
-              label="Specific Date"
-              isActive={historyFilter === 'specific'}
-              onClick={() => handleHistoryFilterChange('specific')}
-            />
-            {historyFilter === 'specific' && (
-              <div className="flex items-center gap-2">
-                <input
-                  type="date"
-                  value={tempDate}
-                  onChange={(e) => setTempDate(e.target.value)}
-                  className="input input-sm input-bordered rounded-full"
-                />
-                <button
-                  className="btn btn-sm btn-primary rounded-full"
-                  onClick={() => setSpecificDate(tempDate)}
-                >
-                  Apply
-                </button>
-              </div>
-            )}
-          </div>
         </div>
 
         <div className="flex flex-col gap-3">
@@ -508,13 +437,10 @@ const ChildStats = () => {
             <p className="text-neutral/40 text-center text-sm py-4">No activity in this period.</p>
           )}
 
-          {hasMoreHistory && (
-            <button
-              className="btn btn-ghost btn-sm w-full text-neutral/60 mt-2"
-              onClick={() => setVisibleHistoryCount(prev => prev + 10)}
-            >
+          {combinedHistory.length > 10 && (
+            <Link to="/child/history" className="btn btn-ghost btn-sm w-full text-neutral/60 mt-2">
               Load More
-            </button>
+            </Link>
           )}
         </div>
       </div>

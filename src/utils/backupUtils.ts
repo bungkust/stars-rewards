@@ -47,7 +47,7 @@ export const validateBackupData = (data: any): boolean => {
     if (!data.data || typeof data.data !== 'object') return false;
 
     // Basic check for required arrays
-    const requiredArrays = ['children', 'tasks', 'rewards', 'categories'];
+    const requiredArrays = ['children', 'tasks', 'rewards'];
     for (const key of requiredArrays) {
         if (!Array.isArray(data.data[key])) return false;
     }

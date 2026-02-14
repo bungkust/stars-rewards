@@ -669,7 +669,9 @@ export const localStorageService = {
                 created_at: t.created_at ?? undefined,
                 category_id: t.category_id ?? undefined,
                 expiry_time: t.expiry_time ?? undefined,
-                next_due_date: t.next_due_date ?? undefined
+                next_due_date: t.next_due_date ?? undefined,
+                total_target_value: t.total_target_value ?? undefined,
+                target_unit: t.target_unit ?? undefined
             }));
 
             const validRewards = (validData.rewards || []).map(r => ({
@@ -691,7 +693,8 @@ export const localStorageService = {
                 ...l,
                 rejection_reason: l.rejection_reason ?? undefined,
                 notes: l.notes ?? undefined,
-                verified_at: l.verified_at ?? undefined
+                verified_at: l.verified_at ?? undefined,
+                current_value: l.current_value ?? undefined
             }));
 
             const newDB: LocalDB = {

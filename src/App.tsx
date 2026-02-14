@@ -12,6 +12,8 @@ import Dashboard from './pages/Dashboard';
 import Tasks from './pages/Tasks';
 import Rewards from './pages/Rewards';
 import Stats from './pages/Stats';
+import ClaimedRewardsHistory from './pages/child/ClaimedRewardsHistory';
+import ChildHistory from './pages/child/ChildHistory';
 import Settings from './pages/settings/Settings';
 import AddChild from './pages/onboarding/AddChild';
 import AddChildSettings from './pages/settings/AddChildSettings';
@@ -236,6 +238,16 @@ const AnimatedRoutes = () => {
         <Route path="/child/stats" element={
           <PageTransition>
             <Stats />
+          </PageTransition>
+        } />
+        <Route path="/child/claimed-rewards" element={
+          <PageTransition>
+            <ClaimedRewardsHistory />
+          </PageTransition>
+        } />
+        <Route path="/child/history" element={
+          <PageTransition>
+            <ChildHistory />
           </PageTransition>
         } />
 
