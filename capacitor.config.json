@@ -3,9 +3,6 @@
   "appName": "Star Habit",
   "webDir": "dist",
   "plugins": {
-    "StatusBar": {
-      "overlaysWebView": false
-    },
     "SplashScreen": {
       "launchShowDuration": 1500,
       "launchAutoHide": true,

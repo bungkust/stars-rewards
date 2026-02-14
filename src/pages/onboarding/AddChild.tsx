@@ -1,17 +1,22 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
+import { downloadAvatarAsDataUri } from '../../utils/avatarUtils';
 import { FaPlus } from 'react-icons/fa';
 import { PrimaryButton } from '../../components/design-system/PrimaryButton';
 import { SecondaryButton } from '../../components/design-system/SecondaryButton';
 
 const AVATAR_OPTIONS = [
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Baby',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Ginger',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Oliver',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Bella',
+  'https://api.dicebear.com/9.x/adventurer/svg?seed=Felix',
+  'https://api.dicebear.com/9.x/adventurer/svg?seed=Aneka',
+  'https://api.dicebear.com/9.x/adventurer/svg?seed=Oliver',
+  'https://api.dicebear.com/9.x/adventurer/svg?seed=Bella',
+  'https://api.dicebear.com/9.x/adventurer/svg?seed=Milo',
+  'https://api.dicebear.com/9.x/adventurer/svg?seed=Sofia',
+  'https://api.dicebear.com/9.x/adventurer/svg?seed=Leo',
+  'https://api.dicebear.com/9.x/adventurer/svg?seed=Zoe',
+  'https://api.dicebear.com/9.x/adventurer/svg?seed=Ryan',
+  'https://api.dicebear.com/9.x/adventurer/svg?seed=Luna',
 ];
 
 const AddChild = () => {
@@ -37,7 +42,7 @@ const AddChild = () => {
     const { error } = await addChild({
       name,
       birth_date: dob,
-      avatar_url: selectedAvatar,
+      avatar_url: await downloadAvatarAsDataUri(selectedAvatar),
     });
 
     if (error) {
@@ -110,7 +115,7 @@ const AddChild = () => {
                 <img src={selectedAvatar} alt="Selected Avatar" />
               </div>
             </div>
-            <div className="flex gap-3 overflow-x-auto py-2 w-full justify-center">
+            <div className="flex gap-4 overflow-x-auto py-4 px-4 w-full justify-start md:justify-center">
               {AVATAR_OPTIONS.map((avatar) => (
                 <button
                   key={avatar}

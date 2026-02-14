@@ -40,7 +40,7 @@ const Header = ({ onParentLoginClick, onSettingsClick, onChildSelectClick }: Hea
 
   return (
     <div
-      className={`navbar fixed top-0 left-0 right-0 z-50 px-4 h-auto min-h-16 pt-8 pb-2 ${headerGradient} backdrop-blur-sm shadow-sm`}
+      className={`navbar fixed top-0 left-0 right-0 z-50 px-4 h-auto min-h-16 pt-[calc(env(safe-area-inset-top)+2rem)] pb-2 ${headerGradient} backdrop-blur-sm shadow-sm`}
     >
       <div className="flex-1">
         {activeChild && !isAdminMode ? (

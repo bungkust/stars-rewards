@@ -19,7 +19,7 @@ export const ToggleButton: React.FC<ToggleButtonProps> = ({ label, isActive, onC
             onClick={onClick}
             className={`btn btn-sm rounded-full normal-case transition-all ${isActive
                 ? `${activeClass} shadow-md`
-                : 'btn-outline border-gray-300 text-gray-600 hover:bg-gray-50'
+                : 'bg-white border text-gray-600 border-gray-300 hover:bg-gray-100 hover:text-gray-900 hover:border-gray-400'
                 } ${className}`}
         >
             {label}
