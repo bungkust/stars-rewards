@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
-import { FaChartLine, FaCheckCircle, FaExclamationTriangle, FaLightbulb, FaTimes } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
+import { FaChartLine, FaCheckCircle, FaLightbulb, FaTimes } from 'react-icons/fa';
 import { AppCard, H1Header, IconWrapper, ToggleButton } from '../../components/design-system';
+import HistoryList, { type HistoryItemType } from '../../components/shared/HistoryList';
 
 import { useAppStore } from '../../store/useAppStore';
 import { calculateCoinMetrics, getRecommendations, getCategoryPerformance } from '../../utils/analytics';
@@ -27,8 +29,7 @@ const AdminStats = () => {
     }
     return [];
   });
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 10;
+  const visibleCount = 10;
 
   // Effect to clean up old dismissals from localStorage
   useEffect(() => {
@@ -59,7 +60,7 @@ const AdminStats = () => {
 
   const handleTimeFilterChange = (filter: TimeFilter) => {
     setTimeFilter(filter);
-    setCurrentPage(1); // Reset pagination
+    // visibleCount reset handled by mounting if needed, but here we just slice top 10 always for dashboard
     if (filter === 'specific') {
       setSpecificDate(tempDate);
     }
@@ -189,10 +190,7 @@ const AdminStats = () => {
 
   const [statusFilter, setStatusFilter] = useState<'all' | 'earned' | 'spent' | 'failed'>('all');
 
-  // Reset pagination when status filter or child filter changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [statusFilter, selectedChildId]);
+
 
   // Filtered History based on Status
   const finalHistory = useMemo(() => {
@@ -215,12 +213,11 @@ const AdminStats = () => {
     });
   }, [visibleHistory, statusFilter]);
 
-  const paginatedHistory = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return finalHistory.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [finalHistory, currentPage]);
+  const displayedHistory = useMemo(() => {
+    return finalHistory.slice(0, visibleCount);
+  }, [finalHistory, visibleCount]);
 
-  const totalPages = Math.ceil(finalHistory.length / ITEMS_PER_PAGE);
+  const hasMore = visibleCount < finalHistory.length;
 
   const getChildName = (childId: string) => children.find(c => c.id === childId)?.name || 'Unknown';
 
@@ -438,87 +435,60 @@ const AdminStats = () => {
           </div>
         </div>
 
-        {finalHistory.length === 0 ? (
-          <div className="text-center py-8 text-neutral/40 bg-base-100 rounded-xl border border-base-200">
-            No history found for this period.
-          </div>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {paginatedHistory.map((item) => {
+        <div className="card bg-base-100 shadow-md rounded-xl p-6">
+          <HistoryList
+            items={displayedHistory.map(item => {
               if (item.type === 'transaction') {
                 const tx = item.data;
                 const isPositive = tx.amount > 0;
-                return (
-                  <div
-                    key={item.id}
-                    className="bg-base-100 p-3 rounded-xl border border-base-200 shadow-sm flex justify-between items-center hover:bg-base-50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-full ${isPositive ? 'bg-success/10 text-success' : 'bg-error/10 text-error'}`}>
-                        {isPositive ? <FaCheckCircle /> : <FaChartLine className="rotate-180" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-bold text-neutral text-sm truncate">{getTxDescription(tx)}</div>
-                        <div className="text-xs text-neutral/50">
-                          {getChildName(tx.child_id)} • {new Date(tx.created_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </div>
-                    <div className={`font-black ${isPositive ? 'text-success' : 'text-error'}`}>
-                      {isPositive ? '+' : ''}{tx.amount}
-                    </div>
-                  </div>
-                );
+                let type: HistoryItemType = 'verified';
+                if (tx.type === 'REWARD_REDEEMED') type = 'redeemed';
+                else if (tx.type === 'MANUAL_ADJ') type = 'manual';
+
+                return {
+                  id: item.id,
+                  type,
+                  title: getTxDescription(tx),
+                  subtitle: `${getChildName(tx.child_id)} • ${new Date(tx.created_at).toLocaleDateString()}`,
+                  amount: tx.amount,
+                  amountLabel: tx.type === 'TASK_VERIFIED' ? 'Done' : tx.type === 'REWARD_REDEEMED' ? 'Redeemed' : '-',
+                  status: isPositive ? 'success' : 'error',
+                  // onClick: () => ... (Admin could open details later)
+                };
               } else {
                 const log = item.data;
-                return (
-                  <div
-                    key={item.id}
-                    className="bg-base-100 p-3 rounded-xl border border-base-200 shadow-sm flex justify-between items-center opacity-70 hover:bg-base-50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-full bg-neutral/10 text-neutral/50">
-                        {log.status === 'EXCUSED' ? <FaCheckCircle /> : <FaExclamationTriangle />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-bold text-neutral text-sm truncate">{getRejectedMissionDetails(log)}</div>
-                        <div className="text-xs text-neutral/50">
-                          {getChildName(log.child_id)} • {log.status} • {new Date(log.completed_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="font-bold text-neutral/40 text-xs uppercase">
-                      {log.status}
-                    </div>
-                  </div>
-                );
+                let type: HistoryItemType = 'rejected';
+                let status: 'error' | 'warning' | 'neutral' = 'error';
+
+                if (log.status === 'FAILED') {
+                  type = 'failed';
+                  status = 'neutral';
+                } else if (log.status === 'EXCUSED') {
+                  type = 'excused';
+                  status = 'warning';
+                }
+
+                return {
+                  id: item.id,
+                  type,
+                  title: getRejectedMissionDetails(log),
+                  subtitle: `${getChildName(log.child_id)} • ${log.status} • ${new Date(log.completed_at).toLocaleDateString()}`,
+                  amountLabel: log.status,
+                  status,
+                  // onClick: ...
+                };
               }
             })}
-          </div>
-        )}
-
-        {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-4 mt-4">
-            <button
-              className="btn btn-sm btn-circle"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            >
-              ❮
-            </button>
-            <span className="text-sm font-bold text-neutral/60">
-              Page {currentPage} of {totalPages}
-            </span>
-            <button
-              className="btn btn-sm btn-circle"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            >
-              ❯
-            </button>
-          </div>
-        )}
+            emptyMessage="No history found for this period."
+            footer={
+              hasMore && (
+                <Link to="/parent/history" className="btn btn-ghost btn-sm w-full text-neutral/60 mt-2">
+                  Load More
+                </Link>
+              )
+            }
+          />
+        </div>
       </div>
 
       {/* Modals placeholders - In real app, we'd implement these */}

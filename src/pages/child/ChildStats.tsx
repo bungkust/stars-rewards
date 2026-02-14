@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 import { H1Header, ToggleButton } from '../../components/design-system';
-import { FaStar, FaTrophy, FaCheckCircle, FaGift, FaSlidersH, FaTimesCircle, FaChild } from 'react-icons/fa';
+import { FaStar, FaTrophy, FaGift } from 'react-icons/fa';
 import {
   CartesianGrid,
   Line,
@@ -13,8 +13,8 @@ import {
   YAxis,
   type TooltipContentProps,
 } from 'recharts';
-import { AnimatePresence, motion } from 'framer-motion';
 import TaskDetailsModal from '../../components/modals/TaskDetailsModal';
+import HistoryList, { type HistoryItemType } from '../../components/shared/HistoryList';
 import type { CoinTransaction } from '../../types';
 
 type Timeframe = 'week' | 'month';
@@ -329,120 +329,65 @@ const ChildStats = () => {
           <h3 className="text-lg font-bold text-neutral">Recent History</h3>
         </div>
 
-        <div className="flex flex-col gap-3">
-          <AnimatePresence mode="popLayout">
-            {visibleHistory.map(item => {
-              if (item.type === 'transaction') {
-                const transaction = item.data;
-                const details = getTransactionDetails(transaction);
+        <HistoryList
+          items={visibleHistory.map(item => {
+            if (item.type === 'transaction') {
+              const transaction = item.data;
+              const details = getTransactionDetails(transaction);
 
-                let Icon = FaCheckCircle;
-                let iconBg = 'bg-success/10';
-                let iconColor = 'text-success';
+              let type: HistoryItemType = 'verified';
+              if (transaction.type === 'REWARD_REDEEMED') type = 'redeemed';
+              else if (transaction.type === 'MANUAL_ADJ') type = 'manual';
 
-                if (transaction.type === 'REWARD_REDEEMED') {
-                  Icon = FaGift;
-                  iconBg = 'bg-warning/10';
-                  iconColor = 'text-warning';
-                } else if (transaction.type === 'MANUAL_ADJ') {
-                  Icon = FaSlidersH;
-                  iconBg = 'bg-info/10';
-                  iconColor = 'text-info';
-                }
+              return {
+                id: item.id,
+                type,
+                title: details.name,
+                subtitle: formatDate(transaction.created_at),
+                description: details.description,
+                amount: transaction.amount,
+                amountLabel: transaction.type === 'TASK_VERIFIED' ? 'Done' : transaction.type === 'REWARD_REDEEMED' ? 'Redeemed' : '-',
+                status: transaction.amount > 0 ? 'success' : transaction.amount < 0 ? 'error' : 'neutral',
+                onClick: () => handleHistoryItemClick(item)
+              };
+            } else { // rejected_mission
+              const log = item.data;
+              const details = getRejectedMissionDetails(log);
+              const isFailed = log.status === 'FAILED';
+              const isExcused = log.status === 'EXCUSED';
 
-                return (
-                  <motion.div
-                    key={item.id}
-                    layout
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                    className={`flex justify-between items-center border-b border-base-200 pb-3 last:border-none last:pb-0 ${transaction.type === 'TASK_VERIFIED' ? 'cursor-pointer hover:bg-base-200/50 transition-colors rounded-lg px-2 -mx-2' : ''}`}
-                    onClick={() => handleHistoryItemClick(item)}
-                  >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className={`p-2 rounded-full ${iconBg} ${iconColor}`}>
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <div className="flex flex-col flex-1 min-w-0">
-                        <span className="font-bold text-neutral text-sm truncate">{details.name}</span>
-                        <span className="text-xs text-neutral/40">{formatDate(transaction.created_at)}</span>
-                        {details.description && (
-                          <span className="text-xs text-neutral/50 italic mt-0.5">
-                            {details.description}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <span className={`font-bold ${transaction.amount > 0 ? 'text-success' : transaction.amount < 0 ? 'text-error' : 'text-neutral/60'}`}>
-                      {transaction.amount !== 0 ? (
-                        <>{transaction.amount > 0 ? '+' : ''}{transaction.amount}</>
-                      ) : (
-                        <span className="text-xs uppercase">
-                          {transaction.type === 'TASK_VERIFIED' ? 'Done' : transaction.type === 'REWARD_REDEEMED' ? 'Redeemed' : '-'}
-                        </span>
-                      )}
-                    </span>
-                  </motion.div>
-                );
-              } else if (item.type === 'rejected_mission') {
-                const log = item.data;
-                const details = getRejectedMissionDetails(log);
-                const isFailed = log.status === 'FAILED';
-                const isExcused = log.status === 'EXCUSED';
+              let type: HistoryItemType = 'rejected';
+              let status: 'error' | 'warning' | 'neutral' = 'error';
 
-                return (
-                  <motion.div
-                    key={item.id}
-                    layout
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                    className="flex justify-between items-center border-b border-base-200 pb-3 last:border-none last:pb-0 cursor-pointer hover:bg-base-200/50 transition-colors rounded-lg px-2 -mx-2"
-                    onClick={() => handleHistoryItemClick(item)}
-                  >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className={`p-2 rounded-full ${isFailed ? 'bg-base-200 text-neutral/60' : isExcused ? 'bg-warning/10 text-warning' : 'bg-error/10 text-error'}`}>
-                        {isExcused ? <FaChild className="w-4 h-4" /> : <FaTimesCircle className="w-4 h-4" />}
-                      </div>
-                      <div className="flex flex-col min-w-0 flex-1">
-                        <span className="font-bold text-neutral text-sm truncate">{details.name}</span>
-                        <span className="text-xs text-neutral/40">{formatDate(log.completed_at)}</span>
-                        {log.rejection_reason && !isExcused && (
-                          <span className={`text-xs italic mt-0.5 ${isFailed ? 'text-neutral/60' : 'text-error'}`}>
-                            {isFailed ? 'Missed Deadline' : `Reason: ${log.rejection_reason}`}
-                          </span>
-                        )}
-                        {isExcused && (
-                          <span className="text-xs italic mt-0.5 text-warning">
-                            {log.notes || 'No reason provided'}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <span className={`font-bold ${isFailed ? 'text-neutral/40' : isExcused ? 'text-warning' : 'text-error'}`}>
-                      <span className="text-xs uppercase">{isFailed ? 'Failed' : isExcused ? 'Excused' : 'Rejected'}</span>
-                    </span>
-                  </motion.div>
-                );
-
+              if (isFailed) {
+                type = 'failed';
+                status = 'neutral';
+              } else if (isExcused) {
+                type = 'excused';
+                status = 'warning';
               }
-              return null;
-            })}
-          </AnimatePresence>
 
-          {visibleHistory.length === 0 && (
-            <p className="text-neutral/40 text-center text-sm py-4">No activity in this period.</p>
-          )}
-
-          {combinedHistory.length > 10 && (
-            <Link to="/child/history" className="btn btn-ghost btn-sm w-full text-neutral/60 mt-2">
-              Load More
-            </Link>
-          )}
-        </div>
+              return {
+                id: item.id,
+                type,
+                title: details.name,
+                subtitle: formatDate(log.completed_at),
+                description: isFailed ? 'Missed Deadline' : isExcused ? (log.notes || 'No reason provided') : `Reason: ${log.rejection_reason}`,
+                amountLabel: isFailed ? 'Failed' : isExcused ? 'Excused' : 'Rejected',
+                status,
+                onClick: () => handleHistoryItemClick(item)
+              };
+            }
+          })}
+          emptyMessage="No activity in this period."
+          footer={
+            combinedHistory.length > 10 && (
+              <Link to="/child/history" className="btn btn-ghost btn-sm w-full text-neutral/60 mt-2">
+                Load More
+              </Link>
+            )
+          }
+        />
       </div>
 
       <TaskDetailsModal

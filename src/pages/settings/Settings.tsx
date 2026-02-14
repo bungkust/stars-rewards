@@ -30,7 +30,7 @@ const Settings = () => {
   const [childToDelete, setChildToDelete] = useState<string | null>(null);
   const [restoreData, setRestoreData] = useState<any>(null);
   const [restoreFilename, setRestoreFilename] = useState('');
-  const [appVersion, setAppVersion] = useState('1.0.3'); // Default/Fallback
+  const [appVersion, setAppVersion] = useState(__APP_VERSION__);
 
   useEffect(() => {
     const fetchVersion = async () => {

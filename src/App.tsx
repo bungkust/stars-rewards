@@ -24,6 +24,7 @@ import Welcome from './pages/Welcome';
 import AdminTaskForm from './pages/admin/AdminTaskForm';
 import AdminRewardForm from './pages/admin/AdminRewardForm';
 import CategoryManagement from './pages/admin/CategoryManagement';
+import AdminHistory from './pages/admin/AdminHistory';
 
 import Privacy from './pages/legal/Privacy';
 import Terms from './pages/legal/Terms';
@@ -216,6 +217,13 @@ const AnimatedRoutes = () => {
           <ParentRoute>
             <PageTransition>
               <Stats />
+            </PageTransition>
+          </ParentRoute>
+        } />
+        <Route path="/parent/history" element={
+          <ParentRoute>
+            <PageTransition>
+              <AdminHistory />
             </PageTransition>
           </ParentRoute>
         } />
