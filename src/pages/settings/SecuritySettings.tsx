@@ -70,8 +70,8 @@ const SecuritySettings = () => {
     return (
         <div className="flex flex-col gap-6 pb-24">
             <div className="flex items-center gap-2">
-                <button onClick={() => navigate(-1)} className="btn btn-ghost btn-sm -ml-2">
-                    <FaChevronRight className="transform rotate-180" /> Back
+                <button onClick={() => navigate(-1)} className="btn btn-ghost btn-circle btn-sm -ml-2">
+                    <FaChevronRight className="transform rotate-180" />
                 </button>
                 <H1Header>Security</H1Header>
             </div>
