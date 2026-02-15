@@ -11,6 +11,7 @@ import { H1Header } from '../../components/design-system/H1Header';
 import { IconWrapper } from '../../components/design-system/IconWrapper';
 import PatternSetupModal from '../../components/modals/PatternSetupModal';
 import PinSetupModal from '../../components/modals/PinSetupModal';
+import BiometricConsentModal from '../../components/modals/BiometricConsentModal';
 
 const SecuritySettings = () => {
     const navigate = useNavigate();
@@ -25,6 +26,7 @@ const SecuritySettings = () => {
     const [isPatternModalOpen, setIsPatternModalOpen] = useState(false);
     const [isPinModalOpen, setIsPinModalOpen] = useState(false);
     const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
+    const [isConsentModalOpen, setIsConsentModalOpen] = useState(false);
 
     useEffect(() => {
         const checkBiometric = async () => {
@@ -88,9 +90,9 @@ const SecuritySettings = () => {
                                 <FaFingerprint size={20} />
                             </div>
                             <div>
-                                <p className="font-bold text-neutral">Enable Biometrics</p>
+                                <p className="font-bold text-neutral">Enable Fingerprint</p>
                                 <p className="text-xs text-neutral/60">
-                                    {isBiometricAvailable ? 'Allow using Fingerprint/Face ID' : 'Not available on this device'}
+                                    {isBiometricAvailable ? 'Allow using Fingerprint login' : 'Not available on this device'}
                                 </p>
                             </div>
                         </div>
@@ -100,10 +102,14 @@ const SecuritySettings = () => {
                             checked={biometricEnabled}
                             onChange={(e) => {
                                 const checked = e.target.checked;
-                                setBiometricEnabled(checked);
-                                // If disabling biometric and it was the preferred method, revert to PIN
-                                if (!checked && preferredAuthMethod === 'biometric') {
-                                    setPreferredAuthMethod('pin');
+                                if (checked) {
+                                    setIsConsentModalOpen(true);
+                                } else {
+                                    setBiometricEnabled(false);
+                                    // If disabling biometric and it was the preferred method, revert to PIN
+                                    if (preferredAuthMethod === 'biometric') {
+                                        setPreferredAuthMethod('pin');
+                                    }
                                 }
                             }}
                             disabled={!isBiometricAvailable && Capacitor.isNativePlatform()}
@@ -160,7 +166,7 @@ const SecuritySettings = () => {
                                     <FaFingerprint size={20} />
                                 </div>
                                 <div>
-                                    <span className="font-bold text-neutral">Biometric</span>
+                                    <span className="font-bold text-neutral">Fingerprint Login</span>
                                     {(!isBiometricAvailable) && <p className="text-xs text-neutral/60">Not available</p>}
                                     {(isBiometricAvailable && !biometricEnabled) && <p className="text-xs text-neutral/60">Enable above first</p>}
                                 </div>
@@ -222,6 +228,15 @@ const SecuritySettings = () => {
             <PinSetupModal
                 isOpen={isPinModalOpen}
                 onClose={() => setIsPinModalOpen(false)}
+            />
+
+            <BiometricConsentModal
+                isOpen={isConsentModalOpen}
+                onClose={() => setIsConsentModalOpen(false)}
+                onConfirm={() => {
+                    setBiometricEnabled(true);
+                    setIsConsentModalOpen(false);
+                }}
             />
         </div>
     );

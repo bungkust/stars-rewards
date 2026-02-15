@@ -74,9 +74,9 @@ const AdminPinModal = ({ isOpen, onClose, onSuccess }: AdminPinModalProps) => {
     try {
       await NativeBiometric.verifyIdentity({
         reason: "Access Parent Features",
-        title: "Parent Authentication",
+        title: "Fingerprint Authentication",
         subtitle: "Log in to access parent features",
-        description: "Use your fingerprint or face to authenticate",
+        description: "Use your fingerprint to authenticate",
       });
 
       handleSuccess();
