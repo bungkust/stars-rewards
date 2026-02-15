@@ -57,6 +57,7 @@ export interface AppState {
   checkPendingAutoApprove: () => Promise<void>;
   getTasksByChildId: (childId: string) => Task[];
   addChild: (child: Omit<Child, 'id' | 'parent_id' | 'balance' | 'current_balance'>) => Promise<{ error: any }>;
+  updateChild: (childId: string, updates: Partial<Child>) => Promise<{ error: any }>;
   deleteChild: (childId: string) => Promise<{ error: any }>;
   addCategory: (category: Omit<Category, 'id'>) => Promise<{ error: any }>;
   updateCategory: (categoryId: string, updates: Partial<Category>) => Promise<{ error: any }>;
@@ -581,6 +582,24 @@ export const useAppStore = create<AppState>()(
 
           return { error: null };
         } catch (error) {
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      updateChild: async (childId, updates) => {
+        set({ isLoading: true });
+        try {
+          const updatedChild = await dataService.updateChild(childId, updates);
+          if (!updatedChild) throw new Error('Failed to update child');
+
+          set((state) => ({
+            children: state.children.map((c) => (c.id === childId ? updatedChild : c)),
+          }));
+          return { error: null };
+        } catch (error) {
+          console.error('Error updating child:', error);
           return { error };
         } finally {
           set({ isLoading: false });

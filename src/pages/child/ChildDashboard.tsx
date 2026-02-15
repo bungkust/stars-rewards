@@ -5,14 +5,14 @@ import { motion, type PanInfo } from 'framer-motion';
 import { ToggleButton } from '../../components/design-system';
 import { parseRRule, isDateValid } from '../../utils/recurrence';
 import { getTodayLocalStart, getLocalStartOfDay, getLocalDateString } from '../../utils/timeUtils';
-import AvatarSelectionModal from '../../components/modals/AvatarSelectionModal';
+import EditChildModal from '../../components/modals/EditChildModal';
 import TaskCompletionModal from '../../components/modals/TaskCompletionModal';
 import TaskRejectionDetailsModal from '../../components/modals/TaskRejectionDetailsModal';
 import ExemptionModal from '../../components/modals/ExemptionModal';
 import TaskDetailsModal from '../../components/modals/TaskDetailsModal';
 
 const ChildDashboard = () => {
-  const { activeChildId, children, getTasksByChildId, updateChildAvatar, completeTask, updateTaskProgress, isLoading, childLogs } = useAppStore();
+  const { activeChildId, children, getTasksByChildId, updateChild, deleteChild, completeTask, updateTaskProgress, isLoading, childLogs } = useAppStore();
   const child = children.find(c => c.id === activeChildId);
   const allTasks = activeChildId ? getTasksByChildId(activeChildId) : [];
 
@@ -230,10 +230,16 @@ const ChildDashboard = () => {
     setIsDetailsModalOpen(true);
   };
 
-  const handleAvatarSave = async (newAvatar: string) => {
+  const handleAvatarSave = async (childId: string, updates: any) => {
     if (child) {
-      await updateChildAvatar(child.id, newAvatar);
+      await updateChild(childId, updates);
     }
+  };
+
+  const handleChildDelete = async (childId: string) => {
+    // In dashboard, deleting active child might require redirect or state update
+    await deleteChild(childId);
+    // Logic to handle "no active child" will be handled by store/App
   };
 
   const handleTaskComplete = async (task: { id: string, name: string, reward_value: number, max_completions_per_day?: number }) => {
@@ -330,12 +336,13 @@ const ChildDashboard = () => {
         </div>
       </div>
 
-      {/* Avatar Selection Modal */}
-      <AvatarSelectionModal
+      {/* Edit Child Modal */}
+      <EditChildModal
         isOpen={isAvatarModalOpen}
-        currentAvatar={child.avatar_url}
         onClose={() => setIsAvatarModalOpen(false)}
+        child={child}
         onSave={handleAvatarSave}
+        onDelete={handleChildDelete}
       />
 
       {/* Task Completion Modal */}

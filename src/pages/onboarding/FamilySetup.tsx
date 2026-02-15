@@ -124,6 +124,13 @@ const FamilySetup = () => {
             </div>
           </div>
 
+          <div className="text-center -mt-2">
+            <p className="text-xs text-neutral/50">
+              You can switch to <strong>Pattern</strong> or <strong>Biometric</strong> authentication later in <br />
+              <span className="font-bold">Settings &gt; Security</span>
+            </p>
+          </div>
+
           {error && <p className="text-error text-sm">{error}</p>}
 
           <PrimaryButton

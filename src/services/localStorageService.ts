@@ -113,7 +113,18 @@ export const localStorageService = {
         return db.children;
     },
 
+    updateChild: async (childId: string, updates: Partial<Child>): Promise<Child | null> => {
+        const db = getDB();
+        const childIndex = db.children.findIndex(c => c.id === childId);
+        if (childIndex === -1) return null;
+
+        db.children[childIndex] = { ...db.children[childIndex], ...updates };
+        saveDB(db);
+        return db.children[childIndex];
+    },
+
     updateChildAvatar: async (childId: string, avatarUrl: string): Promise<boolean> => {
+        // Deprecated, use updateChild instead, but keeping for compatibility if needed temporarily
         const db = getDB();
         const childIndex = db.children.findIndex(c => c.id === childId);
         if (childIndex === -1) return false;

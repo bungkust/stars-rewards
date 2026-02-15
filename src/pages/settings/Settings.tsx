@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import { Link } from 'react-router-dom';
 import { FaUsers, FaBell, FaShieldAlt, FaDatabase, FaCloudDownloadAlt, FaFileUpload, FaChevronRight, FaExclamationTriangle, FaPlus, FaShapes, FaFingerprint } from 'react-icons/fa';
 import { useAppStore } from '../../store/useAppStore';
+import type { Child } from '../../types';
 import { AppCard } from '../../components/design-system/AppCard';
 import { H1Header } from '../../components/design-system/H1Header';
 import { IconWrapper } from '../../components/design-system/IconWrapper';
@@ -11,6 +12,7 @@ import RestoreConfirmationModal from '../../components/modals/RestoreConfirmatio
 import BackupConfirmationModal from '../../components/modals/BackupConfirmationModal';
 import ResetConfirmationModal from '../../components/modals/ResetConfirmationModal';
 import AlertModal from '../../components/design-system/AlertModal';
+import EditChildModal from '../../components/modals/EditChildModal';
 import { browserService } from '../../services/browserService';
 
 const Settings = () => {
@@ -21,6 +23,8 @@ const Settings = () => {
     children,
     notificationsEnabled,
     setNotificationsEnabled,
+    updateChild,
+    deleteChild
   } = useAppStore();
 
   const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
@@ -28,6 +32,11 @@ const Settings = () => {
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isDeleteChildModalOpen, setIsDeleteChildModalOpen] = useState(false);
   const [childToDelete, setChildToDelete] = useState<string | null>(null);
+
+  // Avatar Editing State
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const [editingChild, setEditingChild] = useState<Child | null>(null);
+
   const [restoreData, setRestoreData] = useState<any>(null);
   const [restoreFilename, setRestoreFilename] = useState('');
   const [appVersion, setAppVersion] = useState(__APP_VERSION__);
@@ -103,6 +112,30 @@ const Settings = () => {
           <div className="flex justify-between items-center p-3 hover:bg-base-200 rounded-lg transition-colors">
             <span className="text-neutral/60 font-medium">Children Linked</span>
             <span className="font-bold text-neutral">{children.length} / 4</span>
+          </div>
+
+          <div className="flex flex-col gap-2 mt-2 px-1">
+            {children.map(child => (
+              <div key={child.id} className="flex items-center justify-between p-2 hover:bg-base-200 rounded-lg transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="avatar">
+                    <div className="w-8 h-8 rounded-full ring ring-base-200 ring-offset-1">
+                      <img src={child.avatar_url} alt={child.name} />
+                    </div>
+                  </div>
+                  <span className="font-medium text-sm text-neutral">{child.name}</span>
+                </div>
+                <button
+                  onClick={() => {
+                    setEditingChild(child);
+                    setIsAvatarModalOpen(true);
+                  }}
+                  className="btn btn-ghost btn-xs text-primary"
+                >
+                  Edit
+                </button>
+              </div>
+            ))}
           </div>
 
           {children.length < 4 && (
@@ -426,6 +459,23 @@ const Settings = () => {
           }
         }}
       />
+
+      {editingChild && (
+        <EditChildModal
+          isOpen={isAvatarModalOpen}
+          onClose={() => {
+            setIsAvatarModalOpen(false);
+            setEditingChild(null);
+          }}
+          child={editingChild}
+          onSave={async (childId, updates) => {
+            await updateChild(childId, updates);
+          }}
+          onDelete={async (childId) => {
+            await deleteChild(childId);
+          }}
+        />
+      )}
 
     </div>
   );

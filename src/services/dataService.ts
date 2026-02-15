@@ -17,6 +17,13 @@ export const dataService = {
   },
 
   /**
+   * Updates a child profile.
+   */
+  updateChild: async (childId: string, updates: Partial<Child>): Promise<Child | null> => {
+    return localStorageService.updateChild(childId, updates);
+  },
+
+  /**
    * Adds a new category.
    */
   addCategory: async (_parentId: string, category: Omit<Category, 'id'>): Promise<Category | null> => {
