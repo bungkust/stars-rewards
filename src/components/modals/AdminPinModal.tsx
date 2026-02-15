@@ -19,10 +19,9 @@ const AdminPinModal = ({ isOpen, onClose, onSuccess }: AdminPinModalProps) => {
   const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
   const { verifyPin, verifyPattern, toggleAdminMode, biometricEnabled, parentPattern, preferredAuthMethod } = useAppStore();
 
-  // 'pin' | 'pattern' | 'biometric'. Logic: if pattern is set, check preference.
-  // If preference is 'biometric', defaults to PIN under the hood for the UI state if auth fails, 
-  // but triggers biometric immediately.
-  const [authMode, setAuthMode] = useState<'pin' | 'pattern'>(() => {
+  // 'pin' | 'pattern' | 'biometric'.
+  const [authMode, setAuthMode] = useState<'pin' | 'pattern' | 'biometric'>(() => {
+    if (biometricEnabled && preferredAuthMethod === 'biometric') return 'biometric';
     if (parentPattern && preferredAuthMethod === 'pattern') return 'pattern';
     return 'pin';
   });
@@ -43,9 +42,17 @@ const AdminPinModal = ({ isOpen, onClose, onSuccess }: AdminPinModalProps) => {
           if (isOpen && biometricEnabled && preferredAuthMethod === 'biometric') {
             performBiometricAuth();
           }
+        } else {
+          // If biometric was preferred but not available, fallback to PIN/Pattern
+          if (authMode === 'biometric') {
+            setAuthMode(parentPattern && preferredAuthMethod === 'pattern' ? 'pattern' : 'pin');
+          }
         }
       } catch (e) {
         console.log('Biometric not available:', e);
+        if (authMode === 'biometric') {
+          setAuthMode(parentPattern && preferredAuthMethod === 'pattern' ? 'pattern' : 'pin');
+        }
       }
     };
 
@@ -55,10 +62,11 @@ const AdminPinModal = ({ isOpen, onClose, onSuccess }: AdminPinModalProps) => {
   }, [isOpen, biometricEnabled, preferredAuthMethod]);
 
   // Update authMode when modal opens or preference changes
-  // This ensures if user changes settings and comes back, it reflects immediately
   useEffect(() => {
     if (isOpen) {
-      if (parentPattern && preferredAuthMethod === 'pattern') {
+      if (biometricEnabled && preferredAuthMethod === 'biometric') {
+        setAuthMode('biometric');
+      } else if (parentPattern && preferredAuthMethod === 'pattern') {
         setAuthMode('pattern');
       } else {
         setAuthMode('pin');
@@ -67,7 +75,7 @@ const AdminPinModal = ({ isOpen, onClose, onSuccess }: AdminPinModalProps) => {
       setPin('');
       setPath([]);
     }
-  }, [isOpen, parentPattern, preferredAuthMethod]);
+  }, [isOpen, parentPattern, preferredAuthMethod, biometricEnabled]);
 
 
   const performBiometricAuth = async () => {
@@ -82,7 +90,10 @@ const AdminPinModal = ({ isOpen, onClose, onSuccess }: AdminPinModalProps) => {
       handleSuccess();
     } catch (error) {
       console.log("Biometric authentication failed or cancelled", error);
-      // Don't show error state, just let them use PIN
+      // Fallback to manual if cancelled or failed
+      if (authMode === 'biometric') {
+        setAuthMode(parentPattern && preferredAuthMethod === 'pattern' ? 'pattern' : 'pin');
+      }
     }
   };
 
@@ -134,11 +145,35 @@ const AdminPinModal = ({ isOpen, onClose, onSuccess }: AdminPinModalProps) => {
           <div className="text-center mb-8">
             <h3 className="text-2xl font-bold text-neutral mb-2">Parent Access</h3>
             <p className="text-neutral/60">
-              {authMode === 'pin' ? 'Enter PIN to continue' : 'Draw Pattern to continue'}
+              {authMode === 'biometric' ? 'Authenticate with Fingerprint' :
+                authMode === 'pin' ? 'Enter PIN to continue' : 'Draw Pattern to continue'}
             </p>
           </div>
 
-          {authMode === 'pin' ? (
+          {authMode === 'biometric' ? (
+            <div className="flex flex-col items-center gap-8 py-4">
+              <div
+                className="w-32 h-32 rounded-full bg-primary/10 flex items-center justify-center text-primary animate-pulse cursor-pointer"
+                onClick={performBiometricAuth}
+              >
+                <BiFingerprint size={64} />
+              </div>
+              <div className="flex flex-col gap-3 w-full">
+                <button
+                  className="btn btn-primary w-full shadow-lg"
+                  onClick={performBiometricAuth}
+                >
+                  Use Fingerprint
+                </button>
+                <button
+                  className="btn btn-ghost btn-sm text-neutral/40"
+                  onClick={() => setAuthMode(parentPattern ? 'pattern' : 'pin')}
+                >
+                  Use {parentPattern ? 'Pattern' : 'PIN'} instead
+                </button>
+              </div>
+            </div>
+          ) : authMode === 'pin' ? (
             <form onSubmit={handleSubmit} className="flex flex-col gap-6">
               <input
                 type="password"
@@ -171,6 +206,25 @@ const AdminPinModal = ({ isOpen, onClose, onSuccess }: AdminPinModalProps) => {
               {error && (
                 <p className="text-error text-sm text-center">Incorrect PIN. Try again.</p>
               )}
+
+              {isBiometricAvailable && biometricEnabled && (
+                <button
+                  type="button"
+                  onClick={() => setAuthMode('biometric')}
+                  className="btn btn-ghost btn-sm text-primary"
+                >
+                  Use Fingerprint
+                </button>
+              )}
+              {parentPattern && (
+                <button
+                  type="button"
+                  onClick={() => setAuthMode('pattern')}
+                  className="btn btn-ghost btn-sm text-neutral/40"
+                >
+                  Use Pattern
+                </button>
+              )}
             </form>
           ) : (
             <div className="flex flex-col items-center gap-4">
@@ -192,18 +246,22 @@ const AdminPinModal = ({ isOpen, onClose, onSuccess }: AdminPinModalProps) => {
               {error && (
                 <p className="text-error text-sm text-center">Incorrect Pattern. Try again.</p>
               )}
-            </div>
-          )}
 
-          {isBiometricAvailable && biometricEnabled && (
-            <div className="flex justify-center w-full mt-6">
+              {isBiometricAvailable && biometricEnabled && (
+                <button
+                  type="button"
+                  onClick={() => setAuthMode('biometric')}
+                  className="btn btn-ghost btn-sm text-primary mt-2"
+                >
+                  Use Fingerprint
+                </button>
+              )}
               <button
                 type="button"
-                onClick={performBiometricAuth}
-                className="btn btn-circle btn-lg btn-ghost border-2 border-base-200 text-primary"
-                title="Use Biometric Authentication"
+                onClick={() => setAuthMode('pin')}
+                className="btn btn-ghost btn-sm text-neutral/40 mt-2"
               >
-                <BiFingerprint size={32} />
+                Use PIN
               </button>
             </div>
           )}
