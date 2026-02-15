@@ -1,10 +1,9 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { NativeBiometric } from 'capacitor-native-biometric';
 import { Device } from '@capacitor/device';
 import { useAppStore } from '../../store/useAppStore';
-import { BiFingerprint, BiKey, BiGridAlt } from 'react-icons/bi';
+import { BiFingerprint } from 'react-icons/bi';
 import { PatternLock } from '../common/PatternLock';
 
 interface AdminPinModalProps {
@@ -53,21 +52,25 @@ const AdminPinModal = ({ isOpen, onClose, onSuccess }: AdminPinModalProps) => {
     if (isOpen) {
       checkBiometric();
     }
-  }, [isOpen, biometricEnabled, preferredAuthMethod]); // Added preferredAuthMethod dependency
+  }, [isOpen, biometricEnabled, preferredAuthMethod]);
+
+  // Update authMode when modal opens or preference changes
+  // This ensures if user changes settings and comes back, it reflects immediately
+  useEffect(() => {
+    if (isOpen) {
+      if (parentPattern && preferredAuthMethod === 'pattern') {
+        setAuthMode('pattern');
+      } else {
+        setAuthMode('pin');
+      }
+      setError(false);
+      setPin('');
+      setPath([]);
+    }
+  }, [isOpen, parentPattern, preferredAuthMethod]);
+
 
   const performBiometricAuth = async () => {
-    // Double check enabled state (though effect handles it, button click might need it)
-    // Actually button should only be shown if we want to allow manual trigger even if auto is off?
-    // User requirement: "Explicit Opt-In".
-    // So if biometricEnabled is false, we should probably NOT show the button either,
-    // OR we show it but use it as a way to "Enable once"? 
-    // Sticking to: consistently respect the setting.
-    // If setting is off, maybe the button shouldn't be there or clicking it prompts to enable?
-    // For now, let's allow the button to work manually if hardware is available, 
-    // but ONLY auto-prompt if enabled. 
-    // Wait, if I disable it in settings, I probably don't want to see it.
-    // Let's hide the button if !biometricEnabled too.
-
     try {
       await NativeBiometric.verifyIdentity({
         reason: "Access Parent Features",
@@ -135,30 +138,10 @@ const AdminPinModal = ({ isOpen, onClose, onSuccess }: AdminPinModalProps) => {
             </p>
           </div>
 
-          {/* Toggle between PIN and Pattern if pattern is set */}
-          {parentPattern && (
-            <div className="flex justify-center mb-6">
-              <div className="tabs tabs-boxed bg-base-200 p-1">
-                <a
-                  className={`tab ${authMode === 'pin' ? 'tab-active' : ''} `}
-                  onClick={() => { setAuthMode('pin'); setError(false); setPin(''); }}
-                >
-                  <BiKey className="mr-1" /> PIN
-                </a>
-                <a
-                  className={`tab ${authMode === 'pattern' ? 'tab-active' : ''} `}
-                  onClick={() => { setAuthMode('pattern'); setError(false); }}
-                >
-                  <BiGridAlt className="mr-1" /> Pattern
-                </a>
-              </div>
-            </div>
-          )}
-
           {authMode === 'pin' ? (
             <form onSubmit={handleSubmit} className="flex flex-col gap-6">
               <input
-                type="password" // Hide the PIN
+                type="password"
                 inputMode="numeric"
                 pattern="[0-9]*"
                 maxLength={4}
@@ -182,7 +165,7 @@ const AdminPinModal = ({ isOpen, onClose, onSuccess }: AdminPinModalProps) => {
                 }}
                 className={`input input-lg text-center text-3xl font-bold w-full bg-base-200 focus:bg-white transition-all tracking-widest ${error ? 'input-error animate-shake' : 'input-primary'}`}
                 placeholder="••••"
-                autoFocus={!isBiometricAvailable} // Only autofocus if no bio prompt
+                autoFocus={!isBiometricAvailable || preferredAuthMethod !== 'biometric'}
               />
 
               {error && (
@@ -191,7 +174,7 @@ const AdminPinModal = ({ isOpen, onClose, onSuccess }: AdminPinModalProps) => {
             </form>
           ) : (
             <div className="flex flex-col items-center gap-4">
-              <div className={`p - 4 rounded - 3xl bg - base - 200 / 50 ${error ? 'animate-shake border border-error' : ''} `}>
+              <div className={`p-4 rounded-3xl bg-base-200/50 ${error ? 'animate-shake border border-error' : ''}`}>
                 <PatternLock
                   width={240}
                   path={path}
