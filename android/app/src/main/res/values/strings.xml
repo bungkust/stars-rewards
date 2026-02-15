@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name">Star Habit</string>
-    <string name="title_activity_main">Star Habit</string>
+    <string name="title_activity_main"></string>
     <string name="package_name">com.kulinotech.starhabit</string>
     <string name="custom_url_scheme">com.kulinotech.starhabit</string>
 </resources>

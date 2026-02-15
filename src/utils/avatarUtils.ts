@@ -1,4 +1,3 @@
-import { AppError } from "../types/error";
 
 /**
  * Downloads an SVG image from a URL and converts it to a Data URI (Base64).

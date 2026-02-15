@@ -26,9 +26,9 @@ export const generateBackupData = (state: AppState): string => {
             // Settings
             isAdminMode: state.isAdminMode,
             notificationsEnabled: state.notificationsEnabled,
-            adminName: state.adminName,
+            parentName: state.parentName,
             familyName: state.familyName,
-            adminPin: state.adminPin,
+            parentPin: state.parentPin,
             onboardingStep: state.onboardingStep,
             lastMissedCheckDate: state.lastMissedCheckDate,
             userProfile: state.userProfile,

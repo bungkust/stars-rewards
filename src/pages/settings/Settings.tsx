@@ -16,7 +16,7 @@ import { browserService } from '../../services/browserService';
 const Settings = () => {
   const {
     familyName,
-    adminName,
+    parentName,
     userProfile,
     children,
     notificationsEnabled,
@@ -64,14 +64,14 @@ const Settings = () => {
 
   // Mock user data for display
   const user = {
-    name: adminName || 'Parent',
+    name: parentName || 'Parent',
     email: 'Offline User',
     childCount: children.length,
   };
 
   const familySummary = {
     familyLabel: familyName || userProfile?.family_name || 'Not set yet',
-    parentLabel: adminName || userProfile?.parent_name || 'Not set yet',
+    parentLabel: parentName || userProfile?.parent_name || 'Not set yet',
     parentEmail: user.email,
     childCount: user.childCount,
   };
@@ -360,7 +360,7 @@ const Settings = () => {
           const backup = generateBackupData(state);
 
           // Generate filename: StarsRewards_[FamilyName]_[Children]_[Date]_[Time].json
-          const familyPart = state.familyName || state.adminName || 'Family';
+          const familyPart = state.familyName || state.parentName || 'Family';
           const childrenPart = state.children.length > 0
             ? state.children.map(c => c.name).join('-')
             : 'NoChildren';

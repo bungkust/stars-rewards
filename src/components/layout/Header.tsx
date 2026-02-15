@@ -40,10 +40,10 @@ const Header = ({ onParentLoginClick, onSettingsClick, onChildSelectClick }: Hea
 
   return (
     <div
-      className={`navbar fixed top-0 left-0 right-0 z-50 px-4 h-auto min-h-16 pt-[calc(env(safe-area-inset-top)+2rem)] pb-2 ${headerGradient} backdrop-blur-sm shadow-sm`}
+      className={`navbar fixed top-0 left-0 right-0 z-50 px-4 h-auto pt-[env(safe-area-inset-top)] pb-2 ${headerGradient} backdrop-blur-sm shadow-sm`}
     >
       <div className="flex-1">
-        {activeChild && !isAdminMode ? (
+        {activeChild && !isAdminMode && (
           <div
             className="btn btn-ghost gap-2 normal-case hover:bg-transparent cursor-default"
           >
@@ -57,10 +57,6 @@ const Header = ({ onParentLoginClick, onSettingsClick, onChildSelectClick }: Hea
             </div>
             <span className={`text-lg font-bold ${titleColor}`}>{activeChild.name}</span>
           </div>
-        ) : (
-          <p className="text-lg font-bold text-primary truncate">
-            {isAdminMode ? 'Parent Dashboard' : (activeChild ? activeChild.name : 'Stars Rewards')}
-          </p>
         )}
       </div>
       <div className="flex-none">

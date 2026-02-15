@@ -13,8 +13,8 @@ export interface AppState {
   // State
   activeChildId: string | null;
   isAdminMode: boolean;
-  adminPin: string | null;
-  adminName?: string;
+  parentPin: string | null;
+  parentName?: string;
   familyName?: string;
   notificationsEnabled: boolean;
   lastMissedCheckDate?: string; // ISO Date string (YYYY-MM-DD)
@@ -41,7 +41,7 @@ export interface AppState {
   toggleAdminMode: (isAdmin: boolean) => void;
   verifyPin: (pin: string) => boolean;
   setParentPin: (pin: string) => void;
-  setAdminName: (name: string) => void;
+  setParentName: (name: string) => void;
   setFamilyName: (name: string) => void;
 
   // Data Actions
@@ -131,7 +131,7 @@ export const useAppStore = create<AppState>()(
       },
 
       setParentPin: (pin) => set({ parentPin: pin }),
-      setAdminName: (name) => set({ adminName: name }),
+      setParentName: (name) => set({ parentName: name }),
       setFamilyName: (name) => set({ familyName: name }),
       setNotificationsEnabled: (value) => set({ notificationsEnabled: value }),
 
@@ -488,7 +488,7 @@ export const useAppStore = create<AppState>()(
           if (profile) {
             if (profile.pin_admin) set({ parentPin: profile.pin_admin });
             if (profile.family_name) set({ familyName: profile.family_name });
-            if (profile.parent_name) set({ adminName: profile.parent_name });
+            if (profile.parent_name) set({ parentName: profile.parent_name });
           }
 
           return profile;
@@ -509,7 +509,7 @@ export const useAppStore = create<AppState>()(
             userProfile: profile,
             parentPin: pin,
             familyName: familyName,
-            adminName: parentName,
+            parentName: parentName,
           });
 
           return { error: null };
@@ -548,7 +548,7 @@ export const useAppStore = create<AppState>()(
         try {
           await localStorageService.updateProfile({ parent_name: name });
 
-          set({ adminName: name });
+          set({ parentName: name });
           set((state) => ({
             userProfile: state.userProfile ? { ...state.userProfile, parent_name: name } : null
           }));
@@ -1172,7 +1172,7 @@ export const useAppStore = create<AppState>()(
       name: 'stars-rewards-storage',
       partialize: (state) => ({
         parentPin: state.parentPin,
-        adminName: state.adminName,
+        parentName: state.parentName,
         familyName: state.familyName,
         onboardingStep: state.onboardingStep,
         lastMissedCheckDate: state.lastMissedCheckDate,

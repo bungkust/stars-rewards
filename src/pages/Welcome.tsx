@@ -15,7 +15,7 @@ const Welcome = () => {
     const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
 
     return (
-        <div className="min-h-screen flex flex-col bg-base-100 relative overflow-hidden">
+        <div className="min-h-screen flex flex-col bg-base-100 relative overflow-hidden pt-[env(safe-area-inset-top)]">
             {/* Background Elements */}
             <div className="absolute inset-0 bg-gradient-to-b from-blue-50 to-white opacity-50" />
 

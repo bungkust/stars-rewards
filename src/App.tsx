@@ -68,8 +68,9 @@ function App() {
 
     // Configure StatusBar
     if (Capacitor.isNativePlatform()) {
-      // Android 15+ handles edge-to-edge by default. We just need to ensure correct icon style.
-      StatusBar.setStyle({ style: Style.Light }).catch(() => { });
+      StatusBar.setOverlaysWebView({ overlay: true }).catch(() => { });
+      StatusBar.setBackgroundColor({ color: '#ffffff' }).catch(() => { });
+      StatusBar.setStyle({ style: Style.Dark }).catch(() => { });
     }
 
     // Listen for App Resume (Foreground)
