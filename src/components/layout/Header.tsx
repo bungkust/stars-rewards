@@ -58,6 +58,11 @@ const Header = ({ onParentLoginClick, onSettingsClick, onChildSelectClick }: Hea
             <span className={`text-lg font-bold ${titleColor}`}>{activeChild.name}</span>
           </div>
         )}
+        {isAdminMode && (
+          <div className="flex items-center gap-2">
+            <span className={`text-xl font-bold ${titleColor}`}>Parent Dashboard</span>
+          </div>
+        )}
       </div>
       <div className="flex-none">
         <div
