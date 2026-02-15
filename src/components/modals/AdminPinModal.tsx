@@ -1,7 +1,11 @@
-import { Fragment, useState } from 'react';
+
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Dialog, Transition } from '@headlessui/react';
+import { NativeBiometric } from 'capacitor-native-biometric';
+import { Device } from '@capacitor/device';
 import { useAppStore } from '../../store/useAppStore';
+import { BiFingerprint, BiKey, BiGridAlt } from 'react-icons/bi';
+import { PatternLock } from '../common/PatternLock';
 
 interface AdminPinModalProps {
   isOpen: boolean;
@@ -12,102 +16,218 @@ interface AdminPinModalProps {
 const AdminPinModal = ({ isOpen, onClose, onSuccess }: AdminPinModalProps) => {
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
-  const { verifyPin } = useAppStore();
+  const [path, setPath] = useState<number[]>([]);
+  const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
+  const { verifyPin, verifyPattern, toggleAdminMode, biometricEnabled, parentPattern, preferredAuthMethod } = useAppStore();
+
+  // 'pin' | 'pattern' | 'biometric'. Logic: if pattern is set, check preference.
+  // If preference is 'biometric', defaults to PIN under the hood for the UI state if auth fails, 
+  // but triggers biometric immediately.
+  const [authMode, setAuthMode] = useState<'pin' | 'pattern'>(() => {
+    if (parentPattern && preferredAuthMethod === 'pattern') return 'pattern';
+    return 'pin';
+  });
 
   const navigate = useNavigate();
+
+  // Check for Biometric Availability on Mount
+  useEffect(() => {
+    const checkBiometric = async () => {
+      try {
+        const info = await Device.getInfo();
+        if (info.platform === 'web') return; // Skip on web
+
+        const result = await NativeBiometric.isAvailable();
+        if (result.isAvailable) {
+          setIsBiometricAvailable(true);
+          // Auto-prompt ONLY if enabled AND it is the preferred method
+          if (isOpen && biometricEnabled && preferredAuthMethod === 'biometric') {
+            performBiometricAuth();
+          }
+        }
+      } catch (e) {
+        console.log('Biometric not available:', e);
+      }
+    };
+
+    if (isOpen) {
+      checkBiometric();
+    }
+  }, [isOpen, biometricEnabled, preferredAuthMethod]); // Added preferredAuthMethod dependency
+
+  const performBiometricAuth = async () => {
+    // Double check enabled state (though effect handles it, button click might need it)
+    // Actually button should only be shown if we want to allow manual trigger even if auto is off?
+    // User requirement: "Explicit Opt-In".
+    // So if biometricEnabled is false, we should probably NOT show the button either,
+    // OR we show it but use it as a way to "Enable once"? 
+    // Sticking to: consistently respect the setting.
+    // If setting is off, maybe the button shouldn't be there or clicking it prompts to enable?
+    // For now, let's allow the button to work manually if hardware is available, 
+    // but ONLY auto-prompt if enabled. 
+    // Wait, if I disable it in settings, I probably don't want to see it.
+    // Let's hide the button if !biometricEnabled too.
+
+    try {
+      await NativeBiometric.verifyIdentity({
+        reason: "Access Parent Features",
+        title: "Parent Authentication",
+        subtitle: "Log in to access parent features",
+        description: "Use your fingerprint or face to authenticate",
+      });
+
+      handleSuccess();
+    } catch (error) {
+      console.log("Biometric authentication failed or cancelled", error);
+      // Don't show error state, just let them use PIN
+    }
+  };
+
+  const handleSuccess = () => {
+    setPin('');
+    setError(false);
+    toggleAdminMode(true); // Enable Admin Mode
+    onClose();
+    if (onSuccess) {
+      onSuccess();
+    } else {
+      navigate('/parent');
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (verifyPin(pin)) {
-      setPin('');
-      setError(false);
-      onClose();
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        navigate('/parent');
-      }
+      handleSuccess();
     } else {
       setError(true);
       setPin('');
     }
   };
 
-  return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onClose}>
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-black/25" />
-        </Transition.Child>
+  const handlePatternFinish = (pattern: string) => {
+    if (verifyPattern(pattern)) {
+      handleSuccess();
+    } else {
+      setError(true);
+      // Path is reset by the onFinish handler in the JSX
+    }
+  };
 
-        <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4 text-center">
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
-            >
-              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                <Dialog.Title
-                  as="h3"
-                  className="text-lg font-medium leading-6 text-gray-900 text-center"
-                >
-                  Enter Parent PIN
-                </Dialog.Title>
-                <div className="mt-4">
-                  <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <input
-                      type="password"
-                      inputMode="numeric"
-                      maxLength={4}
-                      value={pin}
-                      onChange={(e) => setPin(e.target.value)}
-                      className={`input input-bordered w-full text-center text-2xl tracking-widest ${error ? 'input-error' : 'input-primary'}`}
-                      placeholder="• • • •"
-                      autoFocus
-                    />
-                    {error && (
-                      <p className="text-error text-sm text-center">Incorrect PIN. Try again.</p>
-                    )}
-                    <div className="mt-4 flex justify-center gap-2">
-                      <button
-                        type="button"
-                        className="btn btn-ghost"
-                        onClick={onClose}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        className="btn btn-primary"
-                        disabled={pin.length < 4}
-                      >
-                        Verify
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </Dialog.Panel>
-            </Transition.Child>
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div className="bg-base-100 w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-scale-in relative">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 btn btn-circle btn-sm btn-ghost z-10"
+        >
+          ✕
+        </button>
+
+        <div className="p-8 pt-10">
+          <div className="text-center mb-8">
+            <h3 className="text-2xl font-bold text-neutral mb-2">Parent Access</h3>
+            <p className="text-neutral/60">
+              {authMode === 'pin' ? 'Enter PIN to continue' : 'Draw Pattern to continue'}
+            </p>
           </div>
+
+          {/* Toggle between PIN and Pattern if pattern is set */}
+          {parentPattern && (
+            <div className="flex justify-center mb-6">
+              <div className="tabs tabs-boxed bg-base-200 p-1">
+                <a
+                  className={`tab ${authMode === 'pin' ? 'tab-active' : ''} `}
+                  onClick={() => { setAuthMode('pin'); setError(false); setPin(''); }}
+                >
+                  <BiKey className="mr-1" /> PIN
+                </a>
+                <a
+                  className={`tab ${authMode === 'pattern' ? 'tab-active' : ''} `}
+                  onClick={() => { setAuthMode('pattern'); setError(false); }}
+                >
+                  <BiGridAlt className="mr-1" /> Pattern
+                </a>
+              </div>
+            </div>
+          )}
+
+          {authMode === 'pin' ? (
+            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+              <input
+                type="password" // Hide the PIN
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={4}
+                value={pin}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                  setPin(val);
+                  setError(false);
+                  // Auto-submit on 4th digit
+                  if (val.length === 4) {
+                    // Small delay to let React update state
+                    setTimeout(() => {
+                      if (verifyPin(val)) {
+                        handleSuccess();
+                      } else {
+                        setError(true);
+                        setPin('');
+                      }
+                    }, 100);
+                  }
+                }}
+                className={`input input-lg text-center text-3xl font-bold w-full bg-base-200 focus:bg-white transition-all tracking-widest ${error ? 'input-error animate-shake' : 'input-primary'}`}
+                placeholder="••••"
+                autoFocus={!isBiometricAvailable} // Only autofocus if no bio prompt
+              />
+
+              {error && (
+                <p className="text-error text-sm text-center">Incorrect PIN. Try again.</p>
+              )}
+            </form>
+          ) : (
+            <div className="flex flex-col items-center gap-4">
+              <div className={`p - 4 rounded - 3xl bg - base - 200 / 50 ${error ? 'animate-shake border border-error' : ''} `}>
+                <PatternLock
+                  width={240}
+                  path={path}
+                  onChange={(val) => {
+                    setPath(val);
+                    setError(false);
+                  }}
+                  onFinish={() => {
+                    handlePatternFinish(path.join('-'));
+                    setPath([]);
+                  }}
+                  error={error}
+                />
+              </div>
+              {error && (
+                <p className="text-error text-sm text-center">Incorrect Pattern. Try again.</p>
+              )}
+            </div>
+          )}
+
+          {isBiometricAvailable && biometricEnabled && (
+            <div className="flex justify-center w-full mt-6">
+              <button
+                type="button"
+                onClick={performBiometricAuth}
+                className="btn btn-circle btn-lg btn-ghost border-2 border-base-200 text-primary"
+                title="Use Biometric Authentication"
+              >
+                <BiFingerprint size={32} />
+              </button>
+            </div>
+          )}
         </div>
-      </Dialog>
-    </Transition>
+      </div>
+    </div>
   );
 };
 
 export default AdminPinModal;
-
-

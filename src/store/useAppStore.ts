@@ -14,9 +14,12 @@ export interface AppState {
   activeChildId: string | null;
   isAdminMode: boolean;
   parentPin: string | null;
+  parentPattern: string | null;
+  preferredAuthMethod: 'pin' | 'pattern' | 'biometric';
   parentName?: string;
   familyName?: string;
   notificationsEnabled: boolean;
+  biometricEnabled: boolean;
   lastMissedCheckDate?: string; // ISO Date string (YYYY-MM-DD)
 
   childLogs: ChildTaskLog[]; // Store logs for the active child
@@ -40,9 +43,14 @@ export interface AppState {
   setActiveChild: (childId: string | null) => void;
   toggleAdminMode: (isAdmin: boolean) => void;
   verifyPin: (pin: string) => boolean;
+  verifyPattern: (pattern: string) => boolean;
   setParentPin: (pin: string) => void;
+  setParentPattern: (pattern: string) => void;
+  setPreferredAuthMethod: (method: 'pin' | 'pattern' | 'biometric') => void;
   setParentName: (name: string) => void;
+
   setFamilyName: (name: string) => void;
+  setBiometricEnabled: (enabled: boolean) => void;
 
   // Data Actions
   refreshData: () => Promise<void>;
@@ -96,7 +104,11 @@ export const useAppStore = create<AppState>()(
       activeChildId: null,
       isAdminMode: false,
       parentPin: null,
+      parentPattern: null,
+      preferredAuthMethod: 'pin',
+
       notificationsEnabled: true,
+      biometricEnabled: false,
       children: [],
       categories: [],
       tasks: [],
@@ -130,10 +142,24 @@ export const useAppStore = create<AppState>()(
         return isValid;
       },
 
+      verifyPattern: (pattern) => {
+        const currentPattern = get().parentPattern;
+        if (!currentPattern) return false;
+
+        const isValid = pattern === currentPattern;
+        if (isValid) {
+          set({ isAdminMode: true });
+        }
+        return isValid;
+      },
+
       setParentPin: (pin) => set({ parentPin: pin }),
+      setParentPattern: (pattern) => set({ parentPattern: pattern }),
+      setPreferredAuthMethod: (method) => set({ preferredAuthMethod: method }),
       setParentName: (name) => set({ parentName: name }),
       setFamilyName: (name) => set({ familyName: name }),
       setNotificationsEnabled: (value) => set({ notificationsEnabled: value }),
+      setBiometricEnabled: (value) => set({ biometricEnabled: value }),
 
       refreshData: async () => {
         set({ isLoading: true });

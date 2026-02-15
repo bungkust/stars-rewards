@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { Link } from 'react-router-dom';
-import { FaUsers, FaBell, FaShieldAlt, FaDatabase, FaCloudDownloadAlt, FaFileUpload, FaChevronRight, FaExclamationTriangle, FaPlus, FaShapes } from 'react-icons/fa';
+import { FaUsers, FaBell, FaShieldAlt, FaDatabase, FaCloudDownloadAlt, FaFileUpload, FaChevronRight, FaExclamationTriangle, FaPlus, FaShapes, FaFingerprint } from 'react-icons/fa';
 import { useAppStore } from '../../store/useAppStore';
 import { AppCard } from '../../components/design-system/AppCard';
 import { H1Header } from '../../components/design-system/H1Header';
@@ -147,6 +147,27 @@ const Settings = () => {
             Push notifications require permissions on your device. You can change this anytime.
           </p>
         </div>
+      </AppCard>
+
+      {/* Security (Biometrics) - Always show for now (or check platform inside if needed) */}
+      <AppCard>
+        <div className="flex items-center gap-3 mb-4">
+          <IconWrapper icon={FaShieldAlt} />
+          <h3 className="font-bold text-lg text-neutral">Security</h3>
+        </div>
+
+        <Link to="/settings/security" className="flex justify-between items-center p-3 hover:bg-base-200 rounded-lg transition-colors">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 text-primary rounded-full">
+              <FaFingerprint />
+            </div>
+            <div>
+              <p className="font-bold text-neutral">Security Settings</p>
+              <p className="text-xs text-neutral/60">Biometrics, PIN, and Pattern Lock</p>
+            </div>
+          </div>
+          <FaChevronRight className="text-neutral/20" />
+        </Link>
       </AppCard>
 
       {/* Customization */}
