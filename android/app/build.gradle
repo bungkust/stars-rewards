@@ -57,7 +57,10 @@ android {
             def version = variant.versionName
             def dateTime = new Date().format("yyyyMMdd-HHmm")
 
-            outputFileName = "${appName}-${platform}-${buildType}-${version}-${dateTime}.apk"
+            def fileName = "${appName}_${buildType}_${version}_${variant.versionCode}_${dateTime}"
+            outputFileName = "${fileName}.apk"
+            // Ensure AAB matches this pattern too (requires resetting archivesBaseName per variant)
+            project.archivesBaseName = fileName
         }
     }
 }
