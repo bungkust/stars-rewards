@@ -6,6 +6,8 @@ import { FaTrash, FaTimes, FaChild, FaCalendarAlt, FaStar, FaCheckCircle, FaExcl
 import { useAppStore } from '../../store/useAppStore';
 import type { HistoryItemEntry } from '../shared/HistoryList';
 import ConfirmationModal from './ConfirmationModal';
+import { Share } from '@capacitor/share';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 
 import * as htmlToImage from 'html-to-image';
 import achievementBg from '../../assets/achievement_bg.png';
@@ -151,26 +153,69 @@ const HistoryDetailModal: React.FC<HistoryDetailModalProps> = ({ isOpen, item, o
 
             if (!blob) throw new Error('Failed to generate image');
 
-            const file = new File([blob], `achievement-${item.childName}.png`, { type: 'image/png' });
+            // Use Capacitor Share for native sharing
+            const safeChildName = item.childName || 'Child';
+            const fileName = `achievement-${safeChildName.replace(/\s+/g, '-').toLowerCase()}.png`;
 
-            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
+            // Check if we can share using Capacitor
+            const canShare = await Share.canShare();
+
+            if (canShare.value) {
+                // For Capacitor Share, we need to write the file to the filesystem first
+                const base64Data = await new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result as string);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+
+                const savedFile = await Filesystem.writeFile({
+                    path: fileName,
+                    data: base64Data,
+                    directory: Directory.Cache
+                });
+
+                await Share.share({
                     title: 'Reward Achievement!',
-                    text: `Hooray! ${item.childName} just got "${item.title}"! So proud of this achievement. 🌟 #StarHabit #Parenting`,
+                    text: `Hooray! ${safeChildName} just got "${item.title}"! So proud of this achievement. 🌟 #StarHabit #Parenting`,
+                    url: savedFile.uri, // Some apps prefer url
+                    dialogTitle: 'Share Achievement'
                 });
             } else {
-                // Fallback: Download
-                const dataUrl = await htmlToImage.toPng(posterElement, { pixelRatio: 3 });
-                const link = document.createElement('a');
-                link.download = `achievement-${item.childName}.png`;
-                link.href = dataUrl;
-                link.click();
-                alert('Sharing directly is not supported in this browser. The achievement poster has been saved to your device!');
+                const file = new File([blob], fileName, { type: 'image/png' });
+                // Fallback for web/desktop where native share might not be available
+                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({
+                        files: [file],
+                        title: 'Reward Achievement!',
+                        text: `Hooray! ${safeChildName} just got "${item.title}"! So proud of this achievement. 🌟 #StarHabit #Parenting`,
+                    });
+                } else {
+                    // Final Fallback: Download
+                    const dataUrl = await htmlToImage.toPng(posterElement, { pixelRatio: 3 });
+                    const link = document.createElement('a');
+                    link.download = fileName;
+                    link.href = dataUrl;
+                    link.click();
+                    alert('Sharing directly is not supported in this browser. The achievement poster has been saved to your device!');
+                }
             }
         } catch (error) {
             console.error('Error sharing:', error);
-            alert('Could not create the shareable image. Please try again.');
+            // If Capacitor Share fails (e.g. file sharing not supported on web), try download fallback
+            try {
+                const posterElement = document.getElementById('achievement-poster');
+                if (posterElement) {
+                    const safeChildName = item.childName || 'Child';
+                    const dataUrl = await htmlToImage.toPng(posterElement, { pixelRatio: 3 });
+                    const link = document.createElement('a');
+                    link.download = `achievement-${safeChildName.replace(/\s+/g, '-').toLowerCase()}.png`;
+                    link.href = dataUrl;
+                    link.click();
+                }
+            } catch (e) {
+                alert('Could not create the shareable image. Please try again.');
+            }
         } finally {
             setIsSharing(false);
         }
