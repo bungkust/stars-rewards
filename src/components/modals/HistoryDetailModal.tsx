@@ -6,7 +6,7 @@ import { FaTrash, FaTimes, FaChild, FaCalendarAlt, FaStar, FaCheckCircle, FaExcl
 import { useAppStore } from '../../store/useAppStore';
 import type { HistoryItemEntry } from '../shared/HistoryList';
 import ConfirmationModal from './ConfirmationModal';
-import { Share } from '@capacitor/share';
+
 import * as htmlToImage from 'html-to-image';
 import achievementBg from '../../assets/achievement_bg.png';
 
@@ -21,7 +21,7 @@ interface HistoryDetailModalProps {
 const HistoryDetailModal: React.FC<HistoryDetailModalProps> = ({ isOpen, item, onClose, onDelete, readOnly = false }) => {
     const { updateTransaction, updateChildLog } = useAppStore();
     const isCelebration = readOnly && item?.type === 'redeemed';
-    const cardRef = React.useRef<HTMLDivElement>(null);
+
     const [isDeleting, setIsDeleting] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editValue, setEditValue] = useState('');
