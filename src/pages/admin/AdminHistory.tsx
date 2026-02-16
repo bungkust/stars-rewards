@@ -5,7 +5,7 @@ import { FaArrowLeft, FaFilter, FaSearch } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import HistoryList, { type HistoryItemType, type HistoryItemEntry } from '../../components/shared/HistoryList';
-import AdminHistoryDetailModal from '../../components/modals/AdminHistoryDetailModal';
+import HistoryDetailModal from '../../components/modals/HistoryDetailModal';
 
 type SortOption = 'date_desc' | 'date_asc';
 type DateFilter = 'all' | 'today' | 'week' | 'month' | 'specific';
@@ -371,7 +371,7 @@ const AdminHistory = () => {
                 />
             </div>
 
-            <AdminHistoryDetailModal
+            <HistoryDetailModal
                 isOpen={isDetailOpen}
                 item={selectedItem}
                 onClose={() => setIsDetailOpen(false)}

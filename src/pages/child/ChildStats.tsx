@@ -13,8 +13,8 @@ import {
   YAxis,
   type TooltipContentProps,
 } from 'recharts';
-import TaskDetailsModal from '../../components/modals/TaskDetailsModal';
-import HistoryList, { type HistoryItemType } from '../../components/shared/HistoryList';
+import HistoryDetailModal from '../../components/modals/HistoryDetailModal';
+import HistoryList, { type HistoryItemType, type HistoryItemEntry } from '../../components/shared/HistoryList';
 import type { CoinTransaction } from '../../types';
 
 type Timeframe = 'week' | 'month';
@@ -51,28 +51,72 @@ const ChildStats = () => {
   );
 
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [selectedTaskDetails, setSelectedTaskDetails] = useState<any>(null);
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState<HistoryItemEntry | null>(null);
 
   const handleHistoryItemClick = (item: any) => {
-    let task = null;
-
+    const childName = child?.name || 'Unknown';
     if (item.type === 'transaction') {
       const tx = item.data;
-      if (tx.type === 'TASK_VERIFIED') {
-        const log = childLogs.find(l => l.id === tx.reference_id);
-        if (log) {
-          task = tasks.find(t => t.id === log.task_id);
-        }
-      }
+      const details = getTransactionDetails(tx);
+      const log = tx.reference_id ? childLogs.find(l => l.id === tx.reference_id) : null;
+      const task = log ? tasks.find(tsk => tsk.id === log.task_id) : null;
+
+      let type: HistoryItemType = 'verified';
+      if (tx.type === 'REWARD_REDEEMED') type = 'redeemed';
+      else if (tx.type === 'MANUAL_ADJ') type = 'manual';
+
+      const entry: HistoryItemEntry = {
+        id: item.id,
+        type,
+        title: details.name,
+        subtitle: `${childName} • ${new Date(tx.created_at).toLocaleDateString()}`,
+        description: details.description,
+        amount: tx.amount,
+        amountLabel: tx.type === 'TASK_VERIFIED' ? 'Done' : tx.type === 'REWARD_REDEEMED' ? 'Redeemed' : '-',
+        status: tx.amount > 0 ? 'success' : tx.type === 'REWARD_REDEEMED' ? 'warning' : tx.amount < 0 ? 'error' : 'neutral',
+        notes: log?.notes,
+        targetValue: task?.total_target_value,
+        currentValue: log?.current_value,
+        unit: task?.target_unit,
+        childName,
+        dateLabel: new Date(tx.created_at).toLocaleDateString(),
+        childId: tx.child_id,
+        taskId: task?.id,
+        referenceId: tx.reference_id
+      };
+      setSelectedHistoryItem(entry);
     } else {
       const log = item.data;
-      task = tasks.find(t => t.id === log.task_id);
-    }
+      const details = getRejectedMissionDetails(log);
+      const isFailed = log.status === 'FAILED';
+      const isExcused = log.status === 'EXCUSED';
+      let type: HistoryItemType = 'rejected';
+      if (isFailed) type = 'failed';
+      else if (isExcused) type = 'excused';
 
-    if (task) {
-      setSelectedTaskDetails(task);
-      setIsDetailsModalOpen(true);
+      const task = tasks.find(tsk => tsk.id === log.task_id);
+
+      const entry: HistoryItemEntry = {
+        id: item.id,
+        type,
+        title: details.name,
+        subtitle: `${childName} • ${new Date(log.completed_at).toLocaleDateString()}`,
+        description: isFailed ? 'Missed Deadline' : isExcused ? (log.notes || 'No reason provided') : `Reason: ${log.rejection_reason}`,
+        amountLabel: log.status,
+        status: isFailed ? 'neutral' : isExcused ? 'warning' : 'error',
+        notes: log.notes,
+        rejectionReason: log.rejection_reason,
+        targetValue: task?.total_target_value,
+        currentValue: log.current_value,
+        unit: task?.target_unit,
+        childName,
+        dateLabel: new Date(log.completed_at).toLocaleDateString(),
+        childId: log.child_id,
+        taskId: log.task_id
+      };
+      setSelectedHistoryItem(entry);
     }
+    setIsDetailsModalOpen(true);
   };
 
   // Combine transactions and rejected missions for history
@@ -291,7 +335,11 @@ const ChildStats = () => {
             .map(transaction => {
               const details = getTransactionDetails(transaction);
               return (
-                <div key={transaction.id} className="flex justify-between items-center border-b border-base-200 pb-3 last:border-none last:pb-0">
+                <button
+                  key={transaction.id}
+                  onClick={() => handleHistoryItemClick({ type: 'transaction', data: transaction, id: transaction.id })}
+                  className="flex justify-between items-center border-b border-base-200 pb-3 last:border-none last:pb-0 hover:bg-base-50 transition-colors w-full text-left rounded-lg"
+                >
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-warning/10 text-warning rounded-full">
                       <FaGift className="w-4 h-4" />
@@ -304,7 +352,7 @@ const ChildStats = () => {
                   <span className="font-bold text-error">
                     {Math.abs(transaction.amount)} Stars
                   </span>
-                </div>
+                </button>
               );
             })}
           {childTransactions.filter(t => t.type === 'REWARD_REDEEMED').length === 0 && (
@@ -390,10 +438,12 @@ const ChildStats = () => {
         />
       </div>
 
-      <TaskDetailsModal
+      <HistoryDetailModal
         isOpen={isDetailsModalOpen}
-        task={selectedTaskDetails}
+        item={selectedHistoryItem}
         onClose={() => setIsDetailsModalOpen(false)}
+        onDelete={async () => { }} // Read-only mode
+        readOnly={true}
       />
     </div >
   );

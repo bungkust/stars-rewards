@@ -1,47 +1,67 @@
 import { useState, useMemo } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { ToggleButton } from '../../components/design-system';
-import { FaGift, FaSearch, FaArrowLeft, FaFilter } from 'react-icons/fa';
+import { FaSearch, FaArrowLeft, FaFilter } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import HistoryList, { type HistoryItemEntry } from '../../components/shared/HistoryList';
+import HistoryDetailModal from '../../components/modals/HistoryDetailModal';
 
 type SortOption = 'date_desc' | 'date_asc' | 'cost_desc' | 'cost_asc';
 type DateFilter = 'all' | 'this_month' | 'last_month';
 
 const ClaimedRewardsHistory = () => {
     const navigate = useNavigate();
-    const { activeChildId, children, transactions, rewards } = useAppStore();
+    const { activeChildId, children, transactions, rewards, categories } = useAppStore();
     const child = children.find(c => c.id === activeChildId);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [dateFilter, setDateFilter] = useState<DateFilter>('all');
     const [sortOption, setSortOption] = useState<SortOption>('date_desc');
     const [showFilters, setShowFilters] = useState(false);
+    const [visibleCount, setVisibleCount] = useState(10);
+    const LOAD_MORE_INCREMENT = 10;
+
+    // Modal State
+    const [selectedItem, setSelectedItem] = useState<HistoryItemEntry | null>(null);
+    const [isDetailOpen, setIsDetailOpen] = useState(false);
 
     const childTransactions = useMemo(
         () => transactions.filter(t => t.child_id === child?.id && t.type === 'REWARD_REDEEMED'),
         [transactions, child?.id]
     );
 
-    const getRewardName = (id?: string) => {
-        const reward = rewards.find(r => r.id === id);
-        return reward?.name || 'Unknown Reward';
+    // Helper to get transaction details (consistent with other pages)
+    const getTransactionDetails = (t: any) => {
+        const reward = rewards.find(r => r.id === t.reference_id);
+        const name = reward?.name || 'Reward Redeemed';
+        const description = 'Spent Stars';
+        return { name, description };
     };
 
+    const formattedTransactions = useMemo(() => {
+        return childTransactions.map(t => ({
+            id: t.id,
+            type: 'transaction' as const,
+            data: t,
+            date: t.created_at,
+            details: getTransactionDetails(t)
+        }));
+    }, [childTransactions, rewards]);
+
     const filteredTransactions = useMemo(() => {
-        let result = [...childTransactions];
+        let result = [...formattedTransactions];
 
         // 1. Search Query
         if (searchQuery) {
             const lowerQuery = searchQuery.toLowerCase();
-            result = result.filter(t => {
-                const name = getRewardName(t.reference_id);
-                return name.toLowerCase().includes(lowerQuery);
+            result = result.filter(item => {
+                const name = item.details.name.toLowerCase();
+                return name.includes(lowerQuery);
             });
         }
 
         // 2. Date Filter
-        // Helper to check date range
         const filterByDate = (dateStr: string) => {
             const date = new Date(dateStr);
             const now = new Date();
@@ -49,40 +69,43 @@ const ClaimedRewardsHistory = () => {
             const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
             const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 
-            if (dateFilter === 'this_month') {
-                return date >= startOfThisMonth;
-            } else if (dateFilter === 'last_month') {
-                return date >= startOfLastMonth && date <= endOfLastMonth;
-            }
+            if (dateFilter === 'this_month') return date >= startOfThisMonth;
+            if (dateFilter === 'last_month') return date >= startOfLastMonth && date <= endOfLastMonth;
             return true;
         };
 
         if (dateFilter !== 'all') {
-            result = result.filter(t => filterByDate(t.created_at));
+            result = result.filter(item => filterByDate(item.date));
         }
-
 
         // 3. Sort
         result.sort((a, b) => {
-            const dateA = new Date(a.created_at).getTime();
-            const dateB = new Date(b.created_at).getTime();
-            const costA = Math.abs(a.amount);
-            const costB = Math.abs(b.amount);
+            const dateA = new Date(a.date).getTime();
+            const dateB = new Date(b.date).getTime();
+            const costA = Math.abs(a.data.amount);
+            const costB = Math.abs(b.data.amount);
 
             switch (sortOption) {
                 case 'date_desc': return dateB - dateA;
                 case 'date_asc': return dateA - dateB;
-                case 'cost_desc': return costB - costA; // High score (cost) first
+                case 'cost_desc': return costB - costA;
                 case 'cost_asc': return costA - costB;
                 default: return dateB - dateA;
             }
         });
 
         return result;
-    }, [childTransactions, rewards, searchQuery, dateFilter, sortOption]);
+    }, [formattedTransactions, searchQuery, dateFilter, sortOption]);
 
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const displayedHistory = useMemo(() => {
+        return filteredTransactions.slice(0, visibleCount);
+    }, [filteredTransactions, visibleCount]);
+
+    const hasMore = visibleCount < filteredTransactions.length;
+
+    const handleItemClick = (item: HistoryItemEntry) => {
+        setSelectedItem(item);
+        setIsDetailOpen(true);
     };
 
     if (!child) return <div>Loading...</div>;
@@ -174,33 +197,52 @@ const ClaimedRewardsHistory = () => {
             </div>
 
             {/* List */}
-            <div className="card bg-base-100 shadow-md rounded-xl overflow-hidden border border-base-200">
-                <div className="flex flex-col">
-                    {filteredTransactions.length > 0 ? (
-                        filteredTransactions.map(transaction => (
-                            <div key={transaction.id} className="flex justify-between items-center p-4 border-b border-base-200 last:border-none hover:bg-base-50 transition-colors">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-3 bg-warning/10 text-warning rounded-full">
-                                        <FaGift className="w-5 h-5" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="font-bold text-neutral text-sm">{getRewardName(transaction.reference_id)}</span>
-                                        <span className="text-xs text-neutral/50">{formatDate(transaction.created_at)}</span>
-                                    </div>
-                                </div>
-                                <span className="font-bold text-error whitespace-nowrap text-sm">
-                                    {Math.abs(transaction.amount)} Stars
-                                </span>
-                            </div>
-                        ))
-                    ) : (
-                        <div className="flex flex-col items-center justify-center p-8 text-neutral/40">
-                            <FaGift className="w-12 h-12 mb-3 opacity-20" />
-                            <p>No rewards found.</p>
-                        </div>
-                    )}
-                </div>
+            <div className="card bg-base-100 shadow-md rounded-xl overflow-hidden border border-base-200 p-4">
+                <HistoryList
+                    items={displayedHistory.map(item => {
+                        const tx = item.data;
+                        const details = item.details;
+                        const reward = rewards.find(r => r.id === tx.reference_id);
+                        const category = reward ? categories.find(c => c.id === reward.category) : null;
+
+                        const entry: HistoryItemEntry = {
+                            id: item.id,
+                            type: 'redeemed',
+                            title: details.name,
+                            subtitle: new Date(tx.created_at).toLocaleDateString(),
+                            description: details.description,
+                            amount: tx.amount,
+                            amountLabel: 'Redeemed',
+                            status: 'warning',
+                            categoryName: category?.name,
+                            childName: child.name,
+                            dateLabel: new Date(tx.created_at).toLocaleDateString(),
+                            childId: tx.child_id,
+                            referenceId: tx.reference_id
+                        };
+                        return { ...entry, onClick: () => handleItemClick(entry) };
+                    })}
+                    emptyMessage="No rewards found."
+                    footer={
+                        hasMore && (
+                            <button
+                                className="btn btn-ghost btn-sm w-full text-neutral/60 mt-2"
+                                onClick={() => setVisibleCount(prev => prev + LOAD_MORE_INCREMENT)}
+                            >
+                                Load More
+                            </button>
+                        )
+                    }
+                />
             </div>
+
+            <HistoryDetailModal
+                isOpen={isDetailOpen}
+                item={selectedItem}
+                onClose={() => setIsDetailOpen(false)}
+                onDelete={async () => { }} // Read-only
+                readOnly={true}
+            />
         </div>
     );
 };

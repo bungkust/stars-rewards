@@ -1,9 +1,11 @@
 import { useState, useMemo } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { ToggleButton } from '../../components/design-system';
-import { FaArrowLeft, FaFilter, FaCheckCircle, FaGift, FaSlidersH, FaTimesCircle, FaChild, FaHistory, FaSearch } from 'react-icons/fa';
+import { FaArrowLeft, FaFilter, FaSearch } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import HistoryList, { type HistoryItemType, type HistoryItemEntry } from '../../components/shared/HistoryList';
+import HistoryDetailModal from '../../components/modals/HistoryDetailModal';
 
 type SortOption = 'date_desc' | 'date_asc';
 type DateFilter = 'all' | 'today' | 'week' | 'month' | 'specific';
@@ -11,7 +13,7 @@ type TypeFilter = 'all' | 'earned' | 'spent' | 'manual' | 'failed';
 
 const ChildHistory = () => {
     const navigate = useNavigate();
-    const { activeChildId, children, transactions, childLogs, tasks, rewards } = useAppStore();
+    const { activeChildId, children, transactions, childLogs, tasks, rewards, categories } = useAppStore();
     const child = children.find(c => c.id === activeChildId);
 
     const [searchQuery, setSearchQuery] = useState('');
@@ -23,6 +25,12 @@ const ChildHistory = () => {
     // Specific date filter state
     const [tempDate, setTempDate] = useState<string>(new Date().toISOString().split('T')[0]);
     const [specificDate, setSpecificDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [visibleCount, setVisibleCount] = useState(10);
+    const LOAD_MORE_INCREMENT = 10;
+
+    // Modal State
+    const [selectedItem, setSelectedItem] = useState<HistoryItemEntry | null>(null);
+    const [isDetailOpen, setIsDetailOpen] = useState(false);
 
     const childTransactions = useMemo(
         () => transactions.filter(t => t.child_id === child?.id),
@@ -67,6 +75,10 @@ const ChildHistory = () => {
         return { name, description };
     };
 
+    const formatDateShort = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString();
+    };
+
     // Combine transactions and rejected missions for history
     const combinedHistory = useMemo(() => {
         const transactionItems = childTransactions.map(t => ({
@@ -74,7 +86,7 @@ const ChildHistory = () => {
             type: 'transaction' as const,
             data: t,
             date: t.created_at,
-            details: getTransactionDetails(t) // Pre-calculate details for filtering
+            details: getTransactionDetails(t)
         }));
 
         const rejectedItems = rejectedMissions.map(log => ({
@@ -82,7 +94,7 @@ const ChildHistory = () => {
             type: 'rejected_mission' as const,
             data: log,
             date: log.completed_at,
-            details: getRejectedMissionDetails(log) // Pre-calculate details for filtering
+            details: getRejectedMissionDetails(log)
         }));
 
         return [...transactionItems, ...rejectedItems];
@@ -104,18 +116,10 @@ const ChildHistory = () => {
         // 1. Type Filter
         if (typeFilter !== 'all') {
             result = result.filter(item => {
-                if (typeFilter === 'earned') {
-                    return item.type === 'transaction' && item.data.amount > 0;
-                }
-                if (typeFilter === 'spent') {
-                    return item.type === 'transaction' && item.data.amount < 0;
-                }
-                if (typeFilter === 'manual') {
-                    return item.type === 'transaction' && item.data.type === 'MANUAL_ADJ';
-                }
-                if (typeFilter === 'failed') {
-                    return item.type === 'rejected_mission';
-                }
+                if (typeFilter === 'earned') return item.type === 'transaction' && item.data.amount > 0;
+                if (typeFilter === 'spent') return item.type === 'transaction' && item.data.amount < 0;
+                if (typeFilter === 'manual') return item.type === 'transaction' && item.data.type === 'MANUAL_ADJ';
+                if (typeFilter === 'failed') return item.type === 'rejected_mission';
                 return true;
             });
         }
@@ -145,14 +149,21 @@ const ChildHistory = () => {
             const dateB = new Date(b.date).getTime();
 
             if (sortOption === 'date_asc') return dateA - dateB;
-            return dateB - dateA; // Default Newest
+            return dateB - dateA;
         });
 
         return result;
-    }, [combinedHistory, typeFilter, dateFilter, sortOption, specificDate]);
+    }, [combinedHistory, typeFilter, dateFilter, sortOption, specificDate, searchQuery]);
 
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const displayedHistory = useMemo(() => {
+        return filteredHistory.slice(0, visibleCount);
+    }, [filteredHistory, visibleCount]);
+
+    const hasMore = visibleCount < filteredHistory.length;
+
+    const handleItemClick = (item: HistoryItemEntry) => {
+        setSelectedItem(item);
+        setIsDetailOpen(true);
     };
 
     if (!child) return <div>Loading...</div>;
@@ -257,83 +268,97 @@ const ChildHistory = () => {
             </div>
 
             {/* List */}
-            <div className="card bg-base-100 shadow-md rounded-xl overflow-hidden border border-base-200">
-                <div className="flex flex-col">
-                    {filteredHistory.length > 0 ? (
-                        filteredHistory.map(item => {
-                            if (item.type === 'transaction') {
-                                const transaction = item.data;
-                                const details = item.details;
+            <div className="card bg-base-100 shadow-md rounded-xl overflow-hidden border border-base-200 p-4">
+                <HistoryList
+                    items={displayedHistory.map(item => {
+                        const childName = child.name;
+                        if (item.type === 'transaction') {
+                            const tx = item.data;
+                            const details = item.details;
+                            const log = tx.reference_id ? childLogs.find(l => l.id === tx.reference_id) : null;
+                            const task = log ? tasks.find(tsk => tsk.id === log.task_id) : null;
+                            const category = task ? categories.find(c => c.id === task.category_id) : null;
 
-                                let Icon = FaCheckCircle;
-                                let iconBg = 'bg-success/10';
-                                let iconColor = 'text-success';
+                            let type: HistoryItemType = 'verified';
+                            if (tx.type === 'REWARD_REDEEMED') type = 'redeemed';
+                            else if (tx.type === 'MANUAL_ADJ') type = 'manual';
 
-                                if (transaction.type === 'REWARD_REDEEMED') {
-                                    Icon = FaGift;
-                                    iconBg = 'bg-warning/10';
-                                    iconColor = 'text-warning';
-                                } else if (transaction.type === 'MANUAL_ADJ') {
-                                    Icon = FaSlidersH;
-                                    iconBg = 'bg-info/10';
-                                    iconColor = 'text-info';
-                                }
+                            const entry: HistoryItemEntry = {
+                                id: item.id,
+                                type,
+                                title: details.name,
+                                subtitle: formatDateShort(tx.created_at),
+                                description: details.description,
+                                amount: tx.amount,
+                                amountLabel: tx.type === 'TASK_VERIFIED' ? 'Done' : tx.type === 'REWARD_REDEEMED' ? 'Redeemed' : '-',
+                                status: tx.amount > 0 ? 'success' : tx.type === 'REWARD_REDEEMED' ? 'warning' : tx.amount < 0 ? 'error' : 'neutral',
+                                categoryName: category?.name,
+                                notes: log?.notes,
+                                targetValue: task?.total_target_value,
+                                currentValue: log?.current_value,
+                                unit: task?.target_unit,
+                                childName,
+                                dateLabel: formatDateShort(tx.created_at),
+                                childId: tx.child_id,
+                                taskId: task?.id,
+                                referenceId: tx.reference_id
+                            };
+                            return { ...entry, onClick: () => handleItemClick(entry) };
+                        } else {
+                            const log = item.data;
+                            const details = item.details;
+                            const isFailed = log.status === 'FAILED';
+                            const isExcused = log.status === 'EXCUSED';
+                            let type: HistoryItemType = 'rejected';
+                            if (isFailed) type = 'failed';
+                            else if (isExcused) type = 'excused';
 
-                                return (
-                                    <div key={item.id} className="flex justify-between items-center p-4 border-b border-base-200 last:border-none hover:bg-base-50 transition-colors">
-                                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                                            <div className={`p-3 rounded-full ${iconBg} ${iconColor}`}>
-                                                <Icon className="w-5 h-5" />
-                                            </div>
-                                            <div className="flex flex-col flex-1 min-w-0">
-                                                <span className="font-bold text-neutral text-sm truncate">{details.name}</span>
-                                                <span className="text-xs text-neutral/40">{formatDate(transaction.created_at)}</span>
-                                                {details.description && <span className="text-xs text-neutral/50 italic mt-0.5">{details.description}</span>}
-                                            </div>
-                                        </div>
-                                        <span className={`font-bold whitespace-nowrap text-sm ${transaction.amount > 0 ? 'text-success' : transaction.amount < 0 ? 'text-error' : 'text-neutral/60'}`}>
-                                            {transaction.amount !== 0 ? (
-                                                <>{transaction.amount > 0 ? '+' : ''}{transaction.amount} Stars</>
-                                            ) : (
-                                                <span className="uppercase text-xs">{transaction.type === 'TASK_VERIFIED' ? 'Done' : '-'}</span>
-                                            )}
-                                        </span>
-                                    </div>
-                                );
-                            } else {
-                                const log = item.data;
-                                const details = item.details;
-                                const isFailed = log.status === 'FAILED';
-                                const isExcused = log.status === 'EXCUSED';
+                            const task = tasks.find(tsk => tsk.id === log.task_id);
+                            const category = task ? categories.find(c => c.id === task.category_id) : null;
 
-                                return (
-                                    <div key={item.id} className="flex justify-between items-center p-4 border-b border-base-200 last:border-none hover:bg-base-50 transition-colors">
-                                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                                            <div className={`p-3 rounded-full ${isFailed ? 'bg-base-200 text-neutral/60' : isExcused ? 'bg-warning/10 text-warning' : 'bg-error/10 text-error'}`}>
-                                                {isExcused ? <FaChild className="w-5 h-5" /> : <FaTimesCircle className="w-5 h-5" />}
-                                            </div>
-                                            <div className="flex flex-col flex-1 min-w-0">
-                                                <span className="font-bold text-neutral text-sm truncate">{details.name}</span>
-                                                <span className="text-xs text-neutral/40">{formatDate(log.completed_at)}</span>
-                                                {log.rejection_reason && !isExcused && <span className={`text-xs italic mt-0.5 ${isFailed ? 'text-neutral/60' : 'text-error'}`}>{isFailed ? 'Missed Deadline' : `Reason: ${log.rejection_reason}`}</span>}
-                                                {isExcused && <span className="text-xs italic mt-0.5 text-warning">{log.notes || 'No reason provided'}</span>}
-                                            </div>
-                                        </div>
-                                        <span className={`font-bold whitespace-nowrap text-sm ${isFailed ? 'text-neutral/40' : isExcused ? 'text-warning' : 'text-error'}`}>
-                                            <span className="uppercase text-xs">{isFailed ? 'Failed' : isExcused ? 'Excused' : 'Rejected'}</span>
-                                        </span>
-                                    </div>
-                                );
-                            }
-                        })
-                    ) : (
-                        <div className="flex flex-col items-center justify-center p-8 text-neutral/40">
-                            <FaHistory className="w-12 h-12 mb-3 opacity-20" />
-                            <p>No history found.</p>
-                        </div>
-                    )}
-                </div>
+                            const entry: HistoryItemEntry = {
+                                id: item.id,
+                                type,
+                                title: details.name,
+                                subtitle: formatDateShort(log.completed_at),
+                                description: isFailed ? 'Missed Deadline' : isExcused ? (log.notes || 'No reason provided') : `Reason: ${log.rejection_reason}`,
+                                amountLabel: log.status,
+                                status: isFailed ? 'neutral' : isExcused ? 'warning' : 'error',
+                                categoryName: category?.name,
+                                notes: log.notes,
+                                rejectionReason: log.rejection_reason,
+                                targetValue: task?.total_target_value,
+                                currentValue: log.current_value,
+                                unit: task?.target_unit,
+                                childName,
+                                dateLabel: formatDateShort(log.completed_at),
+                                childId: log.child_id,
+                                taskId: log.task_id
+                            };
+                            return { ...entry, onClick: () => handleItemClick(entry) };
+                        }
+                    })}
+                    emptyMessage="No history found."
+                    footer={
+                        hasMore && (
+                            <button
+                                className="btn btn-ghost btn-sm w-full text-neutral/60 mt-2"
+                                onClick={() => setVisibleCount(prev => prev + LOAD_MORE_INCREMENT)}
+                            >
+                                Load More
+                            </button>
+                        )
+                    }
+                />
             </div>
+
+            <HistoryDetailModal
+                isOpen={isDetailOpen}
+                item={selectedItem}
+                onClose={() => setIsDetailOpen(false)}
+                onDelete={async () => { }} // Read-only
+                readOnly={true}
+            />
         </div>
     );
 };

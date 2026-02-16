@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { FaChartLine, FaCheckCircle, FaLightbulb, FaTimes, FaArrowLeft } from 'react-icons/fa';
 import { AppCard, H1Header, IconWrapper, ToggleButton } from '../../components/design-system';
 import HistoryList, { type HistoryItemType, type HistoryItemEntry } from '../../components/shared/HistoryList';
-import AdminHistoryDetailModal from '../../components/modals/AdminHistoryDetailModal';
+import HistoryDetailModal from '../../components/modals/HistoryDetailModal';
 
 import { useAppStore } from '../../store/useAppStore';
 import { calculateCoinMetrics, getRecommendations, getCategoryPerformance } from '../../utils/analytics';
@@ -580,7 +580,7 @@ const AdminStats = () => {
         </div>
       </div>
 
-      <AdminHistoryDetailModal
+      <HistoryDetailModal
         isOpen={isDetailOpen}
         item={selectedItem}
         onClose={() => setIsDetailOpen(false)}
