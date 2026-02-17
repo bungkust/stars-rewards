@@ -2,8 +2,13 @@ export interface Profile {
   id: string;
   created_at: string;
   pin_admin: string;
+  parent_pattern?: string;
+  preferred_auth_method?: 'pin' | 'pattern' | 'biometric';
   family_name?: string;
   parent_name?: string;
+  biometric_enabled?: boolean;
+  notifications_enabled?: boolean;
+  onboarding_step?: string;
 }
 
 export interface Child {

@@ -24,6 +24,9 @@ export const taskSchema = z.object({
     next_due_date: z.string().nullish(),
     total_target_value: z.number().nullish(),
     target_unit: z.string().nullish(),
+    max_completions_per_day: z.number().nullish(),
+    current_streak: z.number().nullish(),
+    best_streak: z.number().nullish(),
 });
 
 export const rewardSchema = z.object({
@@ -36,6 +39,7 @@ export const rewardSchema = z.object({
     required_task_id: z.string().nullish(),
     required_task_count: z.number().nullish(),
     created_at: z.string().nullish(),
+    assigned_to: z.array(z.string()).nullish(),
 });
 
 export const logSchema = z.object({
@@ -49,6 +53,7 @@ export const logSchema = z.object({
     notes: z.string().nullish(),
     completed_at: z.string(),
     verified_at: z.string().nullish(),
+    parentDecisionDate: z.string().nullish().nullable(),
 });
 
 export const transactionSchema = z.object({
@@ -73,8 +78,13 @@ export const profileSchema = z.object({
     id: z.string(),
     created_at: z.string().nullish(),
     pin_admin: z.string().nullish(),
+    parent_pattern: z.string().nullish(),
+    preferred_auth_method: z.enum(['pin', 'pattern', 'biometric']).nullish(),
     family_name: z.string().nullish(),
     parent_name: z.string().nullish(),
+    biometric_enabled: z.boolean().nullish(),
+    notifications_enabled: z.boolean().nullish(),
+    onboarding_step: z.string().nullish(),
 });
 
 export const backupSchema = z.object({
@@ -87,11 +97,21 @@ export const backupSchema = z.object({
     transactions: z.array(transactionSchema).nullish(),
     categories: z.array(categorySchema).nullish(),
 
-    // Legacy flat fields support
+    // Legacy flat fields support and State settings
     adminName: z.string().nullish(),
     familyName: z.string().nullish(),
     adminPin: z.string().nullish(),
+    parentPin: z.string().nullish(),
+    parentPattern: z.string().nullish(),
+    preferredAuthMethod: z.enum(['pin', 'pattern', 'biometric']).nullish(),
     onboardingStep: z.string().nullish(),
+    lastMissedCheckDate: z.string().nullish(),
+    biometricEnabled: z.boolean().nullish(),
+    notificationsEnabled: z.boolean().nullish(),
+    redeemedHistory: z.array(z.object({
+        child_id: z.string(),
+        reward_id: z.string()
+    })).nullish(),
 });
 
 export type BackupData = z.infer<typeof backupSchema>;

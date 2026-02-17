@@ -65,7 +65,11 @@ export const localStorageService = {
             created_at: new Date().toISOString(),
             pin_admin: pin,
             family_name: familyName,
-            parent_name: parentName
+            parent_name: parentName,
+            preferred_auth_method: 'pin',
+            biometric_enabled: false,
+            notifications_enabled: true,
+            onboarding_step: 'family-setup'
         };
         db.profile = newProfile;
         saveDB(db);
@@ -652,9 +656,14 @@ export const localStorageService = {
                 profile = {
                     id: 'local-user',
                     created_at: new Date().toISOString(),
-                    pin_admin: validData.adminPin || '0000',
+                    pin_admin: validData.adminPin || validData.parentPin || '0000',
+                    parent_pattern: validData.parentPattern || undefined,
+                    preferred_auth_method: validData.preferredAuthMethod || undefined,
                     family_name: validData.familyName || 'My Family',
-                    parent_name: validData.adminName || 'Parent'
+                    parent_name: validData.adminName || 'Parent',
+                    biometric_enabled: validData.biometricEnabled || false,
+                    notifications_enabled: validData.notificationsEnabled || true,
+                    onboarding_step: validData.onboardingStep || 'family-setup',
                 };
             } else if (profile) {
                 // Sanitize profile fields
@@ -663,7 +672,12 @@ export const localStorageService = {
                     family_name: profile.family_name ?? undefined,
                     parent_name: profile.parent_name ?? undefined,
                     created_at: profile.created_at ?? undefined,
-                    pin_admin: profile.pin_admin ?? undefined
+                    pin_admin: profile.pin_admin ?? undefined,
+                    parent_pattern: profile.parent_pattern ?? undefined,
+                    preferred_auth_method: profile.preferred_auth_method ?? undefined,
+                    biometric_enabled: profile.biometric_enabled ?? undefined,
+                    notifications_enabled: profile.notifications_enabled ?? undefined,
+                    onboarding_step: profile.onboarding_step ?? undefined
                 };
             }
 
@@ -686,7 +700,10 @@ export const localStorageService = {
                 expiry_time: t.expiry_time ?? undefined,
                 next_due_date: t.next_due_date ?? undefined,
                 total_target_value: t.total_target_value ?? undefined,
-                target_unit: t.target_unit ?? undefined
+                target_unit: t.target_unit ?? undefined,
+                max_completions_per_day: t.max_completions_per_day ?? undefined,
+                current_streak: t.current_streak ?? undefined,
+                best_streak: t.best_streak ?? undefined
             }));
 
             const validRewards = (validData.rewards || []).map(r => ({
@@ -695,7 +712,8 @@ export const localStorageService = {
                 category: r.category ?? undefined,
                 required_task_id: r.required_task_id ?? undefined,
                 required_task_count: r.required_task_count ?? undefined,
-                created_at: r.created_at ?? undefined
+                created_at: r.created_at ?? undefined,
+                assigned_to: r.assigned_to || []
             }));
 
             // Filter logs to ensure referential integrity
@@ -709,7 +727,8 @@ export const localStorageService = {
                 rejection_reason: l.rejection_reason ?? undefined,
                 notes: l.notes ?? undefined,
                 verified_at: l.verified_at ?? undefined,
-                current_value: l.current_value ?? undefined
+                current_value: l.current_value ?? undefined,
+                parentDecisionDate: l.parentDecisionDate ?? undefined
             }));
 
             const newDB: LocalDB = {
@@ -718,7 +737,12 @@ export const localStorageService = {
                     created_at: profile.created_at || new Date().toISOString(),
                     pin_admin: profile.pin_admin || '0000',
                     family_name: profile.family_name ?? undefined,
-                    parent_name: profile.parent_name ?? undefined
+                    parent_name: profile.parent_name ?? undefined,
+                    parent_pattern: profile.parent_pattern ?? undefined,
+                    preferred_auth_method: profile.preferred_auth_method ?? undefined,
+                    biometric_enabled: profile.biometric_enabled ?? undefined,
+                    notifications_enabled: profile.notifications_enabled ?? undefined,
+                    onboarding_step: profile.onboarding_step ?? undefined
                 } : null,
                 children: validChildren,
                 tasks: validTasks,

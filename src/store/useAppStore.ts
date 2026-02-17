@@ -44,13 +44,12 @@ export interface AppState {
   toggleAdminMode: (isAdmin: boolean) => void;
   verifyPin: (pin: string) => boolean;
   verifyPattern: (pattern: string) => boolean;
-  setParentPin: (pin: string) => void;
-  setParentPattern: (pattern: string) => void;
-  setPreferredAuthMethod: (method: 'pin' | 'pattern' | 'biometric') => void;
-  setParentName: (name: string) => void;
-
-  setFamilyName: (name: string) => void;
-  setBiometricEnabled: (enabled: boolean) => void;
+  setParentPin: (pin: string) => Promise<void>;
+  setParentPattern: (pattern: string) => Promise<void>;
+  setPreferredAuthMethod: (method: 'pin' | 'pattern' | 'biometric') => Promise<void>;
+  setParentName: (name: string) => Promise<void>;
+  setFamilyName: (name: string) => Promise<void>;
+  setBiometricEnabled: (enabled: boolean) => Promise<void>;
 
   // Data Actions
   refreshData: () => Promise<void>;
@@ -68,7 +67,7 @@ export interface AppState {
   updateReward: (rewardId: string, updates: Partial<Reward>) => Promise<{ error: any }>;
   deleteReward: (rewardId: string) => Promise<{ error: any }>;
 
-  setOnboardingStep: (step: OnboardingStep) => void;
+  setOnboardingStep: (step: OnboardingStep) => Promise<void>;
 
   // Auth Actions
   fetchUserProfile: () => Promise<Profile | null>;
@@ -96,7 +95,7 @@ export interface AppState {
   importData: (data: Partial<AppState>) => Promise<{ error: any }>;
   logout: () => Promise<void>;
   resetApp: () => Promise<void>;
-  setNotificationsEnabled: (value: boolean) => void;
+  setNotificationsEnabled: (value: boolean) => Promise<void>;
 }
 
 export const useAppStore = create<AppState>()(
@@ -154,13 +153,41 @@ export const useAppStore = create<AppState>()(
         return isValid;
       },
 
-      setParentPin: (pin) => set({ parentPin: pin }),
-      setParentPattern: (pattern) => set({ parentPattern: pattern }),
-      setPreferredAuthMethod: (method) => set({ preferredAuthMethod: method }),
-      setParentName: (name) => set({ parentName: name }),
-      setFamilyName: (name) => set({ familyName: name }),
-      setNotificationsEnabled: (value) => set({ notificationsEnabled: value }),
-      setBiometricEnabled: (value) => set({ biometricEnabled: value }),
+      setParentPin: async (pin) => {
+        set({ parentPin: pin });
+        await localStorageService.updateProfile({ pin_admin: pin });
+        set((state) => ({ userProfile: state.userProfile ? { ...state.userProfile, pin_admin: pin } : null }));
+      },
+      setParentPattern: async (pattern) => {
+        set({ parentPattern: pattern });
+        await localStorageService.updateProfile({ parent_pattern: pattern });
+        set((state) => ({ userProfile: state.userProfile ? { ...state.userProfile, parent_pattern: pattern } : null }));
+      },
+      setPreferredAuthMethod: async (method) => {
+        set({ preferredAuthMethod: method });
+        await localStorageService.updateProfile({ preferred_auth_method: method });
+        set((state) => ({ userProfile: state.userProfile ? { ...state.userProfile, preferred_auth_method: method } : null }));
+      },
+      setParentName: async (name) => {
+        set({ parentName: name });
+        await localStorageService.updateProfile({ parent_name: name });
+        set((state) => ({ userProfile: state.userProfile ? { ...state.userProfile, parent_name: name } : null }));
+      },
+      setFamilyName: async (name) => {
+        set({ familyName: name });
+        await localStorageService.updateProfile({ family_name: name });
+        set((state) => ({ userProfile: state.userProfile ? { ...state.userProfile, family_name: name } : null }));
+      },
+      setNotificationsEnabled: async (value) => {
+        set({ notificationsEnabled: value });
+        await localStorageService.updateProfile({ notifications_enabled: value });
+        set((state) => ({ userProfile: state.userProfile ? { ...state.userProfile, notifications_enabled: value } : null }));
+      },
+      setBiometricEnabled: async (value) => {
+        set({ biometricEnabled: value });
+        await localStorageService.updateProfile({ biometric_enabled: value });
+        set((state) => ({ userProfile: state.userProfile ? { ...state.userProfile, biometric_enabled: value } : null }));
+      },
 
       refreshData: async () => {
         set({ isLoading: true });
@@ -504,7 +531,11 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      setOnboardingStep: (step) => set({ onboardingStep: step }),
+      setOnboardingStep: async (step) => {
+        set({ onboardingStep: step });
+        await localStorageService.updateProfile({ onboarding_step: step });
+        set((state) => ({ userProfile: state.userProfile ? { ...state.userProfile, onboarding_step: step } : null }));
+      },
 
       fetchUserProfile: async () => {
         set({ isLoading: true });
@@ -514,8 +545,13 @@ export const useAppStore = create<AppState>()(
           set({ userProfile: profile });
           if (profile) {
             if (profile.pin_admin) set({ parentPin: profile.pin_admin });
+            if (profile.parent_pattern) set({ parentPattern: profile.parent_pattern });
+            if (profile.preferred_auth_method) set({ preferredAuthMethod: profile.preferred_auth_method });
             if (profile.family_name) set({ familyName: profile.family_name });
             if (profile.parent_name) set({ parentName: profile.parent_name });
+            if (profile.biometric_enabled !== undefined) set({ biometricEnabled: profile.biometric_enabled });
+            if (profile.notifications_enabled !== undefined) set({ notificationsEnabled: profile.notifications_enabled });
+            if (profile.onboarding_step) set({ onboardingStep: profile.onboarding_step as OnboardingStep });
           }
 
           return profile;
@@ -1203,6 +1239,15 @@ export const useAppStore = create<AppState>()(
           if (data.lastMissedCheckDate) {
             set({ lastMissedCheckDate: data.lastMissedCheckDate });
           }
+          if (data.notificationsEnabled !== undefined) {
+            set({ notificationsEnabled: data.notificationsEnabled });
+          }
+          if (data.biometricEnabled !== undefined) {
+            set({ biometricEnabled: data.biometricEnabled });
+          }
+          if (data.preferredAuthMethod) {
+            set({ preferredAuthMethod: data.preferredAuthMethod });
+          }
 
           return { error: null };
         } catch (error) {
@@ -1217,10 +1262,14 @@ export const useAppStore = create<AppState>()(
       name: 'stars-rewards-storage',
       partialize: (state) => ({
         parentPin: state.parentPin,
+        parentPattern: state.parentPattern,
+        preferredAuthMethod: state.preferredAuthMethod,
         parentName: state.parentName,
         familyName: state.familyName,
         onboardingStep: state.onboardingStep,
         lastMissedCheckDate: state.lastMissedCheckDate,
+        biometricEnabled: state.biometricEnabled,
+        notificationsEnabled: state.notificationsEnabled,
         // Persist important data
         children: state.children,
         activeChildId: state.activeChildId,
@@ -1229,6 +1278,7 @@ export const useAppStore = create<AppState>()(
         childLogs: state.childLogs,
         redeemedHistory: state.redeemedHistory,
         transactions: state.transactions,
+        categories: state.categories,
       }),
     }
   )
