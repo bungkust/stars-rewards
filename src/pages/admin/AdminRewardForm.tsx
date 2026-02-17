@@ -88,7 +88,7 @@ const AdminRewardForm = () => {
       await addReward(rewardData);
     }
 
-    navigate('/rewards');
+    navigate('/parent/rewards');
   };
 
   const isFormValid = name.trim().length > 0 && selectedChildIds.length > 0 && cost >= 0;

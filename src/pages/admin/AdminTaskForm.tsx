@@ -145,13 +145,13 @@ const AdminTaskForm = () => {
       await addTask(taskData);
     }
 
-    navigate('/admin/tasks');
+    navigate('/parent/tasks');
   };
 
   const handleDelete = async () => {
     if (id) {
       await updateTask(id, { is_active: false });
-      navigate('/admin/tasks');
+      navigate('/parent/tasks');
     }
   };
 
