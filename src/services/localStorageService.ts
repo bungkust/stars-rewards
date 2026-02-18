@@ -32,10 +32,22 @@ const getDB = (): LocalDB => {
 
     try {
         const parsed = JSON.parse(stored);
-        // Ensure arrays are actually arrays (handle case where stored JSON has null/undefined for these keys)
+
+        // Sanitize profile with defaults if it exists
+        let profile = parsed.profile;
+        if (profile) {
+            profile = {
+                preferred_auth_method: 'pin',
+                biometric_enabled: false,
+                notifications_enabled: true,
+                ...profile
+            };
+        }
+
         return {
             ...defaults,
             ...parsed,
+            profile,
             children: Array.isArray(parsed.children) ? parsed.children : defaults.children,
             tasks: Array.isArray(parsed.tasks) ? parsed.tasks : defaults.tasks,
             rewards: Array.isArray(parsed.rewards) ? parsed.rewards : defaults.rewards,

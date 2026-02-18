@@ -542,16 +542,20 @@ export const useAppStore = create<AppState>()(
         try {
           const profile = await localStorageService.getProfile();
 
-          set({ userProfile: profile });
           if (profile) {
-            if (profile.pin_admin) set({ parentPin: profile.pin_admin });
-            if (profile.parent_pattern) set({ parentPattern: profile.parent_pattern });
-            if (profile.preferred_auth_method) set({ preferredAuthMethod: profile.preferred_auth_method });
-            if (profile.family_name) set({ familyName: profile.family_name });
-            if (profile.parent_name) set({ parentName: profile.parent_name });
-            if (profile.biometric_enabled !== undefined) set({ biometricEnabled: profile.biometric_enabled });
-            if (profile.notifications_enabled !== undefined) set({ notificationsEnabled: profile.notifications_enabled });
-            if (profile.onboarding_step) set({ onboardingStep: profile.onboarding_step as OnboardingStep });
+            set((state) => ({
+              userProfile: profile,
+              // Only overwrite individual fields if they are null/undefined in current state 
+              // (to avoid overwriting rehydrated state with potentially stale local db state during mount)
+              parentPin: state.parentPin || profile.pin_admin || null,
+              parentPattern: state.parentPattern || profile.parent_pattern || null,
+              preferredAuthMethod: state.preferredAuthMethod || profile.preferred_auth_method || 'pin',
+              familyName: state.familyName || profile.family_name || undefined,
+              parentName: state.parentName || profile.parent_name || undefined,
+              biometricEnabled: state.biometricEnabled !== undefined ? state.biometricEnabled : (profile.biometric_enabled ?? false),
+              notificationsEnabled: state.notificationsEnabled !== undefined ? state.notificationsEnabled : (profile.notifications_enabled ?? true),
+              onboardingStep: (state.onboardingStep && state.onboardingStep !== 'family-setup') ? state.onboardingStep : (profile.onboarding_step as OnboardingStep || 'family-setup'),
+            }));
           }
 
           return profile;
@@ -1270,6 +1274,7 @@ export const useAppStore = create<AppState>()(
         lastMissedCheckDate: state.lastMissedCheckDate,
         biometricEnabled: state.biometricEnabled,
         notificationsEnabled: state.notificationsEnabled,
+        userProfile: state.userProfile,
         // Persist important data
         children: state.children,
         activeChildId: state.activeChildId,
