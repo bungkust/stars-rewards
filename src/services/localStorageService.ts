@@ -100,7 +100,19 @@ export const localStorageService = {
 
     updateProfile: async (updates: Partial<Profile>): Promise<Profile | null> => {
         const db = getDB();
-        if (!db.profile) return null;
+
+        // If profile is missing, create a base structure so updates can be saved
+        if (!db.profile) {
+            db.profile = {
+                id: 'local-user',
+                created_at: new Date().toISOString(),
+                pin_admin: '0000',
+                preferred_auth_method: 'pin',
+                biometric_enabled: false,
+                notifications_enabled: true,
+                onboarding_step: 'completed'
+            };
+        }
 
         db.profile = { ...db.profile, ...updates };
         saveDB(db);

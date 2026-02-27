@@ -545,16 +545,15 @@ export const useAppStore = create<AppState>()(
           if (profile) {
             set((state) => ({
               userProfile: profile,
-              // Only overwrite individual fields if they are null/undefined in current state 
-              // (to avoid overwriting rehydrated state with potentially stale local db state during mount)
-              parentPin: state.parentPin || profile.pin_admin || null,
-              parentPattern: state.parentPattern || profile.parent_pattern || null,
-              preferredAuthMethod: state.preferredAuthMethod || profile.preferred_auth_method || 'pin',
-              familyName: state.familyName || profile.family_name || undefined,
-              parentName: state.parentName || profile.parent_name || undefined,
-              biometricEnabled: state.biometricEnabled !== undefined ? state.biometricEnabled : (profile.biometric_enabled ?? false),
-              notificationsEnabled: state.notificationsEnabled !== undefined ? state.notificationsEnabled : (profile.notifications_enabled ?? true),
-              onboardingStep: (state.onboardingStep && state.onboardingStep !== 'family-setup') ? state.onboardingStep : (profile.onboarding_step as OnboardingStep || 'family-setup'),
+              // Trust db profile first (which is the single source of truth saved to local storage), fallback to state
+              parentPin: profile.pin_admin || state.parentPin || null,
+              parentPattern: profile.parent_pattern || state.parentPattern || null,
+              preferredAuthMethod: profile.preferred_auth_method || state.preferredAuthMethod || 'pin',
+              familyName: profile.family_name || state.familyName || undefined,
+              parentName: profile.parent_name || state.parentName || undefined,
+              biometricEnabled: profile.biometric_enabled ?? state.biometricEnabled ?? false,
+              notificationsEnabled: profile.notifications_enabled ?? state.notificationsEnabled ?? true,
+              onboardingStep: (profile.onboarding_step as OnboardingStep) || state.onboardingStep || 'family-setup',
             }));
           }
 
