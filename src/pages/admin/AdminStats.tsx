@@ -13,7 +13,7 @@ import type { TimeFilter } from '../../utils/analytics';
 const AdminStats = () => {
   const navigate = useNavigate();
   const { transactions, childLogs, children, tasks, categories, isLoading, deleteTransaction, deleteChildLog } = useAppStore();
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>('week');
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('today');
   const [selectedChildId, setSelectedChildId] = useState<string>('all');
   const [tempDate, setTempDate] = useState(new Date().toISOString().split('T')[0]);
   const [specificDate, setSpecificDate] = useState(new Date().toISOString().split('T')[0]);

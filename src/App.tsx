@@ -163,9 +163,24 @@ import { useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import PageTransition from './components/layout/PageTransition';
 
+// Root Redirect Component
+const RootRedirect = () => {
+  const isAdminMode = useAppStore(state => state.isAdminMode);
+  return <Navigate to={isAdminMode ? "/parent" : "/child"} replace />;
+};
+
+// Protected Route for Parent
+const ParentRoute = ({ children }: { children: ReactNode }) => {
+  const isAdminMode = useAppStore(state => state.isAdminMode);
+  if (!isAdminMode) {
+    return <Navigate to="/child" replace />;
+  }
+  return children;
+};
+
 const AnimatedRoutes = () => {
   const location = useLocation();
-  const { isAdminMode } = useAppStore();
+  const isAdminMode = useAppStore(state => state.isAdminMode);
 
   // Apply Global Theme
   useEffect(() => {
@@ -175,19 +190,6 @@ const AnimatedRoutes = () => {
     const theme = isAdminMode ? 'parentTheme' : 'childTheme';
     document.documentElement.setAttribute('data-theme', theme);
   }, [isAdminMode, location.pathname]);
-
-  // Root Redirect Component
-  const RootRedirect = () => {
-    return <Navigate to={isAdminMode ? "/parent" : "/child"} replace />;
-  };
-
-  // Protected Route for Parent
-  const ParentRoute = ({ children }: { children: ReactNode }) => {
-    if (!isAdminMode) {
-      return <Navigate to="/child" replace />;
-    }
-    return children;
-  };
 
   return (
     <AnimatePresence mode="wait">

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { ToggleButton, H1Header } from '../../components/design-system';
 import { FaArrowLeft, FaFilter, FaSearch } from 'react-icons/fa';
@@ -150,7 +150,7 @@ const AdminHistory = () => {
     }, [combinedHistory, selectedChildId, searchQuery, typeFilter, dateFilter, sortOption, specificDate]);
 
     // Reset visible count when filters change
-    useMemo(() => {
+    useEffect(() => {
         setVisibleCount(10);
     }, [selectedChildId, searchQuery, typeFilter, dateFilter, sortOption, specificDate]);
 
