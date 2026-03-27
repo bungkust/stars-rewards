@@ -128,6 +128,10 @@ export const dataService = {
     return localStorageService.completeTask(childId, taskId);
   },
 
+  completeTaskOnDate: async (_parentId: string, childId: string, taskId: string, dateIso: string): Promise<ChildTaskLog | null> => {
+    return localStorageService.completeTaskOnDate(childId, taskId, dateIso);
+  },
+
   /**
    * Submits an exemption request for a task.
    */

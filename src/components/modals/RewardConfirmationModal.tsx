@@ -7,19 +7,23 @@ import { SecondaryButton } from '../design-system/SecondaryButton';
 interface RewardConfirmationModalProps {
   isOpen: boolean;
   rewardName: string;
+  description?: string;
   cost: number;
   onClose: () => void;
   onConfirm: () => void;
   isLoading?: boolean;
+  canAfford?: boolean;
 }
 
 const RewardConfirmationModal: React.FC<RewardConfirmationModalProps> = ({ 
   isOpen, 
   rewardName, 
+  description,
   cost, 
   onClose, 
   onConfirm,
-  isLoading 
+  isLoading,
+  canAfford = true
 }) => {
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -55,21 +59,39 @@ const RewardConfirmationModal: React.FC<RewardConfirmationModalProps> = ({
                 </div>
                 
                 <Dialog.Title as="h2" className="text-xl font-bold text-gray-800 mb-2">
-                  Buy this reward?
+                  {canAfford ? 'Buy this reward?' : 'Reward Details'}
                 </Dialog.Title>
                 <p className="text-lg font-bold text-primary mb-1">{rewardName}</p>
+                
+                {description && (
+                  <p className="text-sm text-gray-500 mb-4 px-4">{description}</p>
+                )}
                 
                 <div className="flex justify-center items-center gap-2 text-warning font-bold text-xl mb-8">
                   <FaStar /> {cost} Stars
                 </div>
                 
+                {!canAfford && (
+                  <div className="bg-orange-50 text-orange-600 p-3 rounded-xl mb-6 text-sm font-medium">
+                    You need {cost} stars to buy this. Keep going!
+                  </div>
+                )}
+                
                 <div className="flex flex-col gap-3">
-                  <PrimaryButton onClick={onConfirm} disabled={isLoading} className="rounded-xl text-lg">
-                    {isLoading ? 'Buying...' : 'Yes, I want it!'}
-                  </PrimaryButton>
-                  <SecondaryButton onClick={onClose} disabled={isLoading} className="rounded-xl">
-                    Maybe later
-                  </SecondaryButton>
+                  {canAfford ? (
+                    <PrimaryButton onClick={onConfirm} disabled={isLoading} className="rounded-xl text-lg">
+                      {isLoading ? 'Buying...' : 'Yes, I want it!'}
+                    </PrimaryButton>
+                  ) : (
+                    <PrimaryButton onClick={onClose} className="rounded-xl text-lg bg-gray-400 border-none">
+                      Back to Shop
+                    </PrimaryButton>
+                  )}
+                  {canAfford && (
+                    <SecondaryButton onClick={onClose} disabled={isLoading} className="rounded-xl">
+                      Maybe later
+                    </SecondaryButton>
+                  )}
                 </div>
               </Dialog.Panel>
             </Transition.Child>

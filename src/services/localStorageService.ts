@@ -334,6 +334,21 @@ export const localStorageService = {
         return newLog;
     },
 
+    completeTaskOnDate: async (childId: string, taskId: string, dateIso: string): Promise<ChildTaskLog> => {
+        const db = getDB();
+        const newLog: ChildTaskLog = {
+            id: generateId(),
+            parent_id: 'local-user',
+            child_id: childId,
+            task_id: taskId,
+            status: 'PENDING',
+            completed_at: dateIso
+        };
+        db.logs.push(newLog);
+        saveDB(db);
+        return newLog;
+    },
+
     submitExemptionRequest: async (childId: string, taskId: string, reason: string): Promise<ChildTaskLog> => {
         const db = getDB();
         const newLog: ChildTaskLog = {
@@ -549,6 +564,7 @@ export const localStorageService = {
     updateTaskProgress: async (childId: string, taskId: string, value: number, target: number): Promise<ChildTaskLog | null> => {
         const db = getDB();
         const todayStr = new Date().toISOString().split('T')[0];
+        const nowIso = new Date().toISOString();
 
         // Find existing log for today
         let logIndex = db.logs.findIndex(l =>
@@ -560,7 +576,6 @@ export const localStorageService = {
         let log: ChildTaskLog;
 
         if (logIndex === -1) {
-            // Create new log with IN_PROGRESS status
             log = {
                 id: generateId(),
                 parent_id: 'local-user',
@@ -568,34 +583,59 @@ export const localStorageService = {
                 task_id: taskId,
                 status: 'IN_PROGRESS',
                 current_value: value,
-                completed_at: new Date().toISOString()
+                completed_at: nowIso
             };
             db.logs.push(log);
         } else {
-            // Update existing log
             db.logs[logIndex].current_value = value;
-            db.logs[logIndex].completed_at = new Date().toISOString(); // Update timestamp
+            db.logs[logIndex].completed_at = nowIso; // Update timestamp
             log = db.logs[logIndex];
         }
 
-        // Check if target reached
         if (value >= target) {
-            // Create/Update log to PENDING (completed)
-            if (logIndex === -1) {
-                // It was just pushed, need to find it or just mutate 'log' which is ref? 
-                // 'log' object is in the array now.
-                log.status = 'PENDING';
-            } else {
-                db.logs[logIndex].status = 'PENDING';
-                log = db.logs[logIndex];
-            }
+            log.status = 'PENDING';
+        } else if (log.status === 'PENDING' || log.status === 'IN_PROGRESS') {
+            log.status = 'IN_PROGRESS';
+        }
+
+        saveDB(db);
+        return log;
+    },
+
+    updateTaskProgressOnDate: async (childId: string, taskId: string, value: number, target: number, dateIso: string): Promise<ChildTaskLog | null> => {
+        const db = getDB();
+        const targetDateStr = dateIso.split('T')[0];
+
+        // Find existing log for the target date
+        let logIndex = db.logs.findIndex(l =>
+            l.child_id === childId &&
+            l.task_id === taskId &&
+            l.completed_at.startsWith(targetDateStr)
+        );
+
+        let log: ChildTaskLog;
+
+        if (logIndex === -1) {
+            log = {
+                id: generateId(),
+                parent_id: 'local-user',
+                child_id: childId,
+                task_id: taskId,
+                status: 'IN_PROGRESS',
+                current_value: value,
+                completed_at: dateIso
+            };
+            db.logs.push(log);
         } else {
-            // Ensure status is IN_PROGRESS if it was PENDING (e.g. undoing?)
-            // Only if it's not VERIFIED/REJECTED/etc.
-            if (log.status === 'PENDING' || log.status === 'IN_PROGRESS') {
-                if (logIndex !== -1) db.logs[logIndex].status = 'IN_PROGRESS';
-                else log.status = 'IN_PROGRESS';
-            }
+            db.logs[logIndex].current_value = value;
+            db.logs[logIndex].completed_at = dateIso;
+            log = db.logs[logIndex];
+        }
+
+        if (value >= target) {
+            log.status = 'PENDING';
+        } else if (log.status === 'PENDING' || log.status === 'IN_PROGRESS') {
+            log.status = 'IN_PROGRESS';
         }
 
         saveDB(db);

@@ -97,6 +97,13 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, task, onClo
                                             </div>
                                         </div>
                                     </div>
+                                    
+                                    {/* Description */}
+                                    {task.description && (
+                                        <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 italic text-sm text-gray-600">
+                                            {task.description}
+                                        </div>
+                                    )}
 
                                     {/* Close Button */}
                                     <div className="mt-4">

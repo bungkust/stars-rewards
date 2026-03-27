@@ -42,6 +42,7 @@ const AdminTaskForm = () => {
   const [selectedChildIds, setSelectedChildIds] = useState<string[]>([]);
   const [isActive, setIsActive] = useState(true);
   const [maxCompletions, setMaxCompletions] = useState(1);
+  const [description, setDescription] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isCustomRecurrence, setIsCustomRecurrence] = useState(false);
   const [customOptions, setCustomOptions] = useState<RecurrenceOptions>({
@@ -64,6 +65,7 @@ const AdminTaskForm = () => {
         setExpiryTime(taskToEdit.expiry_time || '');
         setMaxCompletions(taskToEdit.max_completions_per_day || 1);
         setIsActive(taskToEdit.is_active !== false);
+        setDescription(taskToEdit.description || '');
         if (taskToEdit.assigned_to && taskToEdit.assigned_to.length > 0) {
           setSelectedChildIds(taskToEdit.assigned_to);
         } else {
@@ -137,6 +139,7 @@ const AdminTaskForm = () => {
       max_completions_per_day: maxCompletions,
       total_target_value: isProgressTask ? targetValue : undefined,
       target_unit: isProgressTask ? targetUnit : undefined,
+      description: description.trim() || undefined,
     };
 
     if (id) {
@@ -185,6 +188,19 @@ const AdminTaskForm = () => {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
+          />
+        </div>
+
+        <div className="form-control w-full">
+          <label className="label">
+            <span className="label-text font-bold">Mission Description</span>
+            <span className="label-text-alt text-gray-400">(Optional)</span>
+          </label>
+          <textarea
+            className="textarea textarea-bordered w-full rounded-xl h-24"
+            placeholder="Describe the mission details..."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
           />
         </div>
 

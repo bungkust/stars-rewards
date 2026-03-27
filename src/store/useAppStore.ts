@@ -76,7 +76,9 @@ export interface AppState {
   updateParentName: (name: string) => Promise<{ error: any }>;
   updateChildAvatar: (childId: string, avatarUrl: string) => Promise<{ error: any }>;
   completeTask: (taskId: string) => Promise<{ error: any }>;
+  completeTaskOnDate: (taskId: string, dateIso: string) => Promise<{ error: any }>;
   updateTaskProgress: (taskId: string, value: number, target: number) => Promise<{ error: any }>;
+  updateTaskProgressOnDate: (taskId: string, value: number, target: number, dateIso: string) => Promise<{ error: any }>;
   submitExemptionRequest: (taskId: string, reason: string) => Promise<{ error: any }>;
   getPendingExcuses: () => ChildTaskLog[];
   approveExcuse: (logId: string) => Promise<{ error: any }>;
@@ -710,6 +712,49 @@ export const useAppStore = create<AppState>()(
         }
       },
 
+      completeTaskOnDate: async (taskId: string, dateIso: string) => {
+        set({ isLoading: true });
+        try {
+          const { activeChildId } = get();
+          if (!activeChildId) throw new Error('Missing child ID');
+
+          const userId = 'local-user';
+          const newLog = await dataService.completeTaskOnDate(userId, activeChildId, taskId, dateIso);
+
+          if (!newLog) throw new Error('Failed to complete task');
+
+          const { tasks, children } = get();
+          const task = tasks.find(t => t.id === taskId);
+          const child = children.find(c => c.id === activeChildId);
+
+          set((state) => ({
+            childLogs: [newLog, ...state.childLogs],
+            pendingVerifications: [
+              ...state.pendingVerifications,
+              {
+                ...newLog,
+                task_title: task?.name || 'Unknown Task',
+                reward_value: task?.reward_value || 0,
+                child_name: child?.name || 'Unknown Child'
+              }
+            ]
+          }));
+
+          const { pendingVerifications, childLogs } = get();
+          const pendingCount = pendingVerifications.length + childLogs.filter(l => l.status === 'PENDING_EXCUSE').length;
+          import('../services/notificationService').then(({ notificationService }) => {
+            notificationService.schedulePendingAdminNotification(pendingCount);
+          });
+
+          return { error: null };
+        } catch (error) {
+          console.error('Error completing task on date:', error);
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
       updateTaskProgress: async (taskId: string, value: number, target: number) => {
         set({ isLoading: true });
         try {
@@ -773,6 +818,68 @@ export const useAppStore = create<AppState>()(
           return { error: null };
         } catch (error) {
           console.error('Error updating progress:', error);
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      updateTaskProgressOnDate: async (taskId: string, value: number, target: number, dateIso: string) => {
+        set({ isLoading: true });
+        try {
+          const { activeChildId } = get();
+          if (!activeChildId) throw new Error('Missing child ID');
+
+          // Call service
+          const updatedLog = await localStorageService.updateTaskProgressOnDate(activeChildId, taskId, value, target, dateIso);
+
+          if (!updatedLog) throw new Error('Failed to update progress');
+
+          // Update local state
+          set((state) => {
+            const existingLogIndex = state.childLogs.findIndex(l => l.id === updatedLog.id);
+            let newLogs = [...state.childLogs];
+
+            if (existingLogIndex !== -1) {
+              newLogs[existingLogIndex] = updatedLog;
+            } else {
+              newLogs = [updatedLog, ...newLogs];
+            }
+
+            let newPending = [...state.pendingVerifications];
+            if (updatedLog.status === 'PENDING') {
+              const isPending = newPending.some(p => p.id === updatedLog.id);
+              if (!isPending) {
+                const task = state.tasks.find(t => t.id === taskId);
+                const child = state.children.find(c => c.id === activeChildId);
+                newPending.push({
+                  ...updatedLog,
+                  task_title: task?.name || 'Unknown',
+                  reward_value: task?.reward_value || 0,
+                  child_name: child?.name || 'Unknown'
+                });
+              }
+            } else {
+              newPending = newPending.filter(p => p.id !== updatedLog.id);
+            }
+
+            return {
+              childLogs: newLogs,
+              pendingVerifications: newPending
+            };
+          });
+
+          if (updatedLog.status === 'PENDING') {
+            const { pendingVerifications, childLogs } = get();
+            const pendingCount = pendingVerifications.length + childLogs.filter(l => l.status === 'PENDING_EXCUSE').length;
+            import('../services/notificationService').then(({ notificationService }) => {
+              notificationService.schedulePendingAdminNotification(pendingCount);
+            });
+          }
+
+          return { error: null };
+        } catch (error) {
+          console.error('Error updating progress on date:', error);
           return { error };
         } finally {
           set({ isLoading: false });

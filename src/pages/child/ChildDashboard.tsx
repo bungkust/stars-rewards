@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { FaStar, FaClock, FaRedo, FaCamera, FaBolt, FaCalendarWeek, FaCalendarAlt } from 'react-icons/fa';
-import { motion, type PanInfo } from 'framer-motion';
+import { FaStar, FaClock, FaRedo, FaCamera, FaBolt, FaCalendarWeek, FaCalendarAlt, FaChevronDown, FaChevronUp, FaPlus } from 'react-icons/fa';
+import { motion, AnimatePresence, type PanInfo } from 'framer-motion';
 import { ToggleButton } from '../../components/design-system';
 import { parseRRule, isDateValid } from '../../utils/recurrence';
 import { getTodayLocalStart, getLocalStartOfDay, getLocalDateString } from '../../utils/timeUtils';
@@ -12,7 +12,7 @@ import ExemptionModal from '../../components/modals/ExemptionModal';
 import TaskDetailsModal from '../../components/modals/TaskDetailsModal';
 
 const ChildDashboard = () => {
-  const { activeChildId, children, getTasksByChildId, updateChild, deleteChild, completeTask, updateTaskProgress, isLoading, childLogs } = useAppStore();
+  const { activeChildId, children, getTasksByChildId, updateChild, deleteChild, completeTask, completeTaskOnDate, updateTaskProgress, updateTaskProgressOnDate, isLoading, childLogs } = useAppStore();
   const child = children.find(c => c.id === activeChildId);
   const allTasks = activeChildId ? getTasksByChildId(activeChildId) : [];
 
@@ -73,6 +73,13 @@ const ChildDashboard = () => {
     checkAndSchedule();
   }, [activeChildId, allTasks, childLogs]);
 
+  // Helper to get yesterday's local start (00:00)
+  const getYesterdayLocalStart = (): Date => {
+    const yesterday = getTodayLocalStart();
+    yesterday.setDate(yesterday.getDate() - 1);
+    return yesterday;
+  };
+
   // Helper to find logs for today
   const getTodayLogs = (taskId: string) => {
     if (!activeChildId) return [];
@@ -84,6 +91,19 @@ const ChildDashboard = () => {
       const logDate = new Date(log.completed_at);
       const logDateStr = getLocalDateString(logDate);
       return logDateStr === todayStr;
+    });
+  };
+
+  // Helper to find logs for yesterday
+  const getYesterdayLogs = (taskId: string) => {
+    if (!activeChildId) return [];
+    const yesterday = getYesterdayLocalStart();
+    const yesterdayStr = getLocalDateString(yesterday);
+
+    return childLogs.filter(log => {
+      if (log.child_id !== activeChildId || log.task_id !== taskId) return false;
+      const logDateStr = getLocalDateString(new Date(log.completed_at));
+      return logDateStr === yesterdayStr;
     });
   };
 
@@ -215,6 +235,36 @@ const ChildDashboard = () => {
   const visibleTasks = filteredTasks.slice(0, visibleCount);
   const hasMore = visibleTasks.length < filteredTasks.length;
 
+  const [isYesterdayCollapsed, setIsYesterdayCollapsed] = useState(true);
+
+  // Yesterday's tasks
+  const yesterdayTasks = useMemo(() => {
+    const yesterday = getYesterdayLocalStart();
+    const yesterdayStr = getLocalDateString(yesterday);
+
+    return allTasks.filter(task => {
+      if (!task.is_active) return false;
+      if (task.assigned_to && activeChildId && !task.assigned_to.includes(activeChildId)) return false;
+
+      if (task.recurrence_rule === 'Once') {
+        // Show Once tasks that were created on or before yesterday and not done before yesterday
+        const createdAt = task.created_at ? getLocalDateString(new Date(task.created_at)) : null;
+        if (!createdAt || createdAt > yesterdayStr) return false;
+        // Check if next_due_date (if set) was yesterday or earlier
+        if (task.next_due_date && task.next_due_date > yesterdayStr) return false;
+        return true;
+      }
+
+      if (task.recurrence_rule) {
+        const options = parseRRule(task.recurrence_rule);
+        const baseDate = new Date(task.created_at || new Date());
+        return isDateValid(yesterday, options, baseDate);
+      }
+
+      return false;
+    });
+  }, [allTasks, activeChildId, childLogs]);
+
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
   const [lastCompletedTask, setLastCompletedTask] = useState<{ name: string, value: number } | null>(null);
@@ -271,6 +321,37 @@ const ChildDashboard = () => {
     if (newVal >= target) {
       setLastCompletedTask({ name: task.name, value: task.reward_value });
       setIsCompletionModalOpen(true);
+    }
+  };
+  
+  const handleYesterdayTaskProgressIncrement = async (task: { id: string; target_value: number }) => {
+    const yesterday = getYesterdayLocalStart();
+    yesterday.setHours(23, 59, 0, 0);
+    const dateIso = yesterday.toISOString();
+    
+    // Find latest log for yesterday to get current value
+    const logs = getYesterdayLogs(task.id);
+    const currentVal = logs[0]?.current_value || 0;
+    const newVal = currentVal + 1;
+    
+    const { error } = await updateTaskProgressOnDate(task.id, newVal, task.target_value, dateIso);
+    if (error) {
+      alert('Failed to update progress. Please try again.');
+    }
+  };
+
+  const handleYesterdayTaskComplete = async (task: { id: string; name: string; reward_value: number }) => {
+    // Use end-of-yesterday as the backdated timestamp
+    const yesterday = getYesterdayLocalStart();
+    yesterday.setHours(23, 59, 0, 0);
+    const dateIso = yesterday.toISOString();
+
+    const { error } = await completeTaskOnDate(task.id, dateIso);
+    if (!error) {
+      setLastCompletedTask({ name: task.name, value: task.reward_value });
+      setIsCompletionModalOpen(true);
+    } else {
+      alert('Something went wrong. Please try again.');
     }
   };
 
@@ -566,6 +647,160 @@ const ChildDashboard = () => {
           </>
         )}
       </div>
+
+      {/* Yesterday's Tasks Section */}
+      {yesterdayTasks.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <button
+            className="flex items-center justify-between px-1 w-full"
+            onClick={() => setIsYesterdayCollapsed(prev => !prev)}
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-bold text-gray-400">
+                Yesterday's Unfinished Mission
+              </h3>
+              <span className="text-xs font-medium text-neutral/40 bg-base-200 px-2 py-0.5 rounded-full">
+                {yesterdayTasks.length}
+              </span>
+            </div>
+            {isYesterdayCollapsed
+              ? <FaChevronDown className="text-gray-400 w-3 h-3" />
+              : <FaChevronUp className="text-gray-400 w-3 h-3" />
+            }
+          </button>
+
+          <AnimatePresence>
+            {!isYesterdayCollapsed && (
+              <motion.div
+                key="yesterday-tasks"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden flex flex-col gap-2"
+              >
+                {yesterdayTasks.map((task) => {
+                  const logs = getYesterdayLogs(task.id);
+                  const max = task.max_completions_per_day || 1;
+                  const validLogs = logs.filter(l => ['VERIFIED', 'PENDING', 'PENDING_EXCUSE', 'EXCUSED'].includes(l.status));
+                  const isDone = validLogs.length >= max;
+                  const latestLog = logs[0];
+                  const status = isDone ? (validLogs[0]?.status || 'VERIFIED') :
+                    latestLog?.status === 'FAILED' ? 'FAILED' :
+                    latestLog?.status === 'REJECTED' ? 'REJECTED' :
+                    'MISSED';
+
+                  const borderColor =
+                    status === 'VERIFIED' ? 'border-success' :
+                    status === 'PENDING' ? 'border-warning' :
+                    status === 'PENDING_EXCUSE' ? 'border-warning' :
+                    status === 'EXCUSED' ? 'border-gray-300' :
+                    status === 'REJECTED' ? 'border-error' :
+                    'border-gray-200'; // MISSED
+
+                  const iconBg =
+                    status === 'VERIFIED' ? 'bg-success/10 text-success' :
+                    status === 'PENDING' ? 'bg-warning/10 text-warning' :
+                    status === 'PENDING_EXCUSE' ? 'bg-warning/10 text-warning' :
+                    status === 'EXCUSED' ? 'bg-neutral/10 text-neutral' :
+                    status === 'REJECTED' ? 'bg-error/10 text-error' :
+                    'bg-gray-100 text-gray-400'; // MISSED
+
+                  const badge =
+                    status === 'VERIFIED' ? <span className="badge badge-success text-white font-bold p-3">Approved</span> :
+                    status === 'PENDING' ? <span className="badge badge-warning text-white font-bold p-3">Pending</span> :
+                    status === 'PENDING_EXCUSE' ? <span className="badge badge-warning text-white font-bold p-3">Pending</span> :
+                    status === 'EXCUSED' ? <span className="badge badge-ghost text-gray-500 text-[10px] font-bold">Skipped</span> :
+                    status === 'REJECTED' ? <span className="badge badge-error text-white text-[10px] font-bold">Rejected</span> :
+                    <span className="badge badge-ghost text-gray-400 text-[10px] font-bold">Unfinished</span>;
+
+                  return (
+                    <div
+                      key={task.id}
+                      onClick={() => handleTaskClick(task)}
+                      className={`card bg-white/60 rounded-xl px-4 py-3 flex flex-row items-center justify-between border-l-4 opacity-75 cursor-pointer active:scale-95 transition-transform ${borderColor}`}
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className={`p-2.5 rounded-full flex-shrink-0 ${iconBg}`}>
+                          {task.recurrence_rule === 'Once' ? <FaBolt className="w-4 h-4" /> :
+                            task.recurrence_rule === 'Daily' ? <FaRedo className="w-4 h-4" /> :
+                              task.recurrence_rule === 'Weekly' ? <FaCalendarWeek className="w-4 h-4" /> :
+                                task.recurrence_rule === 'Monthly' ? <FaCalendarAlt className="w-4 h-4" /> :
+                                  <FaClock className="w-4 h-4" />}
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-semibold text-sm text-gray-600 truncate">{task.name}</h4>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {task.reward_value > 0 && (
+                              <span className="flex items-center gap-1 text-warning text-xs font-bold">
+                                <FaStar className="w-2.5 h-2.5" /> {task.reward_value}
+                              </span>
+                            )}
+                            {/* Only show badge here if it's NOT Pending or Verified/Done */}
+                            {status !== 'PENDING' && status !== 'VERIFIED' && status !== 'PENDING_EXCUSE' && badge}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {/* If not done and (failed/missed/rejected), show Done button */}
+                        {!isDone && (
+                          <>
+                            {task.total_target_value && task.total_target_value > 1 ? (
+                              <div className="flex flex-col items-end gap-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[10px] font-bold text-gray-400">
+                                    {latestLog?.current_value || 0}/{task.total_target_value}
+                                  </span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleYesterdayTaskProgressIncrement({ id: task.id, target_value: task.total_target_value! });
+                                    }}
+                                    disabled={isLoading}
+                                    className="btn btn-circle btn-xs btn-primary text-white"
+                                  >
+                                    <FaPlus className="w-2 h-2" />
+                                  </button>
+                                </div>
+                                <progress
+                                  className="progress progress-primary w-16 h-1.5"
+                                  value={latestLog?.current_value || 0}
+                                  max={task.total_target_value}
+                                />
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-end gap-1">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleYesterdayTaskComplete(task);
+                                  }}
+                                  disabled={isLoading}
+                                  className="btn btn-sm btn-primary text-white rounded-lg px-3 min-h-0 h-8 text-xs font-bold"
+                                >
+                                  Done
+                                </button>
+                                {max > 1 && (
+                                  <span className="text-[10px] font-bold text-gray-400">
+                                    {validLogs.length}/{max} completed
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </>
+                        )}
+                        {/* Show badge here if it IS Pending or Verified/Done (matches today's layout) */}
+                        {(status === 'PENDING' || status === 'VERIFIED' || status === 'PENDING_EXCUSE') && badge}
+                      </div>
+                    </div>
+                  );
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 };

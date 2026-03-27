@@ -20,7 +20,7 @@ const ChildRewards = () => {
   const { rewards, activeChildId, children, redeemReward, isLoading, transactions, childLogs, tasks, redeemedHistory } = useAppStore();
   const child = children.find(c => c.id === activeChildId);
 
-  const [selectedReward, setSelectedReward] = useState<{ id: string, name: string, cost: number } | null>(null);
+  const [selectedReward, setSelectedReward] = useState<{ id: string, name: string, description?: string, cost: number } | null>(null);
   const [successRewardName, setSuccessRewardName] = useState<string | null>(null);
   const [filter, setFilter] = useState<'available' | 'all'>('all');
   const [visibleCount, setVisibleCount] = useState(20);
@@ -133,13 +133,9 @@ const ChildRewards = () => {
   const visibleRewards = sortedRewards.slice(0, visibleCount);
   const hasMore = visibleRewards.length < sortedRewards.length;
 
-  const handleBuyClick = (rewardId: string, cost: number, rewardName: string) => {
+  const handleBuyClick = (rewardId: string, cost: number, rewardName: string, description?: string) => {
     if (!activeChildId || !child) return;
-    if (child.current_balance < cost) {
-      alert('Not enough stars!');
-      return;
-    }
-    setSelectedReward({ id: rewardId, name: rewardName, cost });
+    setSelectedReward({ id: rewardId, name: rewardName, description, cost });
   };
 
   const handleConfirmRedeem = async () => {
@@ -182,10 +178,12 @@ const ChildRewards = () => {
       <RewardConfirmationModal
         isOpen={!!selectedReward}
         rewardName={selectedReward?.name || ''}
+        description={selectedReward?.description}
         cost={selectedReward?.cost || 0}
         onClose={() => setSelectedReward(null)}
         onConfirm={handleConfirmRedeem}
         isLoading={isLoading}
+        canAfford={(child?.current_balance || 0) >= (selectedReward?.cost || 0)}
       />
 
       <RewardRedemptionSuccessModal
@@ -213,7 +211,11 @@ const ChildRewards = () => {
               const IconComponent = getIconComponent(reward.category);
 
               return (
-                <div key={reward.id} className={`card bg-base-100 shadow-sm rounded-xl p-4 flex flex-col items-center text-center gap-2 ${isRedeemed ? 'opacity-60' : ''}`}>
+                <div 
+                  key={reward.id} 
+                  onClick={() => handleBuyClick(reward.id, reward.cost_value, reward.name, reward.description)}
+                  className={`card bg-base-100 shadow-sm rounded-xl p-4 flex flex-col items-center text-center gap-2 cursor-pointer active:scale-95 transition-transform ${isRedeemed ? 'opacity-60' : ''}`}
+                >
                   <div className={`p-4 rounded-full mb-2 relative ${isRedeemed ? 'bg-neutral/10 text-neutral/40' : isLocked ? 'bg-neutral/10 text-neutral/40' : 'bg-primary/10 text-primary'}`}>
                     <IconComponent className="w-8 h-8" />
                     {isLocked && (
@@ -252,7 +254,7 @@ const ChildRewards = () => {
                   ) : (
                     <button
                       className={`btn btn-sm w-full rounded-full ${reward.cost_value === 0 ? 'btn-success text-white' : 'btn-primary text-white'}`}
-                      onClick={() => handleBuyClick(reward.id, reward.cost_value, reward.name)}
+                      onClick={() => handleBuyClick(reward.id, reward.cost_value, reward.name, reward.description)}
                       disabled={isLoading || !canAfford}
                     >
                       {reward.cost_value === 0 ? (

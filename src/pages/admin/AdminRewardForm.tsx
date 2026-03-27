@@ -28,6 +28,7 @@ const AdminRewardForm = () => {
   const [requiredTaskId, setRequiredTaskId] = useState('');
   const [requiredTaskCount, setRequiredTaskCount] = useState(1);
   const [selectedChildIds, setSelectedChildIds] = useState<string[]>([]);
+  const [description, setDescription] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -42,6 +43,7 @@ const AdminRewardForm = () => {
         setType(rewardToEdit.type as any);
         if (rewardToEdit.required_task_id) setRequiredTaskId(rewardToEdit.required_task_id);
         if (rewardToEdit.required_task_count) setRequiredTaskCount(rewardToEdit.required_task_count);
+        setDescription(rewardToEdit.description || '');
 
         if (rewardToEdit.assigned_to && rewardToEdit.assigned_to.length > 0) {
           setSelectedChildIds(rewardToEdit.assigned_to);
@@ -79,7 +81,8 @@ const AdminRewardForm = () => {
       type,
       required_task_id: type === 'ACCUMULATIVE' ? requiredTaskId : undefined,
       required_task_count: type === 'ACCUMULATIVE' ? Number(requiredTaskCount) : undefined,
-      assigned_to: selectedChildIds
+      assigned_to: selectedChildIds,
+      description: description.trim() || undefined
     };
 
     if (id) {
@@ -123,6 +126,19 @@ const AdminRewardForm = () => {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
+          />
+        </div>
+
+        <div className="form-control w-full">
+          <label className="label">
+            <span className="label-text font-bold">Reward Description</span>
+            <span className="label-text-alt text-gray-400">(Optional)</span>
+          </label>
+          <textarea
+            className="textarea textarea-bordered w-full rounded-xl h-24"
+            placeholder="Describe the reward details..."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
           />
         </div>
 

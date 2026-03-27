@@ -7,6 +7,7 @@ import { H1Header } from '../../components/design-system/H1Header';
 import { IconWrapper } from '../../components/design-system/IconWrapper';
 import { useAppStore } from '../../store/useAppStore';
 import { AlertModal } from '../../components/design-system';
+import RewardConfirmationModal from '../../components/modals/RewardConfirmationModal';
 
 // Helper function to get icon component
 const getIconComponent = (iconId: string | undefined) => {
@@ -26,6 +27,7 @@ const AdminRewards = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [rewardToDelete, setRewardToDelete] = useState<string | null>(null);
+  const [selectedRewardDetails, setSelectedRewardDetails] = useState<any>(null);
 
   const filteredRewards = rewards.filter(reward => {
     // Filter by Active Child
@@ -43,6 +45,10 @@ const AdminRewards = () => {
   const handleDeleteClick = (rewardId: string) => {
     setRewardToDelete(rewardId);
     setIsDeleteModalOpen(true);
+  };
+
+  const handleRewardClick = (reward: any) => {
+    setSelectedRewardDetails(reward);
   };
 
   const handleEditConfirm = () => {
@@ -74,7 +80,11 @@ const AdminRewards = () => {
           filteredRewards.map((reward) => {
             const IconComponent = getIconComponent(reward.category);
             return (
-              <AppCard key={reward.id} className="flex flex-row items-center gap-4 !p-4 min-w-0">
+              <AppCard 
+                key={reward.id} 
+                className="flex flex-row items-center gap-4 !p-4 min-w-0 cursor-pointer active:scale-95 transition-transform"
+                onClick={() => handleRewardClick(reward)}
+              >
                 <div className="p-3 bg-primary/10 text-primary rounded-lg">
                   <IconWrapper icon={IconComponent} className="text-primary" />
                 </div>
@@ -124,6 +134,16 @@ const AdminRewards = () => {
         type="danger"
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleDeleteConfirm}
+      />
+
+      <RewardConfirmationModal
+        isOpen={!!selectedRewardDetails}
+        rewardName={selectedRewardDetails?.name || ''}
+        description={selectedRewardDetails?.description}
+        cost={selectedRewardDetails?.cost_value || 0}
+        onClose={() => setSelectedRewardDetails(null)}
+        onConfirm={() => setSelectedRewardDetails(null)}
+        canAfford={false}
       />
     </div>
   );

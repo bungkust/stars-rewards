@@ -1,6 +1,7 @@
 import { useAppStore } from '../../store/useAppStore';
 import { FaTasks, FaStar, FaBolt, FaRedo, FaCalendarWeek, FaCalendarAlt, FaClock } from 'react-icons/fa';
 import { ToggleButton } from '../../components/design-system';
+import TaskDetailsModal from '../../components/modals/TaskDetailsModal';
 import { useState, useMemo } from 'react';
 import { ICON_MAP } from '../../utils/icons';
 import type { Task } from '../../types';
@@ -10,6 +11,13 @@ const ChildTasks = () => {
   const allTasks = activeChildId ? getTasksByChildId(activeChildId) : [];
 
   const [filter, setFilter] = useState<'daily' | 'once' | 'all'>('all');
+  const [selectedTaskDetails, setSelectedTaskDetails] = useState<any>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+
+  const handleTaskClick = (task: any) => {
+    setSelectedTaskDetails(task);
+    setIsDetailsModalOpen(true);
+  };
 
 
   const handleFilterChange = (newFilter: 'daily' | 'once' | 'all') => {
@@ -137,7 +145,11 @@ const ChildTasks = () => {
                 </div>
                 <div className="grid gap-3">
                   {tasks.map((task) => (
-                    <div key={task.id} className="card bg-base-100 shadow-sm rounded-xl p-4 flex flex-row items-center gap-4 border border-base-200">
+                    <div 
+                      key={task.id} 
+                      onClick={() => handleTaskClick(task)}
+                      className="card bg-base-100 shadow-sm rounded-xl p-4 flex flex-row items-center gap-4 border border-base-200 cursor-pointer active:scale-95 transition-transform"
+                    >
                       <div className="bg-base-200 p-3 rounded-full text-neutral/60">
                         {/* Task Type Icon */}
                         {task.recurrence_rule === 'Once' ? <FaBolt className="w-5 h-5" /> :
@@ -169,6 +181,12 @@ const ChildTasks = () => {
           })}
         </div>
       )}
+
+      <TaskDetailsModal
+        isOpen={isDetailsModalOpen}
+        task={selectedTaskDetails}
+        onClose={() => setIsDetailsModalOpen(false)}
+      />
     </div>
   );
 };

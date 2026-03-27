@@ -45,6 +45,7 @@ export interface Task {
   max_completions_per_day?: number;
   total_target_value?: number;
   target_unit?: string;
+  description?: string;
 }
 
 export interface Reward {
@@ -57,6 +58,7 @@ export interface Reward {
   required_task_id?: string;
   required_task_count?: number;
   assigned_to?: string[];
+  description?: string;
 }
 
 export interface ChildTaskLog {

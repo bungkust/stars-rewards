@@ -7,6 +7,7 @@ import { H1Header } from '../../components/design-system/H1Header';
 import { IconWrapper } from '../../components/design-system/IconWrapper';
 import { useAppStore } from '../../store/useAppStore';
 import { AlertModal, ToggleButton } from '../../components/design-system';
+import TaskDetailsModal from '../../components/modals/TaskDetailsModal';
 
 const AdminTasks = () => {
   const navigate = useNavigate();
@@ -17,6 +18,8 @@ const AdminTasks = () => {
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
   const [filter, setFilter] = useState<'daily' | 'once' | 'all'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [selectedTaskDetails, setSelectedTaskDetails] = useState<any>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   const filteredTasks = tasks
     .filter(task => task.is_active !== false)
@@ -43,6 +46,11 @@ const AdminTasks = () => {
   const handleEditClick = (taskId: string) => {
     setSelectedTask(taskId);
     setIsEditModalOpen(true);
+  };
+
+  const handleTaskClick = (task: any) => {
+    setSelectedTaskDetails(task);
+    setIsDetailsModalOpen(true);
   };
 
   const handleDeleteClick = (taskId: string) => {
@@ -131,7 +139,11 @@ const AdminTasks = () => {
           </div>
         ) : (
           filteredTasks.map((task) => (
-            <AppCard key={task.id} className="flex flex-row items-center gap-4 !p-4 min-w-0">
+            <AppCard 
+              key={task.id} 
+              className="flex flex-row items-center gap-4 !p-4 min-w-0 cursor-pointer active:scale-95 transition-transform"
+              onClick={() => handleTaskClick(task)}
+            >
               <div className={`p-3 rounded-lg ${task.recurrence_rule === 'Once' ? 'bg-accent/10 text-accent' :
                 task.recurrence_rule === 'Daily' ? 'bg-primary/10 text-primary' :
                   task.recurrence_rule === 'Weekly' ? 'bg-secondary/10 text-secondary' :
@@ -199,6 +211,12 @@ const AdminTasks = () => {
         type="danger"
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleDeleteConfirm}
+      />
+
+      <TaskDetailsModal
+        isOpen={isDetailsModalOpen}
+        task={selectedTaskDetails}
+        onClose={() => setIsDetailsModalOpen(false)}
       />
     </div>
   );
