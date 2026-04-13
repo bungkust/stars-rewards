@@ -176,7 +176,7 @@ const ChildStats = () => {
     Math.max(5, chartMaxValue + yPadding),
   ];
 
-  if (!child) return <div>Loading...</div>;
+  if (!child) return <div className="min-h-screen flex items-center justify-center"><span className="loading loading-spinner loading-lg text-primary"></span></div>;
 
   // Helper to format date friendly
   const formatDate = (dateString: string) => {

@@ -97,11 +97,9 @@ const ChildRewards = () => {
 
   const filteredRewards = rewards.filter(reward => {
     // DEBUG LOG
-    // console.log(`[ChildRewards] Checking ${reward.name}. Assigned: ${JSON.stringify(reward.assigned_to)}`);
 
     // 1. Filter by Assignment (MUST BE FIRST)
     if (reward.assigned_to && activeChildId && !reward.assigned_to.includes(activeChildId)) {
-      // console.log(`[ChildRewards] Hiding ${reward.name} (Not assigned to ${activeChildId})`);
       return false;
     }
 
@@ -119,11 +117,7 @@ const ChildRewards = () => {
   });
 
   // DEBUG LOGS
-  console.log('[ChildRewards] Active Child:', activeChildId);
-  console.log('[ChildRewards] All Rewards:', rewards.length);
-  console.log('[ChildRewards] Filtered Rewards:', filteredRewards.length);
   filteredRewards.forEach(r => {
-    console.log(`[ChildRewards] Showing: ${r.name}, Cost: ${r.cost_value}, Assigned: ${JSON.stringify(r.assigned_to || 'ALL')}`);
   });
 
   const sortedRewards = [...filteredRewards].sort((a, b) => {

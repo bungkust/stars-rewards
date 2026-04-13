@@ -223,13 +223,9 @@ const ChildDashboard = () => {
   }, [allTasks, filter, childLogs, activeChildId]);
 
   // DEBUG LOGS
-  console.log('[Dashboard] Active Child:', activeChildId);
-  console.log('[Dashboard] All Tasks:', allTasks.length);
-  console.log('[Dashboard] Filtered Tasks:', filteredTasks.length);
 
   filteredTasks.forEach(t => {
     const status = getTaskStatus(t);
-    console.log(`[Dashboard] Task: ${t.name}, Status: ${status}, Recurrence: ${t.recurrence_rule}, Expiry: ${t.expiry_time || 'None'}, AssignedTo: ${t.assigned_to ? JSON.stringify(t.assigned_to) : 'ALL'}`);
   });
 
   const visibleTasks = filteredTasks.slice(0, visibleCount);
@@ -300,6 +296,7 @@ const ChildDashboard = () => {
     const { error } = await completeTask(task.id);
     if (!error) {
       setLastCompletedTask({ name: task.name, value: task.reward_value });
+      setIsDetailsModalOpen(false);
       setIsCompletionModalOpen(true);
     } else {
       alert('Something went wrong. Please try again.');
@@ -320,6 +317,7 @@ const ChildDashboard = () => {
 
     if (newVal >= target) {
       setLastCompletedTask({ name: task.name, value: task.reward_value });
+      setIsDetailsModalOpen(false);
       setIsCompletionModalOpen(true);
     }
   };
@@ -394,7 +392,7 @@ const ChildDashboard = () => {
     }
   };
 
-  if (!child) return <div>Loading...</div>;
+  if (!child) return <div className="min-h-screen flex items-center justify-center"><span className="loading loading-spinner loading-lg text-primary"></span></div>;
 
   return (
     <div className="flex flex-col gap-6">

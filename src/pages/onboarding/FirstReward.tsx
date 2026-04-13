@@ -136,7 +136,7 @@ const FirstReward = () => {
             </label>
           </div>
 
-          <div className="form-control w-full">
+          <div className="form-control w-full mt-2">
             <label className="label">
               <span className="label-text font-bold text-gray-500 uppercase text-xs tracking-wider">Reward Type</span>
             </label>

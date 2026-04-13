@@ -39,11 +39,7 @@ const ChildTasks = () => {
   }, [allTasks, filter]);
 
   // DEBUG LOGS
-  console.log('[ChildTasks] Active Child:', activeChildId);
-  console.log('[ChildTasks] All Tasks (from store):', allTasks.length);
-  console.log('[ChildTasks] Filtered Tasks:', filteredTasks.length);
   filteredTasks.forEach(t => {
-    console.log(`[ChildTasks] Showing: ${t.name}, Recurrence: ${t.recurrence_rule}, Assigned: ${JSON.stringify(t.assigned_to || 'ALL')}`);
   });
 
   const groupedTasks = useMemo(() => {
