@@ -2,6 +2,33 @@
 
 All notable changes to the Star Habit project will be documented in this file.
 
+## [Unreleased] - Post 1.3.4
+
+### Added
+- **Multi-Factor Authentication**: Parents can now choose between three admin unlock methods — **PIN**, **Pattern Lock** (gesture grid), and **Biometric** (fingerprint/face). Preferred method is persisted per device.
+- **Pattern Lock (`PatternLock.tsx`)**: New gesture-based pattern input screen as an alternative to numeric PIN for entering Parent Mode.
+- **Biometric Authentication**: Opt-in biometric unlock via device hardware (fingerprint/face ID), toggled in Security Settings with an explicit consent flow.
+- **Security Settings Page** (`/settings/security`): Dedicated screen to manage PIN change, Pattern Lock setup, and Biometric toggle — accessible from the main Settings page.
+- **Push Notifications**: Parent receives local push notifications when a child submits a task for verification or requests an exemption. Notification badge shows total pending count. Toggleable in Settings.
+- **Backup & Restore**: Parents can export all family data to a timestamped JSON file (`StarsRewards_Family_Children_Date_Time.json`) and restore it on any device. Restore flow includes a validation step and confirmation modal.
+- **Category Management** (`/admin/categories`): Parents can create, rename, and delete task categories. Each category has a name and icon. Default seeded categories: Hygiene, Time, Responsibility, Skill, Family, Social, Dressing, Emotion.
+- **Child Avatar & Name Editing**: Parents can edit a child's name and avatar directly from Settings via `EditChildModal`. Avatar selection modal (`AvatarSelectionModal.tsx`) replaced simple URL input.
+- **Multi-Child Task Assignment**: Tasks can now be assigned to specific children via `assigned_to` field. Tasks without an assignment are shown to all children (backward-compatible).
+- **Manual Star Adjustment** (`StarAdjustmentModal`): Parents can manually add or deduct stars from any child's balance with a required reason — supports bulk adjustment across all children simultaneously.
+- **Exemption / Excuse Request Workflow**: Children can submit an exemption request for a task with an optional reason. Parent can **Approve** (counts for streak, awards 0 stars) or **Reject** from the Verification Center on the Dashboard.
+- **Auto-Approve Logic**: Tasks pending verification for more than 24 hours are automatically approved to prevent permanent backlog.
+- **App Resume Data Refresh**: App listens to foreground/background state via Capacitor. On resume, data is refreshed automatically to catch missed daily missions.
+- **Task Progress Tracking** (`updateTaskProgress`): Tasks with multi-completion targets (e.g., "Read 3 chapters") now track incremental progress per day. Status transitions: `IN_PROGRESS` → `PENDING` on full completion.
+- **Compliment on Missed Day** (`completeTaskOnDate`): Parents can retroactively log a task as completed for a specific past date.
+- **Mark Verified Task as Failed**: Admins can retroactively mark an already-verified task as failed, reversing the star award.
+- **Data Import/Export API** (`importData`): Full app state can be imported programmatically, used internally by the Restore flow.
+- **App Version Display**: Settings page dynamically reads and displays the current app version from Capacitor's native layer on Android/iOS.
+
+### Changed
+- **Settings Page Restructured**: Now organized into dedicated sections: Family Information, Notifications, Security (new), Customization, Data Management, Legal & Policy, and Danger Zone.
+- **Admin Dashboard Unified**: The "Verification Center" now shows both pending task approvals and pending exemption requests in a single merged queue, each with contextual action buttons.
+- **Child Profile Delete**: Moved to the "Danger Zone" section within Settings with a confirmation modal.
+
 ## [1.3.4] - 2026-03-27
 
 ### Added
