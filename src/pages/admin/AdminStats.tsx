@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { FaChartLine, FaCheckCircle, FaLightbulb, FaTimes, FaArrowLeft } from 'react-icons/fa';
 import { AppCard, H1Header, IconWrapper, ToggleButton } from '../../components/design-system';
 import HistoryList, { type HistoryItemType, type HistoryItemEntry } from '../../components/shared/HistoryList';
@@ -31,7 +31,7 @@ const AdminStats = () => {
     }
     return [];
   });
-  const visibleCount = 10;
+  const [visibleCount, setVisibleCount] = useState(10);
 
   // Modal State
   const [selectedItem, setSelectedItem] = useState<HistoryItemEntry | null>(null);
@@ -312,12 +312,6 @@ const AdminStats = () => {
         <div className="flex-1">
           <H1Header>Parent Stats</H1Header>
         </div>
-        <button
-          onClick={() => navigate('/admin/history')}
-          className="btn btn-ghost btn-sm text-primary font-bold"
-        >
-          Parent History
-        </button>
       </div>
 
       {/* Filters */}
@@ -335,19 +329,26 @@ const AdminStats = () => {
           <ToggleButton label="Specific Date" isActive={timeFilter === 'specific'} onClick={() => handleTimeFilterChange('specific')} />
 
           {timeFilter === 'specific' && (
-            <div className="flex items-center gap-2">
-              <input
-                type="date"
-                value={tempDate}
-                onChange={(e) => setTempDate(e.target.value)}
-                className="input input-sm input-bordered rounded-full"
-              />
-              <button
-                className="btn btn-sm btn-primary rounded-full"
-                onClick={() => setSpecificDate(tempDate)}
-              >
-                Apply
-              </button>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <input
+                  id="adminStatsSpecificDate"
+                  name="adminStatsSpecificDate"
+                  type="date"
+                  value={tempDate}
+                  onChange={(e) => setTempDate(e.target.value)}
+                  onInput={(e) => setTempDate(e.currentTarget.value)}
+                  className="input input-sm input-bordered rounded-full"
+                  placeholder="yyyy-MM-dd"
+                />
+                <button
+                  className="btn btn-sm btn-primary rounded-full"
+                  onClick={() => setSpecificDate(tempDate)}
+                >
+                  Apply
+                </button>
+              </div>
+              <span className="text-[10px] text-gray-600 pl-1 font-bold">Format: yyyy-MM-dd (e.g. 2019-08-27)</span>
             </div>
           )}
         </div>
@@ -379,14 +380,14 @@ const AdminStats = () => {
         <AppCard className="bg-gradient-to-br from-yellow-400/10 to-base-100 border-yellow-400/20">
           <div className="flex justify-between items-start">
             <div>
-              <h2 className="text-neutral/60 font-bold text-sm uppercase mb-1">Current Balance</h2>
+              <h2 className="text-neutral/80 font-bold text-sm uppercase mb-1">Current Balance</h2>
               <div className="flex items-baseline gap-2">
                 <span className="text-4xl font-black text-warning">
                   {currentBalance}
                 </span>
-                <span className="text-sm font-bold text-neutral/40">stars</span>
+                <span className="text-sm font-bold text-neutral/60">stars</span>
               </div>
-              <p className="text-xs text-neutral/50 mt-2">
+              <p className="text-xs text-neutral/60 mt-2 font-medium">
                 Total available in wallet
               </p>
             </div>
@@ -427,63 +428,69 @@ const AdminStats = () => {
           <h3 className="font-bold text-lg text-neutral">Category Performance</h3>
         </div>
         <div className="flex flex-col gap-4">
-          {categoryMetrics.map((cat) => {
-            const Icon = ICON_MAP[cat.icon as keyof typeof ICON_MAP] || ICON_MAP['default'];
-            const percentage = cat.total > 0 ? Math.round((cat.completed / cat.total) * 100) : 0;
+          {categoryMetrics.length > 0 ? (
+            categoryMetrics.map((cat) => {
+              const Icon = ICON_MAP[cat.icon as keyof typeof ICON_MAP] || ICON_MAP['default'];
+              const percentage = cat.total > 0 ? Math.round((cat.completed / cat.total) * 100) : 0;
 
-            return (
-              <div key={cat.id} className="flex flex-col gap-2">
-                <div className="flex items-center gap-4">
-                  <div className="p-2 rounded-lg bg-base-200 text-neutral/60">
-                    <Icon className="w-5 h-5" />
+              return (
+                <div key={cat.id} className="flex flex-col gap-2">
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 rounded-lg bg-base-200 text-neutral/60">
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="font-bold text-neutral text-sm truncate pr-2">{cat.name}</span>
+                        <span className="text-xs font-bold text-primary flex-shrink-0">{cat.earned} Stars</span>
+                      </div>
+                      <div className="w-full bg-base-200 rounded-full h-2 overflow-hidden">
+                        <div
+                          className="bg-primary h-full rounded-full"
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
+                      <div className="flex justify-between mt-1">
+                        <span className="text-[10px] text-neutral/40">{cat.completed}/{cat.total} Completed</span>
+                        <span className="text-[10px] text-neutral/40">{percentage}% Success</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="font-bold text-neutral text-sm truncate pr-2">{cat.name}</span>
-                      <span className="text-xs font-bold text-primary flex-shrink-0">{cat.earned} Stars</span>
-                    </div>
-                    <div className="w-full bg-base-200 rounded-full h-2 overflow-hidden">
-                      <div
-                        className="bg-primary h-full rounded-full"
-                        style={{ width: `${percentage}%` }}
-                      ></div>
-                    </div>
-                    <div className="flex justify-between mt-1">
-                      <span className="text-[10px] text-neutral/40">{cat.completed}/{cat.total} Completed</span>
-                      <span className="text-[10px] text-neutral/40">{percentage}% Success</span>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Child Breakdown (Only when 'All Children' is selected) */}
-                {selectedChildId === 'all' && Object.keys(cat.childStats || {}).length > 0 && (
-                  <div className="pl-14 pr-2 flex flex-col gap-1">
-                    {Object.entries(cat.childStats).map(([childId, stats]) => {
-                      if (stats.earned === 0 && stats.completed === 0) return null;
-                      const childName = children.find(c => c.id === childId)?.name || 'Unknown';
-                      return (
-                        <div key={childId} className="flex justify-between items-center text-[10px] text-neutral/50">
-                          <span>{childName}</span>
-                          <div className="flex gap-2">
-                            <span>{stats.completed} done</span>
-                            <span className="font-bold text-primary/70">{stats.earned} stars</span>
+                  {/* Child Breakdown (Only when 'All Children' is selected) */}
+                  {selectedChildId === 'all' && Object.keys(cat.childStats || {}).length > 0 && (
+                    <div className="pl-14 pr-2 flex flex-col gap-1">
+                      {Object.entries(cat.childStats).map(([childId, stats]) => {
+                        if (stats.earned === 0 && stats.completed === 0) return null;
+                        const childName = children.find(c => c.id === childId)?.name || 'Unknown';
+                        return (
+                          <div key={childId} className="flex justify-between items-center text-[10px] text-neutral/50">
+                            <span>{childName}</span>
+                            <div className="flex gap-2">
+                              <span>{stats.completed} done</span>
+                              <span className="font-bold text-primary/70">{stats.earned} stars</span>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 text-neutral/40 italic text-sm">
+              <p>No mission data for this period.</p>
+            </div>
+          )}
         </div>
       </AppCard>
 
       {/* Transaction History */}
       <div className="flex flex-col gap-4">
-        <div className="flex justify-between items-center px-1">
-          <h3 className="font-bold text-neutral text-lg">History</h3>
-          <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
+          <h3 className="font-bold text-neutral text-lg whitespace-nowrap">History</h3>
+          <div className="flex flex-wrap gap-2">
             <ToggleButton label="All" isActive={statusFilter === 'all'} onClick={() => setStatusFilter('all')} />
             <ToggleButton label="Earned" isActive={statusFilter === 'earned'} onClick={() => setStatusFilter('earned')} />
             <ToggleButton label="Spent" isActive={statusFilter === 'spent'} onClick={() => setStatusFilter('spent')} />
@@ -571,9 +578,12 @@ const AdminStats = () => {
             emptyMessage="No history found for this period."
             footer={
               hasMore && (
-                <Link to="/parent/history" className="btn btn-ghost btn-sm w-full text-neutral/60 mt-2">
+                <button 
+                  onClick={() => setVisibleCount(prev => prev + 10)}
+                  className="btn btn-ghost btn-sm w-full text-neutral/60 mt-2"
+                >
                   Load More
-                </Link>
+                </button>
               )
             }
           />

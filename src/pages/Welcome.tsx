@@ -61,12 +61,12 @@ const Welcome = () => {
                     {/* FR 1.2b: Secondary Option */}
                     <button
                         onClick={() => setIsRestoreModalOpen(true)}
-                        className="btn btn-ghost w-full text-slate-400 hover:bg-slate-50 hover:text-slate-600 rounded-2xl normal-case text-lg font-medium transition-all"
+                        className="btn btn-ghost w-full text-slate-600 hover:bg-slate-50 hover:text-slate-800 rounded-2xl normal-case text-lg font-medium transition-all"
                     >
                         Restore from Backup
                     </button>
 
-                    <p className="text-xs text-center text-slate-300 pt-4">
+                    <p className="text-xs text-center text-slate-600 pt-4 font-medium">
                         v1.1.2 • Designed for Kids {APP_MOCK_DATA.target_age}
                     </p>
                 </div>

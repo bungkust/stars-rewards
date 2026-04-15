@@ -108,7 +108,7 @@ const ClaimedRewardsHistory = () => {
         setIsDetailOpen(true);
     };
 
-    if (!child) return <div>Loading...</div>;
+    if (!child) return null;
 
     return (
         <div className="flex flex-col gap-6 pb-24">

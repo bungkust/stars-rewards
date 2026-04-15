@@ -30,7 +30,7 @@ const AddParent = () => {
     <div className="min-h-screen flex flex-col items-center justify-center app-gradient p-6">
       <div className="w-full max-w-md text-center">
         <H1Header className="mb-2">Add Parent Profile</H1Header>
-        <p className="text-gray-500 mb-8">What should we call you?</p>
+        <p className="text-gray-600 mb-8">What should we call you?</p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           <div className="form-control w-full">

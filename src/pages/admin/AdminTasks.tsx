@@ -8,6 +8,7 @@ import { IconWrapper } from '../../components/design-system/IconWrapper';
 import { useAppStore } from '../../store/useAppStore';
 import { AlertModal, ToggleButton } from '../../components/design-system';
 import TaskDetailsModal from '../../components/modals/TaskDetailsModal';
+import { getTaskIconComponent } from '../../utils/icons';
 
 const AdminTasks = () => {
   const navigate = useNavigate();
@@ -144,16 +145,26 @@ const AdminTasks = () => {
               className="flex flex-row items-center gap-4 !p-4 min-w-0 cursor-pointer active:scale-95 transition-transform"
               onClick={() => handleTaskClick(task)}
             >
-              <div className={`p-3 rounded-lg ${task.recurrence_rule === 'Once' ? 'bg-accent/10 text-accent' :
-                task.recurrence_rule === 'Daily' ? 'bg-primary/10 text-primary' :
-                  task.recurrence_rule === 'Weekly' ? 'bg-secondary/10 text-secondary' :
-                    task.recurrence_rule === 'Monthly' ? 'bg-info/10 text-info' :
-                      'bg-base-200 text-neutral/50'
-                }`}>
-                <IconWrapper icon={getTaskIcon(task.recurrence_rule || 'Once')} className="" />
-              </div>
+              {task.image_url ? (
+                <div className="w-12 h-12 rounded-full flex-shrink-0 overflow-hidden shadow-sm border border-base-200 bg-white">
+                  <img src={task.image_url} alt={task.name} className="w-full h-full object-cover" />
+                </div>
+              ) : (
+                <div className={`p-3 rounded-full flex-shrink-0 ${task.recurrence_rule === 'Once' ? 'bg-accent/10 text-accent' :
+                  task.recurrence_rule === 'Daily' ? 'bg-primary/10 text-primary' :
+                    task.recurrence_rule === 'Weekly' ? 'bg-secondary/10 text-secondary' :
+                      task.recurrence_rule === 'Monthly' ? 'bg-info/10 text-info' :
+                        'bg-base-200 text-neutral/50'
+                  }`}>
+                  {task.icon ? (
+                    (() => { const CustomIcon = getTaskIconComponent(task.icon); return <CustomIcon className="w-6 h-6" />; })()
+                  ) : (
+                    <IconWrapper icon={getTaskIcon(task.recurrence_rule || 'Once')} className="" />
+                  )}
+                </div>
+              )}
               <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-neutral truncate">{task.name}</h3>
+                <h3 className="font-bold text-neutral line-clamp-2 leading-tight break-words">{task.name}</h3>
                 <div className="flex flex-col gap-1 mt-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getBadgeStyle(task.recurrence_rule || 'Once')}`}>

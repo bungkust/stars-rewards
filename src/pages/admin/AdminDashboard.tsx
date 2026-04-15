@@ -178,8 +178,8 @@ const AdminDashboard = () => {
         {allItems.length === 0 ? (
           <AppCard className="flex flex-col items-center justify-center py-12 text-center">
             <FaCheckDouble className="w-16 h-16 text-neutral/20 mb-4" />
-            <h3 className="text-lg font-bold text-neutral/60">All caught up!</h3>
-            <p className="text-neutral/50">No missions waiting for approval.</p>
+            <h3 className="text-lg font-bold text-neutral/70">All caught up!</h3>
+            <p className="text-neutral/60">No missions waiting for approval.</p>
           </AppCard>
         ) : (
           <div className="flex flex-col gap-3">
@@ -198,13 +198,13 @@ const AdminDashboard = () => {
 
                   <div>
                     <h4 className="font-bold text-neutral">{item.task_title}</h4>
-                    <p className="text-xs text-neutral/50">
+                    <p className="text-xs text-neutral/60 font-medium">
                       {item.child_name}
                       {item.type === 'verification' && ` • Reward: ${item.reward_value} Stars`}
                       {item.type === 'excuse' && ` • Wants to skip`}
                     </p>
                     {item.type === 'excuse' && item.notes && (
-                      <p className="text-xs text-neutral/40 italic mt-0.5">
+                      <p className="text-xs text-neutral/60 italic mt-0.5 font-bold">
                         "{item.notes}"
                       </p>
                     )}

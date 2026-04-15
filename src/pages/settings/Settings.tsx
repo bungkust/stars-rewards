@@ -22,7 +22,13 @@ const Settings = () => {
     userProfile,
     children,
     notificationsEnabled,
+    notifyMissionApprovals,
+    notifyMissedTasks,
+    notifyDailyReport,
     setNotificationsEnabled,
+    setNotifyMissionApprovals,
+    setNotifyMissedTasks,
+    setNotifyDailyReport,
     updateChild,
     deleteChild
   } = useAppStore();
@@ -152,12 +158,14 @@ const Settings = () => {
           <IconWrapper icon={FaBell} />
           <h3 className="font-bold text-lg text-neutral">Notifications</h3>
         </div>
+
+        {/* Master Switch */}
         <div className="p-3 hover:bg-base-200 rounded-lg transition-colors">
           <label className="flex items-start justify-between gap-4 cursor-pointer">
             <div>
-              <p className="font-bold text-neutral">Parent reminders</p>
+              <p className="font-bold text-neutral">Enable Notifications</p>
               <p className="text-sm text-neutral/60 mt-1">
-                Receive alerts for mission approvals, reward redemptions, and weekly summaries.
+                Turn on to receive all in-app alerts and reminders.
               </p>
             </div>
             <input
@@ -175,9 +183,69 @@ const Settings = () => {
             />
           </label>
         </div>
-        <div className="px-3 mt-2">
+
+        {/* Granular Sub-toggles */}
+        <div className={`mt-2 flex flex-col gap-1 transition-opacity duration-200 ${!notificationsEnabled ? 'opacity-40 pointer-events-none' : ''}`}>
+          <div className="divider my-1 text-xs text-neutral/40 font-semibold">Notification Types</div>
+
+          {/* Mission Approvals */}
+          <div className="p-3 hover:bg-base-200 rounded-lg transition-colors">
+            <label className="flex items-start justify-between gap-4 cursor-pointer">
+              <div>
+                <p className="font-semibold text-neutral text-sm">Mission Approvals</p>
+                <p className="text-xs text-neutral/60 mt-0.5">
+                  Alert when a child submits a mission for review.
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                className="toggle toggle-primary toggle-sm"
+                checked={notifyMissionApprovals}
+                onChange={(e) => setNotifyMissionApprovals(e.target.checked)}
+              />
+            </label>
+          </div>
+
+          {/* Missed Daily Tasks */}
+          <div className="p-3 hover:bg-base-200 rounded-lg transition-colors">
+            <label className="flex items-start justify-between gap-4 cursor-pointer">
+              <div>
+                <p className="font-semibold text-neutral text-sm">Missed Daily Reminders</p>
+                <p className="text-xs text-neutral/60 mt-0.5">
+                  Evening nudge when daily tasks are still incomplete.
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                className="toggle toggle-primary toggle-sm"
+                checked={notifyMissedTasks}
+                onChange={(e) => setNotifyMissedTasks(e.target.checked)}
+              />
+            </label>
+          </div>
+
+          {/* Daily Summary Report */}
+          <div className="p-3 hover:bg-base-200 rounded-lg transition-colors">
+            <label className="flex items-start justify-between gap-4 cursor-pointer">
+              <div>
+                <p className="font-semibold text-neutral text-sm">Daily Summary Report</p>
+                <p className="text-xs text-neutral/60 mt-0.5">
+                  Morning recap of yesterday's missed missions.
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                className="toggle toggle-primary toggle-sm"
+                checked={notifyDailyReport}
+                onChange={(e) => setNotifyDailyReport(e.target.checked)}
+              />
+            </label>
+          </div>
+        </div>
+
+        <div className="px-3 mt-3">
           <p className="text-xs text-neutral/40 bg-base-200 p-3 rounded-lg border border-base-300">
-            Push notifications require permissions on your device. You can change this anytime.
+            Push notifications require device permissions. You can change this anytime in your device settings.
           </p>
         </div>
       </AppCard>

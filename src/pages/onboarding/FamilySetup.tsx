@@ -69,11 +69,14 @@ const FamilySetup = () => {
               <span className="label-text font-bold">Family Name</span>
             </label>
             <input
+              id="familyName"
+              name="familyName"
               type="text"
               value={familyName}
               onChange={(e) => setFamilyNameInput(e.target.value)}
+              onInput={(e) => setFamilyNameInput(e.currentTarget.value)}
               className="input input-bordered w-full rounded-xl text-center text-xl"
-              placeholder="e.g. The Smiths"
+              placeholder="e.g. The Anderson Family"
               autoFocus
               required
             />
@@ -84,11 +87,14 @@ const FamilySetup = () => {
               <span className="label-text font-bold">Your Name</span>
             </label>
             <input
+              id="parentName"
+              name="parentName"
               type="text"
               value={parentName}
               onChange={(e) => setParentNameInput(e.target.value)}
+              onInput={(e) => setParentNameInput(e.currentTarget.value)}
               className="input input-bordered w-full rounded-xl text-center text-xl"
-              placeholder="e.g. Mom or Dad"
+              placeholder="e.g. Mom, Dad, or Grandma"
               required
             />
           </div>
@@ -99,10 +105,13 @@ const FamilySetup = () => {
                 <span className="label-text font-bold">Create PIN</span>
               </label>
               <input
+                id="adminPin"
+                name="adminPin"
                 type="password"
                 inputMode="numeric"
                 value={pin}
                 onChange={(e) => handlePinChange(e.target.value)}
+                onInput={(e) => handlePinChange(e.currentTarget.value)}
                 className="input input-bordered text-center text-xl tracking-widest w-full rounded-xl"
                 placeholder="####"
                 required
@@ -113,10 +122,13 @@ const FamilySetup = () => {
                 <span className="label-text font-bold">Confirm PIN</span>
               </label>
               <input
+                id="confirmPin"
+                name="confirmPin"
                 type="password"
                 inputMode="numeric"
                 value={confirmPin}
                 onChange={(e) => handleConfirmChange(e.target.value)}
+                onInput={(e) => handleConfirmChange(e.currentTarget.value)}
                 className="input input-bordered text-center text-xl tracking-widest w-full rounded-xl"
                 placeholder="####"
                 required

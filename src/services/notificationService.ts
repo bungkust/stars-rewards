@@ -36,8 +36,8 @@ export const notificationService = {
      */
     schedulePendingAdminNotification: async (count: number) => {
         if (!Capacitor.isNativePlatform()) return;
-        const { notificationsEnabled } = useAppStore.getState();
-        if (!notificationsEnabled) return;
+        const { notificationsEnabled, notifyMissionApprovals } = useAppStore.getState();
+        if (!notificationsEnabled || !notifyMissionApprovals) return;
 
         try {
             // Always cancel existing to reset the debounce timer
@@ -74,8 +74,8 @@ export const notificationService = {
      */
     scheduleMissedChildNotification: async (count: number) => {
         if (!Capacitor.isNativePlatform()) return;
-        const { notificationsEnabled } = useAppStore.getState();
-        if (!notificationsEnabled) return;
+        const { notificationsEnabled, notifyMissedTasks } = useAppStore.getState();
+        if (!notificationsEnabled || !notifyMissedTasks) return;
 
         try {
             // Always cancel existing first
@@ -120,8 +120,8 @@ export const notificationService = {
      */
     scheduleMissedDailyReport: async (missedCount: number) => {
         if (!Capacitor.isNativePlatform()) return;
-        const { notificationsEnabled } = useAppStore.getState();
-        if (!notificationsEnabled || missedCount <= 0) return;
+        const { notificationsEnabled, notifyDailyReport } = useAppStore.getState();
+        if (!notificationsEnabled || missedCount <= 0 || !notifyDailyReport) return;
 
         try {
             // Cancel existing

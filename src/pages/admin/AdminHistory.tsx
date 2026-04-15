@@ -266,9 +266,21 @@ const AdminHistory = () => {
                                     <ToggleButton label="Specific" isActive={dateFilter === 'specific'} onClick={() => setDateFilter('specific')} />
                                 </div>
                                 {dateFilter === 'specific' && (
-                                    <div className="mt-3 flex gap-2">
-                                        <input type="date" className="input input-sm input-bordered w-full" value={tempDate} onChange={(e) => setTempDate(e.target.value)} />
-                                        <button className="btn btn-sm btn-primary" onClick={() => setSpecificDate(tempDate)}>Apply</button>
+                                    <div className="mt-3 flex flex-col gap-1">
+                                        <div className="flex gap-2">
+                                            <input
+                                                id="adminHistorySpecificDate"
+                                                name="adminHistorySpecificDate"
+                                                type="date"
+                                                className="input input-sm input-bordered w-full"
+                                                value={tempDate}
+                                                onChange={(e) => setTempDate(e.target.value)}
+                                                onInput={(e) => setTempDate(e.currentTarget.value)}
+                                                placeholder="yyyy-MM-dd"
+                                            />
+                                            <button className="btn btn-sm btn-primary" onClick={() => setSpecificDate(tempDate)}>Apply</button>
+                                        </div>
+                                        <span className="text-[10px] text-gray-400 pl-1">Format: yyyy-MM-dd (e.g. 2019-08-27)</span>
                                     </div>
                                 )}
                             </div>

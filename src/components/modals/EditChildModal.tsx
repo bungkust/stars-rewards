@@ -135,9 +135,12 @@ const EditChildModal = ({ isOpen, onClose, child, onSave, onDelete }: EditChildM
                                 <span className="label-text font-bold text-neutral/70">Name</span>
                             </label>
                             <input
+                                id="editChildName"
+                                name="editChildName"
                                 type="text"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
+                                onInput={(e) => setName(e.currentTarget.value)}
                                 className="input input-bordered w-full rounded-xl"
                                 placeholder="Child Name"
                             />
@@ -148,11 +151,18 @@ const EditChildModal = ({ isOpen, onClose, child, onSave, onDelete }: EditChildM
                                 <span className="label-text font-bold text-neutral/70">Date of Birth</span>
                             </label>
                             <input
+                                id="editChildDob"
+                                name="editChildDob"
                                 type="date"
                                 value={dob}
                                 onChange={(e) => setDob(e.target.value)}
+                                onInput={(e) => setDob(e.currentTarget.value)}
                                 className="input input-bordered w-full rounded-xl"
+                                placeholder="yyyy-MM-dd"
                             />
+                            <label className="label">
+                                <span className="label-text-alt text-gray-400">Format: yyyy-MM-dd (e.g. 2019-08-27)</span>
+                            </label>
                         </div>
                     </div>
 

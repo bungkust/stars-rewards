@@ -124,10 +124,17 @@ const AddChildSettings = () => {
                             <span className="label-text font-bold">Child's Name</span>
                         </label>
                         <input
+                            id="childSettingsName"
+                            name="childSettingsName"
                             type="text"
                             value={name}
                             onChange={(e) => {
                                 setName(e.target.value);
+                                setSuccessMsg('');
+                                setErrorMsg('');
+                            }}
+                            onInput={(e) => {
+                                setName(e.currentTarget.value);
                                 setSuccessMsg('');
                                 setErrorMsg('');
                             }}
@@ -141,12 +148,19 @@ const AddChildSettings = () => {
                             <span className="label-text font-bold">Date of Birth</span>
                         </label>
                         <input
+                            id="childSettingsDob"
+                            name="childSettingsDob"
                             type="date"
                             value={dob}
                             max={today}
                             onChange={(e) => setDob(e.target.value)}
+                            onInput={(e) => setDob(e.currentTarget.value)}
                             className="input input-bordered w-full rounded-xl text-neutral"
+                            placeholder="yyyy-MM-dd"
                         />
+                        <label className="label">
+                            <span className="label-text-alt text-gray-400">Format: dd-mm-yyyy</span>
+                        </label>
                     </div>
 
                     <div className="flex flex-col gap-3 mt-4">

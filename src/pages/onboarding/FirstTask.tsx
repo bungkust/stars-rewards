@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 import { PrimaryButton } from '../../components/design-system/PrimaryButton';
 import { AppCard, ToggleButton } from '../../components/design-system';
+import { FaStar, FaImage } from 'react-icons/fa';
 import { generateRRule, WEEKDAYS } from '../../utils/recurrence';
-import { ICON_MAP } from '../../utils/icons';
+import { ICON_MAP, TASK_ICONS } from '../../utils/icons';
 import type { RecurrenceOptions } from '../../utils/recurrence';
+import { convertToWebP } from '../../utils/imageUtils';
 
 const DIFFICULTY_PRESETS = [
   { label: 'MILESTONE', value: 0, desc: 'No Star Reward (Trigger for Milestone)', color: 'bg-gradient-to-br from-gray-50 to-gray-100 text-gray-600 border-gray-200' },
@@ -14,6 +16,17 @@ const DIFFICULTY_PRESETS = [
   { label: 'HARD', value: 15, desc: 'Habit formation (e.g., Practice music)', color: 'bg-gradient-to-br from-purple-50 to-purple-100 text-purple-600 border-purple-200' },
   { label: 'SPECIAL', value: 25, desc: 'One-off project (e.g., Wash car)', color: 'bg-gradient-to-br from-amber-50 to-amber-100 text-amber-600 border-amber-200' },
 ];
+
+const TASK_TEMPLATES = [
+  { title: 'Brush Teeth', reward: 5 },
+  { title: 'Make Bed', reward: 10 },
+  { title: 'Homework', reward: 15 },
+  { title: 'Clean Room', reward: 20 },
+  { title: 'Help at Home', reward: 10 },
+  { title: 'Read a Book', reward: 15 },
+];
+
+const removeEmojis = (str: string) => str.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '');
 
 const FirstTask = () => {
   const navigate = useNavigate();
@@ -35,6 +48,23 @@ const FirstTask = () => {
   const [targetValue, setTargetValue] = useState(1);
   const [targetUnit, setTargetUnit] = useState('');
   const [error, setError] = useState('');
+
+  const [selectedIcon, setSelectedIcon] = useState('star');
+  const [imageUrl, setImageUrl] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const webpDataUrl = await convertToWebP(file, 1);
+        setImageUrl(webpDataUrl);
+        setSelectedIcon('');
+      } catch (err: any) {
+        alert(err.message || 'Failed to process image');
+      }
+    }
+  };
 
   // Initialize selected children (select all by default for onboarding convenience)
   useState(() => {
@@ -89,11 +119,27 @@ const FirstTask = () => {
       assigned_to: selectedChildIds,
       total_target_value: isProgressTask ? targetValue : undefined,
       target_unit: isProgressTask ? targetUnit : undefined,
+      icon: imageUrl ? undefined : selectedIcon,
+      image_url: imageUrl || undefined,
     });
 
     if (taskError) {
       setError('Failed to create task');
       return;
+    }
+
+    // First Win Flow: Auto-create an easy, ready-to-complete 'Setup Profile' task
+    if (categories.length > 0) {
+      await addTask({
+        name: 'Setup Profile 🚀',
+        category_id: categories[0].id,
+        reward_value: 10,
+        type: 'ONE_TIME',
+        recurrence_rule: 'Once',
+        is_active: true,
+        expiry_time: '',
+        assigned_to: selectedChildIds,
+      });
     }
 
     setOnboardingStep('first-reward');
@@ -106,7 +152,7 @@ const FirstTask = () => {
     <div className="min-h-screen flex flex-col items-center justify-center app-gradient p-6 py-12">
       <div className="w-full max-w-md">
         <h1 className="text-3xl font-bold text-primary text-center mb-2">Create First Mission</h1>
-        <p className="text-gray-500 text-center mb-8">What is a daily habit you want to encourage?</p>
+        <p className="text-gray-600 text-center mb-8">What is a daily habit you want to encourage?</p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           <div className="form-control w-full">
@@ -115,13 +161,41 @@ const FirstTask = () => {
             </label>
             <input
               type="text"
-              placeholder="e.g. Clean Room"
+              id="missionTitleInput"
+              name="missionTitleInput"
+              placeholder="e.g. Brush Teeth, Feed the dog"
               className="input input-bordered w-full rounded-xl"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onInput={(e) => setTitle(removeEmojis(e.currentTarget.value))}
+              onChange={(e) => setTitle(removeEmojis(e.target.value))}
+              maxLength={25}
               autoFocus
               required
             />
+            <div className="flex justify-end mt-1 px-1">
+              <span className={`text-xs ${title.length >= 25 ? 'text-error font-bold' : 'text-gray-500'}`}>
+                {title.length}/25 {title.length >= 25 && "(Max Length)"}
+              </span>
+            </div>
+            
+            <div className="mt-3">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Quick Templates</span>
+              <div className="grid grid-cols-2 gap-2.5">
+                {TASK_TEMPLATES.map(t => (
+                  <button
+                    key={t.title}
+                    type="button"
+                    onClick={() => { setTitle(t.title); setReward(t.reward); }}
+                    className="group relative flex items-center justify-between w-full px-3 py-2 bg-white border-2 border-gray-100 rounded-xl text-xs font-bold text-gray-700 hover:border-primary hover:bg-primary/5 transition-all shadow-sm active:scale-95 text-left"
+                  >
+                    <span className="line-clamp-2 leading-tight mr-1">{t.title}</span> 
+                    <span className="shrink-0 flex items-center gap-0.5 bg-primary/10 text-primary px-1.5 py-0.5 rounded-md text-[10px] font-black tracking-wide">
+                      {t.reward} <FaStar className="w-2.5 h-2.5" />
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className="form-control w-full">
@@ -139,7 +213,7 @@ const FirstTask = () => {
                     onClick={() => setCategoryId(cat.id)}
                     className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all duration-200 h-20 ${isSelected
                       ? 'border-primary bg-primary/10 text-primary ring-1 ring-primary'
-                      : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-500'
+                      : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-600'
                       }`}
                   >
                     <Icon className="text-xl mb-1" />
@@ -149,6 +223,74 @@ const FirstTask = () => {
                   </button>
                 );
               })}
+            </div>
+          </div>
+
+          {/* Mission Icon/Image Selector */}
+          <div className="form-control w-full">
+            <label className="label">
+              <span className="label-text font-bold">Mission Icon / Image</span>
+              <span className="label-text-alt text-gray-500 font-bold">(Optional custom icon)</span>
+            </label>
+            <div className="flex flex-col gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
+              {/* Custom Image Upload */}
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="btn bg-white btn-sm w-full font-bold border-gray-300 text-gray-600 hover:bg-gray-100 hover:border-gray-400 shadow-sm"
+                  >
+                    <FaImage className="mr-2" /> Upload Custom Photo
+                  </button>
+                  <p className="text-[10px] text-gray-500 mt-1.5 text-center font-bold">Max 1MB. Auto-converted to WebP.</p>
+                </div>
+                
+                {imageUrl && (
+                  <div className="relative">
+                    <div className="w-14 h-14 rounded-xl overflow-hidden border-2 border-primary shadow-sm bg-white">
+                      <img src={imageUrl} alt="Custom" className="w-full h-full object-contain" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setImageUrl(''); setSelectedIcon('star'); }}
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-error text-white rounded-full flex items-center justify-center text-xs shadow-md border-2 border-white font-black hover:scale-110 transition-transform"
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="divider my-1 text-xs font-bold text-gray-400">OR</div>
+
+              {/* Predefined Icons */}
+              <div className={`grid grid-cols-6 gap-2 ${imageUrl ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
+                {TASK_ICONS.map((item) => {
+                  const Icon = item.icon;
+                  const isSelected = selectedIcon === item.id && !imageUrl;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => { setSelectedIcon(item.id); setImageUrl(''); }}
+                      className={`flex flex-col items-center justify-center p-2 rounded-xl border-2 transition-all aspect-square ${isSelected
+                        ? 'border-primary bg-primary/10 text-primary shadow-sm ring-1 ring-primary'
+                        : 'border-transparent bg-white hover:bg-gray-100 text-gray-400 shadow-sm'
+                        }`}
+                    >
+                      <Icon className="text-xl" />
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -229,8 +371,8 @@ const FirstTask = () => {
             </div>
 
             {/* Selected Description Helper */}
-            <div className="min-h-[20px] mt-2 text-center">
-              <p className="text-xs text-gray-400 font-medium transition-all">
+            <div className="min-h-[20px] mt-2 text-center border-t border-gray-100 pt-1">
+              <p className="text-xs text-gray-600 font-bold transition-all">
                 {DIFFICULTY_PRESETS.find(p => p.value === reward)?.desc || 'Custom reward amount'}
               </p>
             </div>
@@ -253,7 +395,7 @@ const FirstTask = () => {
             <div className="form-control w-full">
               <label className="label">
                 <span className="label-text font-bold">Expired Time</span>
-                <span className="label-text-alt text-gray-400">(Optional)</span>
+                <span className="label-text-alt text-gray-600 font-bold">(Optional)</span>
               </label>
               <input
                 type="time"

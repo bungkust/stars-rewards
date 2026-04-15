@@ -70,7 +70,12 @@ const TaskCompletionModal: React.FC<TaskCompletionModalProps> = ({ isOpen, taskN
                   Ask your parent to approve it to get your stars!
                 </p>
 
-                <PrimaryButton onClick={onClose} className="rounded-xl text-lg">
+                <PrimaryButton 
+                  id="completionDoneBtn"
+                  name="completionDoneBtn"
+                  onClick={onClose} 
+                  className="rounded-xl text-lg w-full"
+                >
                   Okay, Got it!
                 </PrimaryButton>
               </Dialog.Panel>

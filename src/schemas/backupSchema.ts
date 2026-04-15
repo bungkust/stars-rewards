@@ -27,6 +27,8 @@ export const taskSchema = z.object({
     max_completions_per_day: z.number().nullish(),
     current_streak: z.number().nullish(),
     best_streak: z.number().nullish(),
+    icon: z.string().nullish().transform(val => val ?? undefined),
+    image_url: z.string().nullish().transform(val => val ?? undefined),
 });
 
 export const rewardSchema = z.object({
@@ -40,6 +42,8 @@ export const rewardSchema = z.object({
     required_task_count: z.number().nullish(),
     created_at: z.string().nullish(),
     assigned_to: z.array(z.string()).nullish(),
+    icon: z.string().nullish().transform(val => val ?? undefined),
+    image_url: z.string().nullish().transform(val => val ?? undefined),
 });
 
 export const logSchema = z.object({

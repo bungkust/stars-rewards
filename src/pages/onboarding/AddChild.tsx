@@ -92,7 +92,7 @@ const AddChild = () => {
     <div className="min-h-screen flex flex-col items-center justify-center app-gradient p-6">
       <div className="w-full max-w-md">
         <h1 className="text-3xl font-bold text-primary text-center mb-2">Add Your Child</h1>
-        <p className="text-gray-500 text-center mb-8">Let's create a profile for your little star.</p>
+        <p className="text-gray-600 text-center mb-8">Let's create a profile for your little star.</p>
 
         {successMsg && (
           <div className="alert alert-success mb-6 shadow-sm">
@@ -134,6 +134,8 @@ const AddChild = () => {
               <span className="label-text font-bold">Child's Name</span>
             </label>
             <input
+              id="childName"
+              name="childName"
               type="text"
               value={name}
               onChange={(e) => {
@@ -141,8 +143,13 @@ const AddChild = () => {
                 setSuccessMsg('');
                 setErrorMsg('');
               }}
+              onInput={(e) => {
+                setName(e.currentTarget.value);
+                setSuccessMsg('');
+                setErrorMsg('');
+              }}
               className="input input-bordered w-full rounded-xl"
-              placeholder="e.g. Alice"
+              placeholder="e.g. Alex, Emma"
             />
           </div>
 
@@ -151,12 +158,19 @@ const AddChild = () => {
               <span className="label-text font-bold">Date of Birth</span>
             </label>
             <input
+              id="childDob"
+              name="childDob"
               type="date"
               value={dob}
               max={today}
               onChange={(e) => setDob(e.target.value)}
+              onInput={(e) => setDob(e.currentTarget.value)}
               className="input input-bordered w-full rounded-xl text-neutral"
+              placeholder="yyyy-MM-dd"
             />
+            <label className="label">
+              <span className="label-text-alt text-gray-600">Format: dd-mm-yyyy</span>
+            </label>
           </div>
 
           <div className="flex flex-col gap-3 mt-4">

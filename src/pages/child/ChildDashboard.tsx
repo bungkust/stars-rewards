@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { FaStar, FaClock, FaRedo, FaCamera, FaBolt, FaCalendarWeek, FaCalendarAlt, FaChevronDown, FaChevronUp, FaPlus } from 'react-icons/fa';
+import { FaStar, FaClock, FaRedo, FaCamera, FaBolt, FaCalendarWeek, FaCalendarAlt, FaChevronDown, FaChevronUp, FaPlus, FaHistory } from 'react-icons/fa';
 import { motion, AnimatePresence, type PanInfo } from 'framer-motion';
 import { ToggleButton } from '../../components/design-system';
 import { parseRRule, isDateValid } from '../../utils/recurrence';
@@ -10,6 +10,15 @@ import TaskCompletionModal from '../../components/modals/TaskCompletionModal';
 import TaskRejectionDetailsModal from '../../components/modals/TaskRejectionDetailsModal';
 import ExemptionModal from '../../components/modals/ExemptionModal';
 import TaskDetailsModal from '../../components/modals/TaskDetailsModal';
+import { getTaskIconComponent } from '../../utils/icons';
+
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 11) return 'Selamat Pagi';
+  if (hour < 15) return 'Selamat Siang';
+  if (hour < 19) return 'Selamat Sore';
+  return 'Selamat Malam';
+};
 
 const ChildDashboard = () => {
   const { activeChildId, children, getTasksByChildId, updateChild, deleteChild, completeTask, completeTaskOnDate, updateTaskProgress, updateTaskProgressOnDate, isLoading, childLogs } = useAppStore();
@@ -222,16 +231,6 @@ const ChildDashboard = () => {
     });
   }, [allTasks, filter, childLogs, activeChildId]);
 
-  // DEBUG LOGS
-  console.log('[Dashboard] Active Child:', activeChildId);
-  console.log('[Dashboard] All Tasks:', allTasks.length);
-  console.log('[Dashboard] Filtered Tasks:', filteredTasks.length);
-
-  filteredTasks.forEach(t => {
-    const status = getTaskStatus(t);
-    console.log(`[Dashboard] Task: ${t.name}, Status: ${status}, Recurrence: ${t.recurrence_rule}, Expiry: ${t.expiry_time || 'None'}, AssignedTo: ${t.assigned_to ? JSON.stringify(t.assigned_to) : 'ALL'}`);
-  });
-
   const visibleTasks = filteredTasks.slice(0, visibleCount);
   const hasMore = visibleTasks.length < filteredTasks.length;
 
@@ -245,6 +244,10 @@ const ChildDashboard = () => {
     return allTasks.filter(task => {
       if (!task.is_active) return false;
       if (task.assigned_to && activeChildId && !task.assigned_to.includes(activeChildId)) return false;
+
+      // Filter out tasks created after yesterday (e.g. today or future)
+      const createdAtStr = task.created_at ? getLocalDateString(new Date(task.created_at)) : getLocalDateString();
+      if (createdAtStr > yesterdayStr) return false;
 
       if (task.recurrence_rule === 'Once') {
         // Show Once tasks that were created on or before yesterday and not done before yesterday
@@ -394,7 +397,7 @@ const ChildDashboard = () => {
     }
   };
 
-  if (!child) return <div>Loading...</div>;
+  if (!child) return null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -409,7 +412,7 @@ const ChildDashboard = () => {
           </div>
         </div>
         <div className="flex-1">
-          <h2 className="text-2xl font-bold text-gray-800">Hi, {child.name}!</h2>
+          <h2 className="text-2xl font-bold text-gray-800">{getGreeting()}, {child.name}!</h2>
           <div className="flex items-center gap-2 text-warning mt-1">
             <FaStar className="w-6 h-6" />
             <span className="text-3xl font-bold text-gray-700">{child.current_balance}</span>
@@ -451,8 +454,13 @@ const ChildDashboard = () => {
 
       <TaskDetailsModal
         isOpen={isDetailsModalOpen}
-        task={selectedTaskDetails}
+        task={selectedTaskDetails ? {
+          ...selectedTaskDetails,
+          status: getTaskStatus(selectedTaskDetails)
+        } : null}
         onClose={() => setIsDetailsModalOpen(false)}
+        onComplete={handleTaskComplete}
+        isLoading={isLoading}
       />
 
       {/* Today's Tasks Section */}
@@ -545,22 +553,32 @@ const ChildDashboard = () => {
                       }`}
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className={`p-3 rounded-full flex-shrink-0 ${finalDisplayStatus === 'VERIFIED' ? 'bg-success/10 text-success' :
-                        finalDisplayStatus === 'FAILED' ? 'bg-error/10 text-error' :
-                          finalDisplayStatus === 'PENDING' ? 'bg-warning/10 text-warning' :
-                            finalDisplayStatus === 'PENDING_EXCUSE' ? 'bg-warning/10 text-warning' :
-                              finalDisplayStatus === 'EXCUSED' ? 'bg-neutral/10 text-neutral' :
-                                finalDisplayStatus === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-600' :
-                                  isLatestRejected ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'
-                        }`}>
-                        {task.recurrence_rule === 'Once' ? <FaBolt className="w-6 h-6" /> :
-                          task.recurrence_rule === 'Daily' ? <FaRedo className="w-6 h-6" /> :
-                            task.recurrence_rule === 'Weekly' ? <FaCalendarWeek className="w-6 h-6" /> :
-                              task.recurrence_rule === 'Monthly' ? <FaCalendarAlt className="w-6 h-6" /> :
-                                <FaClock className="w-6 h-6" />}
-                      </div>
+                      {task.image_url ? (
+                        <div className="w-12 h-12 rounded-full flex-shrink-0 overflow-hidden shadow-sm border border-gray-200 bg-white">
+                          <img src={task.image_url} alt={task.name} className="w-full h-full object-cover" />
+                        </div>
+                      ) : (
+                        <div className={`p-3 rounded-full flex-shrink-0 ${finalDisplayStatus === 'VERIFIED' ? 'bg-success/10 text-success' :
+                          finalDisplayStatus === 'FAILED' ? 'bg-error/10 text-error' :
+                            finalDisplayStatus === 'PENDING' ? 'bg-warning/10 text-warning' :
+                              finalDisplayStatus === 'PENDING_EXCUSE' ? 'bg-warning/10 text-warning' :
+                                finalDisplayStatus === 'EXCUSED' ? 'bg-neutral/10 text-neutral' :
+                                  finalDisplayStatus === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-600' :
+                                    isLatestRejected ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'
+                          }`}>
+                          {task.icon ? (
+                            (() => { const CustomIcon = getTaskIconComponent(task.icon); return <CustomIcon className="w-6 h-6" />; })()
+                          ) : (
+                            task.recurrence_rule === 'Once' ? <FaBolt className="w-6 h-6" /> :
+                              task.recurrence_rule === 'Daily' ? <FaRedo className="w-6 h-6" /> :
+                                task.recurrence_rule === 'Weekly' ? <FaCalendarWeek className="w-6 h-6" /> :
+                                  task.recurrence_rule === 'Monthly' ? <FaCalendarAlt className="w-6 h-6" /> :
+                                    <FaClock className="w-6 h-6" />
+                          )}
+                        </div>
+                      )}
                       <div className="min-w-0">
-                        <h4 className="font-bold text-gray-800 truncate">{task.name}</h4>
+                        <h4 className="font-bold text-gray-800 line-clamp-2 leading-tight break-words">{task.name}</h4>
                         <div className="flex items-center gap-2 text-sm text-gray-500">
                           {task.reward_value > 0 && (
                             <span className="flex items-center gap-1 text-warning font-bold">
@@ -656,10 +674,13 @@ const ChildDashboard = () => {
             onClick={() => setIsYesterdayCollapsed(prev => !prev)}
           >
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-gray-400">
-                Yesterday's Unfinished Mission
+              <div className="p-1.5 rounded-lg bg-gray-100 text-gray-500">
+                <FaHistory className="w-3.5 h-3.5" />
+              </div>
+              <h3 className="text-sm font-bold text-gray-600 uppercase tracking-wide">
+                Yesterday's Unfinished
               </h3>
-              <span className="text-xs font-medium text-neutral/40 bg-base-200 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-black text-white bg-error px-2 py-0.5 rounded-full">
                 {yesterdayTasks.length}
               </span>
             </div>
@@ -721,15 +742,25 @@ const ChildDashboard = () => {
                       className={`card bg-white/60 rounded-xl px-4 py-3 flex flex-row items-center justify-between border-l-4 opacity-75 cursor-pointer active:scale-95 transition-transform ${borderColor}`}
                     >
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className={`p-2.5 rounded-full flex-shrink-0 ${iconBg}`}>
-                          {task.recurrence_rule === 'Once' ? <FaBolt className="w-4 h-4" /> :
-                            task.recurrence_rule === 'Daily' ? <FaRedo className="w-4 h-4" /> :
-                              task.recurrence_rule === 'Weekly' ? <FaCalendarWeek className="w-4 h-4" /> :
-                                task.recurrence_rule === 'Monthly' ? <FaCalendarAlt className="w-4 h-4" /> :
-                                  <FaClock className="w-4 h-4" />}
-                        </div>
+                        {task.image_url ? (
+                          <div className="w-9 h-9 rounded-full flex-shrink-0 overflow-hidden shadow-sm border border-gray-200 bg-white opacity-90">
+                            <img src={task.image_url} alt={task.name} className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className={`p-2.5 rounded-full flex-shrink-0 ${iconBg}`}>
+                            {task.icon ? (
+                              (() => { const CustomIcon = getTaskIconComponent(task.icon); return <CustomIcon className="w-4 h-4" />; })()
+                            ) : (
+                              task.recurrence_rule === 'Once' ? <FaBolt className="w-4 h-4" /> :
+                                task.recurrence_rule === 'Daily' ? <FaRedo className="w-4 h-4" /> :
+                                  task.recurrence_rule === 'Weekly' ? <FaCalendarWeek className="w-4 h-4" /> :
+                                    task.recurrence_rule === 'Monthly' ? <FaCalendarAlt className="w-4 h-4" /> :
+                                      <FaClock className="w-4 h-4" />
+                            )}
+                          </div>
+                        )}
                         <div className="min-w-0">
-                          <h4 className="font-semibold text-sm text-gray-600 truncate">{task.name}</h4>
+                          <h4 className="font-semibold text-sm text-gray-600 line-clamp-2 leading-tight break-words">{task.name}</h4>
                           <div className="flex items-center gap-2 mt-0.5">
                             {task.reward_value > 0 && (
                               <span className="flex items-center gap-1 text-warning text-xs font-bold">

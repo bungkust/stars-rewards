@@ -176,7 +176,7 @@ const ChildStats = () => {
     Math.max(5, chartMaxValue + yPadding),
   ];
 
-  if (!child) return <div>Loading...</div>;
+  if (!child) return null;
 
   // Helper to format date friendly
   const formatDate = (dateString: string) => {

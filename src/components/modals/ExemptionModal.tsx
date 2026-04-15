@@ -45,6 +45,7 @@ const ExemptionModal = ({ isOpen, taskName, onClose, onSubmit, isLoading }: Exem
                         <label key={reason} className="flex items-center gap-3 p-3 border rounded-xl cursor-pointer hover:bg-base-100 transition-colors">
                             <input
                                 type="radio"
+                                id={`exemption-reason-${reason}`}
                                 name="exemption-reason"
                                 className="radio radio-primary"
                                 checked={selectedReason === reason}
@@ -57,22 +58,27 @@ const ExemptionModal = ({ isOpen, taskName, onClose, onSubmit, isLoading }: Exem
 
                 {selectedReason === 'Other Reason' && (
                     <textarea
+                        id="customReason"
+                        name="customReason"
                         className="textarea textarea-bordered w-full"
                         placeholder="Tell us why..."
                         value={customReason}
                         onChange={(e) => setCustomReason(e.target.value)}
+                        onInput={(e) => setCustomReason((e.target as HTMLTextAreaElement).value)}
                         rows={3}
                     />
                 )}
 
                 <div className="flex flex-col-reverse sm:flex-row gap-3 mt-6">
-                    <button
-                        onClick={handleSubmit}
-                        disabled={isLoading || (selectedReason === 'Other Reason' && !customReason.trim())}
-                        className="btn btn-lg btn-warning rounded-full shadow-lg disabled:bg-gray-300 disabled:text-gray-500 disabled:border-none flex-1"
-                    >
-                        Send to Parent
-                    </button>
+                        <button
+                            id="exemptionSubmitBtn"
+                            name="exemptionSubmitBtn"
+                            onClick={handleSubmit}
+                            disabled={isLoading || (selectedReason === 'Other Reason' && !customReason.trim())}
+                            className="btn btn-lg btn-warning rounded-full shadow-lg disabled:bg-gray-300 disabled:text-gray-500 disabled:border-none flex-1"
+                        >
+                            Send to Parent
+                        </button>
                 </div>
             </div>
         </Modal>

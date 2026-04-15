@@ -1,20 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
-import { FaArrowLeft, FaGamepad, FaIceCream, FaTicketAlt, FaGift, FaChevronDown, FaCheck, FaInfinity, FaCheckCircle, FaTrophy, FaPizzaSlice, FaBicycle, FaBook, FaPalette } from 'react-icons/fa';
+import { FaArrowLeft, FaGamepad, FaIceCream, FaTicketAlt, FaGift, FaChevronDown, FaCheck, FaInfinity, FaCheckCircle, FaTrophy, FaPizzaSlice, FaBicycle, FaBook, FaPalette, FaStar, FaImage } from 'react-icons/fa';
 import { AlertModal } from '../../components/design-system';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
+import { convertToWebP } from '../../utils/imageUtils';
+import { REWARD_ICONS as ICONS } from '../../utils/icons';
 
-const ICONS = [
-  { id: 'game', icon: FaGamepad, label: 'Game' },
-  { id: 'treat', icon: FaIceCream, label: 'Treat' },
-  { id: 'event', icon: FaTicketAlt, label: 'Event' },
-  { id: 'gift', icon: FaGift, label: 'Gift' },
-  { id: 'food', icon: FaPizzaSlice, label: 'Food' },
-  { id: 'activity', icon: FaBicycle, label: 'Activity' },
-  { id: 'book', icon: FaBook, label: 'Book' },
-  { id: 'art', icon: FaPalette, label: 'Art' },
+
+
+const REWARD_TEMPLATES = [
+  { title: 'Screen Time', cost: 50, icon: 'game' },
+  { title: 'Ice Cream', cost: 80, icon: 'treat' },
+  { title: 'Movie Night', cost: 150, icon: 'event' },
+  { title: 'New Game', cost: 200, icon: 'game' },
+  { title: 'New Toy', cost: 250, icon: 'gift' },
+  { title: 'Play in Park', cost: 30, icon: 'activity' },
 ];
+
+const removeEmojis = (str: string) => str.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '');
 
 const AdminRewardForm = () => {
   const navigate = useNavigate();
@@ -32,6 +36,22 @@ const AdminRewardForm = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const [imageUrl, setImageUrl] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const webpDataUrl = await convertToWebP(file, 1);
+        setImageUrl(webpDataUrl);
+        setSelectedIcon('');
+      } catch (err: any) {
+        alert(err.message || 'Failed to process image');
+      }
+    }
+  };
+
   // Load existing reward if editing
   useEffect(() => {
     if (id) {
@@ -44,6 +64,12 @@ const AdminRewardForm = () => {
         if (rewardToEdit.required_task_id) setRequiredTaskId(rewardToEdit.required_task_id);
         if (rewardToEdit.required_task_count) setRequiredTaskCount(rewardToEdit.required_task_count);
         setDescription(rewardToEdit.description || '');
+
+        if (rewardToEdit.icon) setSelectedIcon(rewardToEdit.icon);
+        if (rewardToEdit.image_url) {
+          setImageUrl(rewardToEdit.image_url);
+          setSelectedIcon('');
+        }
 
         if (rewardToEdit.assigned_to && rewardToEdit.assigned_to.length > 0) {
           setSelectedChildIds(rewardToEdit.assigned_to);
@@ -82,7 +108,9 @@ const AdminRewardForm = () => {
       required_task_id: type === 'ACCUMULATIVE' ? requiredTaskId : undefined,
       required_task_count: type === 'ACCUMULATIVE' ? Number(requiredTaskCount) : undefined,
       assigned_to: selectedChildIds,
-      description: description.trim() || undefined
+      description: description.trim() || undefined,
+      icon: imageUrl ? undefined : selectedIcon,
+      image_url: imageUrl || undefined,
     };
 
     if (id) {
@@ -120,25 +148,58 @@ const AdminRewardForm = () => {
             <span className="label-text font-bold">Reward Name</span>
           </label>
           <input
+            id="rewardName"
+            name="rewardName"
             type="text"
-            placeholder="e.g. 30 min iPad"
+            placeholder="e.g. 30 min iPad, Ice Cream"
             className="input input-bordered w-full rounded-xl"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => setName(removeEmojis(e.target.value))}
+            onInput={(e) => setName(removeEmojis(e.currentTarget.value))}
+            maxLength={25}
             required
           />
+          <div className="flex justify-end mt-1 px-1">
+            <span className={`text-xs ${name.length >= 25 ? 'text-error font-bold' : 'text-gray-500'}`}>
+              {name.length}/25 {name.length >= 25 && "(Max Length)"}
+            </span>
+          </div>
+          
+          {!id && (
+            <div className="mt-3">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Quick Suggestions</span>
+              <div className="grid grid-cols-2 gap-2.5">
+                {REWARD_TEMPLATES.map(t => (
+                  <button
+                    key={t.title}
+                    type="button"
+                    onClick={() => { setName(t.title); setCost(t.cost); setSelectedIcon(t.icon); }}
+                    className="group relative flex items-center justify-between w-full px-3 py-2 bg-white border-2 border-gray-100 rounded-xl text-xs font-bold text-gray-700 hover:border-primary hover:bg-primary/5 transition-all shadow-sm active:scale-95 text-left"
+                  >
+                    <span className="line-clamp-2 leading-tight mr-1">{t.title}</span> 
+                    <span className="shrink-0 flex items-center gap-0.5 bg-primary/10 text-primary px-1.5 py-0.5 rounded-md text-[10px] font-black tracking-wide">
+                      {t.cost} <FaStar className="w-2.5 h-2.5" />
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="form-control w-full">
           <label className="label">
             <span className="label-text font-bold">Reward Description</span>
-            <span className="label-text-alt text-gray-400">(Optional)</span>
+            <span className="label-text-alt text-gray-600 font-bold">(Optional)</span>
           </label>
           <textarea
+            id="rewardDescription"
+            name="rewardDescription"
             className="textarea textarea-bordered w-full rounded-xl h-24"
             placeholder="Describe the reward details..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            onInput={(e) => setDescription(e.currentTarget.value)}
           />
         </div>
 
@@ -160,6 +221,8 @@ const AdminRewardForm = () => {
           </div>
           <div className="relative">
             <input
+              id="rewardCost"
+              name="rewardCost"
               type="number"
               className="input input-bordered w-full rounded-xl pl-12 font-bold text-lg"
               value={cost}
@@ -167,20 +230,24 @@ const AdminRewardForm = () => {
                 const val = Number(e.target.value);
                 if (val <= 9999) setCost(val);
               }}
+              onInput={(e) => {
+                const val = Number(e.currentTarget.value);
+                if (val <= 9999) setCost(val);
+              }}
               min={0}
               max={9999}
             />
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-              <span className="text-xs font-bold">STAR</span>
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600">
+              <span className="text-xs font-black">STAR</span>
             </div>
           </div>
           <label className="label">
-            <span className="label-text-alt text-gray-500">Set to 0 for free rewards</span>
+            <span className="label-text-alt text-gray-600 font-bold">Set to 0 for free rewards</span>
           </label>
         </div>
 
-        <div className="form-control w-full">
-          <label className="label">
+        <div className="form-control w-full mt-4">
+          <label className="label mb-1">
             <span className="label-text font-bold text-gray-500 uppercase text-xs tracking-wider">Reward Type</span>
           </label>
           <div className="grid grid-cols-3 gap-3">
@@ -296,10 +363,13 @@ const AdminRewardForm = () => {
                 <span className="label-text font-bold">Required Completions</span>
               </label>
               <input
+                id="requiredCompletions"
+                name="requiredCompletions"
                 type="number"
                 className="input input-bordered w-full rounded-xl"
                 value={requiredTaskCount}
                 onChange={(e) => setRequiredTaskCount(Number(e.target.value))}
+                onInput={(e) => setRequiredTaskCount(Number(e.currentTarget.value))}
                 min={1}
                 required={type === 'ACCUMULATIVE'}
               />
@@ -312,23 +382,65 @@ const AdminRewardForm = () => {
 
         <div className="form-control w-full">
           <label className="label">
-            <span className="label-text font-bold text-gray-500 uppercase text-xs tracking-wider">Icon Category</span>
+            <span className="label-text font-bold">Reward Icon / Image</span>
+            <span className="label-text-alt text-gray-500 font-bold">(Optional custom icon)</span>
           </label>
-          <div className="grid grid-cols-4 gap-3">
-            {ICONS.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setSelectedIcon(item.id)}
-                className={`flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border-2 transition-all aspect-square ${selectedIcon === item.id
-                  ? 'border-primary bg-primary/5 text-primary shadow-sm'
-                  : 'border-transparent bg-gray-50 hover:bg-gray-100 text-gray-400'
-                  }`}
-              >
-                <item.icon className="w-6 h-6" />
-                <span className="text-[10px] font-bold uppercase tracking-wide">{item.label}</span>
-              </button>
-            ))}
+          <div className="flex flex-col gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
+            {/* Custom Image Upload */}
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="btn bg-white btn-sm w-full font-bold border-gray-300 text-gray-600 hover:bg-gray-100 hover:border-gray-400 shadow-sm"
+                >
+                  <FaImage className="mr-2" /> Upload Custom Photo
+                </button>
+                <p className="text-[10px] text-gray-500 mt-1.5 text-center font-bold">Max 1MB. Auto-converted to WebP.</p>
+              </div>
+              
+              {imageUrl && (
+                <div className="relative">
+                  <div className="w-14 h-14 rounded-xl overflow-hidden border-2 border-primary shadow-sm bg-white">
+                    <img src={imageUrl} alt="Custom" className="w-full h-full object-contain" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setImageUrl(''); setSelectedIcon(ICONS[0].id); }}
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-error text-white rounded-full flex items-center justify-center text-xs shadow-md border-2 border-white font-black hover:scale-110 transition-transform"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="divider my-1 text-xs font-bold text-gray-400">OR</div>
+
+            {/* Predefined Icons */}
+            <div className={`grid grid-cols-4 gap-3 ${imageUrl ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
+              {ICONS.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => { setSelectedIcon(item.id); setImageUrl(''); }}
+                  className={`flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border-2 transition-all aspect-square ${selectedIcon === item.id && !imageUrl
+                    ? 'border-primary bg-primary/5 text-primary shadow-sm ring-1 ring-primary'
+                    : 'border-transparent bg-white hover:bg-gray-100 text-gray-400 shadow-sm'
+                    }`}
+                >
+                  <item.icon className="w-6 h-6" />
+                  <span className="text-[10px] font-bold uppercase tracking-wide">{item.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

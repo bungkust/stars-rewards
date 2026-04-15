@@ -8,6 +8,9 @@ export interface Profile {
   parent_name?: string;
   biometric_enabled?: boolean;
   notifications_enabled?: boolean;
+  notify_mission_approvals?: boolean;
+  notify_missed_tasks?: boolean;
+  notify_daily_report?: boolean;
   onboarding_step?: string;
 }
 
@@ -46,6 +49,8 @@ export interface Task {
   total_target_value?: number;
   target_unit?: string;
   description?: string;
+  icon?: string;
+  image_url?: string;
 }
 
 export interface Reward {
@@ -59,6 +64,8 @@ export interface Reward {
   required_task_count?: number;
   assigned_to?: string[];
   description?: string;
+  icon?: string;
+  image_url?: string;
 }
 
 export interface ChildTaskLog {

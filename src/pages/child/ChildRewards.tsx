@@ -4,6 +4,7 @@ import { useAppStore } from '../../store/useAppStore';
 import RewardConfirmationModal from '../../components/modals/RewardConfirmationModal';
 import RewardRedemptionSuccessModal from '../../components/modals/RewardRedemptionSuccessModal';
 import { ToggleButton } from '../../components/design-system';
+import { getRewardIconComponent } from '../../utils/icons';
 
 // Helper function to get icon component
 const getIconComponent = (iconId: string | undefined) => {
@@ -118,14 +119,6 @@ const ChildRewards = () => {
     return !redeemed && !isLocked && canAfford;
   });
 
-  // DEBUG LOGS
-  console.log('[ChildRewards] Active Child:', activeChildId);
-  console.log('[ChildRewards] All Rewards:', rewards.length);
-  console.log('[ChildRewards] Filtered Rewards:', filteredRewards.length);
-  filteredRewards.forEach(r => {
-    console.log(`[ChildRewards] Showing: ${r.name}, Cost: ${r.cost_value}, Assigned: ${JSON.stringify(r.assigned_to || 'ALL')}`);
-  });
-
   const sortedRewards = [...filteredRewards].sort((a, b) => {
     return getRewardSortWeight(a) - getRewardSortWeight(b);
   });
@@ -194,7 +187,7 @@ const ChildRewards = () => {
 
       {visibleRewards.length === 0 ? (
         <div className="text-center p-12 bg-base-100 rounded-xl border-2 border-dashed border-base-300">
-          <p className="text-neutral/40">No rewards available yet.</p>
+          <p className="text-neutral/60">No rewards available yet.</p>
         </div>
       ) : (
         <>
@@ -216,15 +209,30 @@ const ChildRewards = () => {
                   onClick={() => handleBuyClick(reward.id, reward.cost_value, reward.name, reward.description)}
                   className={`card bg-base-100 shadow-sm rounded-xl p-4 flex flex-col items-center text-center gap-2 cursor-pointer active:scale-95 transition-transform ${isRedeemed ? 'opacity-60' : ''}`}
                 >
-                  <div className={`p-4 rounded-full mb-2 relative ${isRedeemed ? 'bg-neutral/10 text-neutral/40' : isLocked ? 'bg-neutral/10 text-neutral/40' : 'bg-primary/10 text-primary'}`}>
-                    <IconComponent className="w-8 h-8" />
-                    {isLocked && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/10 rounded-full">
-                        <FaLock className="text-neutral/60" />
-                      </div>
-                    )}
-                  </div>
-                  <h3 className="font-bold text-neutral text-sm line-clamp-2 min-h-[2.5rem] flex items-center justify-center">
+                  {reward.image_url ? (
+                    <div className={`w-16 h-16 rounded-full mb-2 flex-shrink-0 overflow-hidden shadow-sm border border-base-200 bg-white relative ${isRedeemed ? 'opacity-50 grayscale' : ''}`}>
+                      <img src={reward.image_url} alt={reward.name} className="w-full h-full object-cover" />
+                      {isLocked && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                          <FaLock className="text-white w-5 h-5" />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className={`p-4 rounded-full mb-2 flex flex-shrink-0 items-center justify-center overflow-hidden relative ${isRedeemed ? 'bg-neutral/10 text-neutral/40' : isLocked ? 'bg-neutral/10 text-neutral/40' : 'bg-primary/10 text-primary'}`}>
+                      {reward.icon ? (
+                        (() => { const CustomIcon = getRewardIconComponent(reward.icon); return <CustomIcon className="w-8 h-8" />; })()
+                      ) : (
+                        <IconComponent className="w-8 h-8" />
+                      )}
+                      {isLocked && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/10 rounded-full">
+                          <FaLock className="text-neutral/60" />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <h3 className="font-bold text-neutral text-sm line-clamp-2 break-words min-h-[2.5rem] flex items-center justify-center">
                     {reward.name}
                   </h3>
 
@@ -237,7 +245,7 @@ const ChildRewards = () => {
                       <button className="btn btn-sm btn-disabled w-full rounded-full bg-neutral/20 text-neutral/50 border-none text-xs">
                         <FaLock className="mr-1 text-[10px]" /> Locked
                       </button>
-                      <div className="text-[10px] text-neutral/50 leading-tight px-1">
+                      <div className="text-[10px] text-neutral/60 leading-tight px-1 font-bold">
                         Complete "{progress?.taskName}" {Math.max(0, progress?.required! - progress?.current!)} more times
                         {progress?.pending! > 0 && (
                           <span className="text-warning font-bold ml-1">
@@ -279,7 +287,7 @@ const ChildRewards = () => {
 
           {hasMore && (
             <button
-              className="btn btn-ghost btn-sm w-full text-neutral/60 mt-4"
+              className="btn btn-ghost btn-sm w-full text-neutral/70 mt-4"
               onClick={() => setVisibleCount(prev => prev + 20)}
             >
               Load More

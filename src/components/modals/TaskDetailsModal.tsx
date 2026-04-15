@@ -8,16 +8,20 @@ import { formatRRule } from '../../utils/recurrence';
 interface TaskDetailsModalProps {
     isOpen: boolean;
     task: {
+        id: string;
         name: string;
         reward_value: number;
         recurrence_rule?: string;
         expiry_time?: string;
         description?: string;
+        status?: string;
     } | null;
     onClose: () => void;
+    onComplete?: (task: any) => void;
+    isLoading?: boolean;
 }
 
-const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, task, onClose }) => {
+const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, task, onClose, onComplete, isLoading }) => {
     if (!task) return null;
 
     const getRecurrenceIcon = (rule?: string) => {
@@ -105,11 +109,31 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, task, onClo
                                         </div>
                                     )}
 
-                                    {/* Close Button */}
-                                    <div className="mt-4">
-                                        <PrimaryButton onClick={onClose} className="w-full rounded-xl">
-                                            Close
-                                        </PrimaryButton>
+                                    {/* Action Buttons */}
+                                    <div className="mt-4 flex flex-col gap-3">
+                                        {onComplete && (!task.status || task.status === 'ACTIVE' || task.status === 'IN_PROGRESS' || task.status === 'REJECTED') && (
+                                            <PrimaryButton 
+                                                id="detailDoneBtn"
+                                                name="detailDoneBtn"
+                                                onClick={() => {
+                                                    onComplete(task);
+                                                    onClose();
+                                                }} 
+                                                disabled={isLoading}
+                                                className="w-full rounded-xl shadow-lg font-bold text-lg"
+                                            >
+                                                {isLoading ? 'Processing...' : (task.status === 'REJECTED' ? 'Try Again' : 'Mark as Done')}
+                                            </PrimaryButton>
+                                        )}
+                                        
+                                        <button 
+                                            id="detailCloseBtn"
+                                            name="detailCloseBtn"
+                                            onClick={onClose} 
+                                            className="btn btn-ghost w-full rounded-xl text-gray-500"
+                                        >
+                                            {task.status === 'VERIFIED' ? 'Back to Missions' : 'Close'}
+                                        </button>
                                     </div>
                                 </div>
                             </Dialog.Panel>

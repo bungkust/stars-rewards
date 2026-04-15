@@ -19,6 +19,9 @@ export interface AppState {
   parentName?: string;
   familyName?: string;
   notificationsEnabled: boolean;
+  notifyMissionApprovals: boolean;
+  notifyMissedTasks: boolean;
+  notifyDailyReport: boolean;
   biometricEnabled: boolean;
   lastMissedCheckDate?: string; // ISO Date string (YYYY-MM-DD)
 
@@ -98,6 +101,9 @@ export interface AppState {
   logout: () => Promise<void>;
   resetApp: () => Promise<void>;
   setNotificationsEnabled: (value: boolean) => Promise<void>;
+  setNotifyMissionApprovals: (value: boolean) => Promise<void>;
+  setNotifyMissedTasks: (value: boolean) => Promise<void>;
+  setNotifyDailyReport: (value: boolean) => Promise<void>;
 }
 
 export const useAppStore = create<AppState>()(
@@ -110,6 +116,9 @@ export const useAppStore = create<AppState>()(
       preferredAuthMethod: 'pin',
 
       notificationsEnabled: true,
+      notifyMissionApprovals: true,
+      notifyMissedTasks: true,
+      notifyDailyReport: true,
       biometricEnabled: false,
       children: [],
       categories: [],
@@ -184,6 +193,18 @@ export const useAppStore = create<AppState>()(
         set({ notificationsEnabled: value });
         await localStorageService.updateProfile({ notifications_enabled: value });
         set((state) => ({ userProfile: state.userProfile ? { ...state.userProfile, notifications_enabled: value } : null }));
+      },
+      setNotifyMissionApprovals: async (value) => {
+        set({ notifyMissionApprovals: value });
+        await localStorageService.updateProfile({ notify_mission_approvals: value });
+      },
+      setNotifyMissedTasks: async (value) => {
+        set({ notifyMissedTasks: value });
+        await localStorageService.updateProfile({ notify_missed_tasks: value });
+      },
+      setNotifyDailyReport: async (value) => {
+        set({ notifyDailyReport: value });
+        await localStorageService.updateProfile({ notify_daily_report: value });
       },
       setBiometricEnabled: async (value) => {
         set({ biometricEnabled: value });
