@@ -9,13 +9,18 @@ export interface MissionCheckResult {
     lastCheckedDate: string;
 }
 
+export interface StreakIncrementResult {
+    tasks: Task[];
+    milestoneReached?: { taskName: string; streak: number };
+}
+
 export const missionLogicService = {
     /**
    * Increments the streak for a task and persists the change.
    */
-    incrementStreak: async (taskId: string, tasks: Task[], childLogs: ChildTaskLog[], currentLogId: string): Promise<Task[]> => {
+    incrementStreak: async (taskId: string, tasks: Task[], childLogs: ChildTaskLog[], currentLogId: string): Promise<StreakIncrementResult> => {
         const taskIndex = tasks.findIndex(t => t.id === taskId);
-        if (taskIndex === -1) return tasks;
+        if (taskIndex === -1) return { tasks };
 
         // Check if streak was already incremented today by another log
         const todayStr = getLocalDateString();
@@ -27,7 +32,7 @@ export const missionLogicService = {
         );
 
         if (alreadyIncremented) {
-            return tasks;
+            return { tasks };
         }
 
         const task = tasks[taskIndex];
@@ -40,7 +45,14 @@ export const missionLogicService = {
         // Return updated tasks array
         const newTasks = [...tasks];
         newTasks[taskIndex] = { ...task, current_streak: currentStreak, best_streak: bestStreak };
-        return newTasks;
+
+        // Check for milestone
+        const MILESTONES = [3, 7, 14, 30, 100];
+        const milestoneReached = MILESTONES.includes(currentStreak)
+            ? { taskName: task.name, streak: currentStreak }
+            : undefined;
+
+        return { tasks: newTasks, milestoneReached };
     },
 
     /**

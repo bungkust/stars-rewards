@@ -21,7 +21,7 @@ const getGreeting = () => {
 };
 
 const ChildDashboard = () => {
-  const { activeChildId, children, getTasksByChildId, updateChild, deleteChild, completeTask, completeTaskOnDate, updateTaskProgress, updateTaskProgressOnDate, isLoading, childLogs } = useAppStore();
+  const { activeChildId, children, getTasksByChildId, updateChild, deleteChild, completeTask, completeTaskOnDate, updateTaskProgress, updateTaskProgressOnDate, isLoading, childLogs, setStreakMilestone } = useAppStore();
   const child = children.find(c => c.id === activeChildId);
   const allTasks = activeChildId ? getTasksByChildId(activeChildId) : [];
 
@@ -43,7 +43,7 @@ const ChildDashboard = () => {
 
       // Calculate incomplete tasks for today
       const todayStr = getLocalDateString();
-      const incompleteCount = allTasks.filter(task => {
+      const incompleteTasks = allTasks.filter(task => {
         if (task.is_active === false) return false;
         if (task.assigned_to && !task.assigned_to.includes(activeChildId)) return false;
 
@@ -73,10 +73,15 @@ const ChildDashboard = () => {
         if (['VERIFIED', 'PENDING', 'PENDING_EXCUSE', 'EXCUSED'].includes(log.status)) return false;
 
         return true;
-      }).length;
+      });
+      
+      const incompleteCount = incompleteTasks.length;
+      
+      // Determine if any incomplete task has a streak at risk (streak >= 2)
+      const hasAtRiskStreak = incompleteTasks.some(task => (task.current_streak || 0) >= 2);
 
       // Always call this to ensure we cancel if count is 0
-      notificationService.scheduleMissedChildNotification(incompleteCount);
+      notificationService.scheduleMissedChildNotification(incompleteCount, hasAtRiskStreak);
     };
 
     checkAndSchedule();
@@ -295,15 +300,22 @@ const ChildDashboard = () => {
     // Logic to handle "no active child" will be handled by store/App
   };
 
-  const handleTaskComplete = async (task: { id: string, name: string, reward_value: number, max_completions_per_day?: number }) => {
+  const handleTaskComplete = async (task: { id: string, name: string, reward_value: number, max_completions_per_day?: number, current_streak?: number }) => {
     // Check if already done today handled by UI state, but double check
     const status = getTaskStatus(task);
     if (status !== 'ACTIVE' && status !== 'IN_PROGRESS') return;
 
     const { error } = await completeTask(task.id);
     if (!error) {
-      setLastCompletedTask({ name: task.name, value: task.reward_value });
-      setIsCompletionModalOpen(true);
+      const predictedStreak = (task.current_streak || 0) + 1;
+      const isMilestone = false && [3, 7, 14, 30, 100].includes(predictedStreak);
+
+      if (isMilestone) {
+        setStreakMilestone({ taskName: task.name, streak: predictedStreak });
+      } else {
+        setLastCompletedTask({ name: task.name, value: task.reward_value });
+        setIsCompletionModalOpen(true);
+      }
     } else {
       alert('Something went wrong. Please try again.');
     }
@@ -322,28 +334,47 @@ const ChildDashboard = () => {
     }
 
     if (newVal >= target) {
-      setLastCompletedTask({ name: task.name, value: task.reward_value });
-      setIsCompletionModalOpen(true);
+      const predictedStreak = (task.current_streak || 0) + 1;
+      const isMilestone = [3, 7, 14, 30, 100].includes(predictedStreak);
+
+      if (isMilestone) {
+        setStreakMilestone({ taskName: task.name, streak: predictedStreak });
+      } else {
+        setLastCompletedTask({ name: task.name, value: task.reward_value });
+        setIsCompletionModalOpen(true);
+      }
     }
   };
   
-  const handleYesterdayTaskProgressIncrement = async (task: { id: string; target_value: number }) => {
+  const handleYesterdayTaskProgressIncrement = async (task: any, currentVal: number) => {
     const yesterday = getYesterdayLocalStart();
     yesterday.setHours(23, 59, 0, 0);
     const dateIso = yesterday.toISOString();
     
-    // Find latest log for yesterday to get current value
-    const logs = getYesterdayLogs(task.id);
-    const currentVal = logs[0]?.current_value || 0;
-    const newVal = currentVal + 1;
+    const increment = 1;
+    const target = task.total_target_value;
+    const newVal = Math.min(currentVal + increment, target);
     
-    const { error } = await updateTaskProgressOnDate(task.id, newVal, task.target_value, dateIso);
+    const { error } = await updateTaskProgressOnDate(task.id, newVal, target, dateIso);
     if (error) {
       alert('Failed to update progress. Please try again.');
+      return;
+    }
+
+    if (newVal >= target) {
+      const predictedStreak = (task.current_streak || 0) + 1;
+      const isMilestone = [3, 7, 14, 30, 100].includes(predictedStreak);
+
+      if (isMilestone) {
+        setStreakMilestone({ taskName: task.name, streak: predictedStreak });
+      } else {
+        setLastCompletedTask({ name: task.name, value: task.reward_value });
+        setIsCompletionModalOpen(true);
+      }
     }
   };
 
-  const handleYesterdayTaskComplete = async (task: { id: string; name: string; reward_value: number }) => {
+  const handleYesterdayTaskComplete = async (task: { id: string; name: string; reward_value: number; current_streak?: number }) => {
     // Use end-of-yesterday as the backdated timestamp
     const yesterday = getYesterdayLocalStart();
     yesterday.setHours(23, 59, 0, 0);
@@ -351,8 +382,15 @@ const ChildDashboard = () => {
 
     const { error } = await completeTaskOnDate(task.id, dateIso);
     if (!error) {
-      setLastCompletedTask({ name: task.name, value: task.reward_value });
-      setIsCompletionModalOpen(true);
+      const predictedStreak = (task.current_streak || 0) + 1;
+      const isMilestone = [3, 7, 14, 30, 100].includes(predictedStreak);
+
+      if (isMilestone) {
+        setStreakMilestone({ taskName: task.name, streak: predictedStreak });
+      } else {
+        setLastCompletedTask({ name: task.name, value: task.reward_value });
+        setIsCompletionModalOpen(true);
+      }
     } else {
       alert('Something went wrong. Please try again.');
     }
@@ -579,7 +617,7 @@ const ChildDashboard = () => {
                       )}
                       <div className="min-w-0">
                         <h4 className="font-bold text-gray-800 line-clamp-2 leading-tight break-words">{task.name}</h4>
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 mt-0.5">
                           {task.reward_value > 0 && (
                             <span className="flex items-center gap-1 text-warning font-bold">
                               <FaStar className="w-3 h-3" /> {task.reward_value}
@@ -595,7 +633,16 @@ const ChildDashboard = () => {
                               {currentProgress}/{task.total_target_value || 1} {task.target_unit}
                             </span>
                           )}
+                          {/* Streak badges hidden for now */}
+                          {false && (task.current_streak || 0) >= 2 && (
+                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded-full border border-orange-200">
+                              🔥 {task.current_streak}
+                            </span>
+                          )}
                         </div>
+                        {task.description && (
+                          <p className="text-xs text-gray-400 italic mt-1 line-clamp-1">{task.description}</p>
+                        )}
                         {isProgressTask && finalDisplayStatus !== 'VERIFIED' && finalDisplayStatus !== 'PENDING' && (
                           <div className="mt-2 w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-700">
                             <div className="bg-primary h-1.5 rounded-full" style={{ width: `${Math.min((currentProgress / (task.total_target_value || 1)) * 100, 100)}%` }}></div>
@@ -761,14 +808,25 @@ const ChildDashboard = () => {
                         )}
                         <div className="min-w-0">
                           <h4 className="font-semibold text-sm text-gray-600 line-clamp-2 leading-tight break-words">{task.name}</h4>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            {task.reward_value > 0 && (
-                              <span className="flex items-center gap-1 text-warning text-xs font-bold">
-                                <FaStar className="w-2.5 h-2.5" /> {task.reward_value}
-                              </span>
+                          <div className="flex flex-col gap-1 mt-0.5">
+                            <div className="flex items-center gap-2">
+                              {task.reward_value > 0 && (
+                                <span className="flex items-center gap-1 text-warning text-xs font-bold">
+                                  <FaStar className="w-2.5 h-2.5" /> {task.reward_value}
+                                </span>
+                              )}
+                              {/* Streak badges hidden for now */}
+                              {false && (task.current_streak || 0) >= 2 && (
+                                <span className="flex items-center gap-0.5 text-[10px] font-bold text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded-full border border-orange-200">
+                                  🔥 {task.current_streak}
+                                </span>
+                              )}
+                              {/* Only show badge here if it's NOT Pending or Verified/Done */}
+                              {status !== 'PENDING' && status !== 'VERIFIED' && status !== 'PENDING_EXCUSE' && badge}
+                            </div>
+                            {task.description && (
+                              <p className="text-[10px] text-gray-400 italic line-clamp-1">{task.description}</p>
                             )}
-                            {/* Only show badge here if it's NOT Pending or Verified/Done */}
-                            {status !== 'PENDING' && status !== 'VERIFIED' && status !== 'PENDING_EXCUSE' && badge}
                           </div>
                         </div>
                       </div>
@@ -786,7 +844,7 @@ const ChildDashboard = () => {
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleYesterdayTaskProgressIncrement({ id: task.id, target_value: task.total_target_value! });
+                                      handleYesterdayTaskProgressIncrement(task, latestLog?.current_value || 0);
                                     }}
                                     disabled={isLoading}
                                     className="btn btn-circle btn-xs btn-primary text-white"

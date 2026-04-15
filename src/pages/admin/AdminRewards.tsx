@@ -83,36 +83,46 @@ const AdminRewards = () => {
             return (
               <AppCard 
                 key={reward.id} 
-                className="flex flex-row items-center gap-4 !p-4 min-w-0 cursor-pointer active:scale-95 transition-transform"
-                onClick={() => handleRewardClick(reward)}
+                className="flex flex-row items-center gap-4 !p-4 min-w-0"
               >
-                {reward.image_url ? (
-                  <div className="w-12 h-12 rounded-full flex-shrink-0 overflow-hidden shadow-sm border border-base-200 bg-white">
-                    <img src={reward.image_url} alt={reward.name} className="w-full h-full object-cover" />
+                <div 
+                  className="flex-1 flex flex-row items-center gap-4 min-w-0 cursor-pointer active:scale-95 transition-transform"
+                  onClick={() => handleRewardClick(reward)}
+                >
+                  {reward.image_url ? (
+                    <div className="w-12 h-12 rounded-full flex-shrink-0 overflow-hidden shadow-sm border border-base-200 bg-white">
+                      <img src={reward.image_url} alt={reward.name} className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-primary/10 text-primary rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden">
+                      {reward.icon ? (
+                        (() => { const CustomIcon = getRewardIconComponent(reward.icon); return <CustomIcon className="w-6 h-6" />; })()
+                      ) : (
+                        <IconWrapper icon={IconComponent} className="text-primary" />
+                      )}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-neutral line-clamp-2 leading-tight break-words">{reward.name}</h3>
+                    <p className="text-sm text-neutral/60">{reward.cost_value} Stars</p>
                   </div>
-                ) : (
-                  <div className="p-3 bg-primary/10 text-primary rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden">
-                    {reward.icon ? (
-                      (() => { const CustomIcon = getRewardIconComponent(reward.icon); return <CustomIcon className="w-6 h-6" />; })()
-                    ) : (
-                      <IconWrapper icon={IconComponent} className="text-primary" />
-                    )}
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-neutral line-clamp-2 leading-tight break-words">{reward.name}</h3>
-                  <p className="text-sm text-neutral/60">{reward.cost_value} Stars</p>
                 </div>
                 <div className="flex gap-2">
                   <button
                     className="btn btn-ghost btn-sm btn-circle text-neutral/40"
-                    onClick={() => handleEditClick(reward.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditClick(reward.id);
+                    }}
                   >
                     <FaPencilAlt />
                   </button>
                   <button
                     className="btn btn-ghost btn-sm btn-circle text-error"
-                    onClick={() => handleDeleteClick(reward.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteClick(reward.id);
+                    }}
                   >
                     <FaTrash />
                   </button>

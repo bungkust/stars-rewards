@@ -235,6 +235,9 @@ const ChildRewards = () => {
                   <h3 className="font-bold text-neutral text-sm line-clamp-2 break-words min-h-[2.5rem] flex items-center justify-center">
                     {reward.name}
                   </h3>
+                  {reward.description && (
+                    <p className="text-[10px] text-neutral/50 italic mb-1 line-clamp-1">{reward.description}</p>
+                  )}
 
                   {isRedeemed ? (
                     <button className="btn btn-sm btn-disabled w-full rounded-full bg-neutral/10 text-neutral/40 border-none">

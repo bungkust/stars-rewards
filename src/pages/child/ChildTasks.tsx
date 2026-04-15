@@ -162,7 +162,7 @@ const ChildTasks = () => {
                       )}
                       <div className="flex-1">
                         <h3 className="font-bold text-neutral line-clamp-2 leading-tight break-words">{task.name}</h3>
-                        <div className="flex gap-4 text-sm text-neutral/60 mt-1">
+                        <div className="flex flex-wrap gap-2 text-sm text-neutral/60 mt-1 items-center">
                           {task.reward_value > 0 && (
                             <span className="flex items-center gap-1 text-warning font-bold">
                               <FaStar /> {task.reward_value}
@@ -171,6 +171,12 @@ const ChildTasks = () => {
                           {task.recurrence_rule && (
                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${getBadgeStyle(task.recurrence_rule)}`}>
                               {['Once', 'Daily', 'Weekly', 'Monthly'].includes(task.recurrence_rule) ? task.recurrence_rule : 'Custom'}
+                            </span>
+                          )}
+                          {/* Streak badges hidden for now */}
+                          {false && (task.current_streak || 0) >= 2 && (
+                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-200">
+                              🔥 {task.current_streak} hari
                             </span>
                           )}
                         </div>
@@ -203,7 +209,15 @@ const ChildTasks = () => {
           const { error } = await completeTask(task.id);
           if (!error) {
             setIsDetailsModalOpen(false);
-            // Optionally show success message or just let dashboard reflect it
+            
+            // Streak Milestone Check (Hidden for now)
+            const predictedStreak = (task.current_streak || 0) + 1;
+            const isMilestone = false && [3, 7, 14, 30, 100].includes(predictedStreak);
+
+            if (isMilestone) {
+              const { setStreakMilestone } = useAppStore.getState();
+              setStreakMilestone({ taskName: task.name, streak: predictedStreak });
+            }
           }
         }}
         isLoading={isLoading}

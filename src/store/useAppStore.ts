@@ -42,6 +42,11 @@ export interface AppState {
   userProfile: Profile | null;
   isLoading: boolean;
 
+  // Streak milestone state
+  streakMilestone: { taskName: string; streak: number } | null;
+  setStreakMilestone: (milestone: { taskName: string; streak: number } | null) => void;
+  clearStreakMilestone: () => void;
+
   // Actions
   setActiveChild: (childId: string | null) => void;
   toggleAdminMode: (isAdmin: boolean) => void;
@@ -132,6 +137,10 @@ export const useAppStore = create<AppState>()(
 
       userProfile: null,
       isLoading: false,
+
+      streakMilestone: null,
+      setStreakMilestone: (milestone) => set({ streakMilestone: milestone }),
+      clearStreakMilestone: () => set({ streakMilestone: null }),
 
       setActiveChild: (childId) => set({ activeChildId: childId }),
 
@@ -964,7 +973,8 @@ export const useAppStore = create<AppState>()(
           let updatedTasks = tasks;
 
           if (log) {
-            updatedTasks = await missionLogicService.incrementStreak(log.task_id, tasks, childLogs, logId);
+            const result = await missionLogicService.incrementStreak(log.task_id, tasks, childLogs, logId);
+            updatedTasks = result.tasks;
           }
 
           set((state) => ({
@@ -1021,7 +1031,8 @@ export const useAppStore = create<AppState>()(
           let updatedTasks = tasks;
           // Optimistically update if log exists locally
           if (existingLog) {
-            updatedTasks = await missionLogicService.incrementStreak(existingLog.task_id, tasks, childLogs, logId);
+            const result = await missionLogicService.incrementStreak(existingLog.task_id, tasks, childLogs, logId);
+            updatedTasks = result.tasks;
           }
 
           // Update State
@@ -1360,16 +1371,18 @@ export const useAppStore = create<AppState>()(
           const { success, error } = await dataService.restoreBackup(userId, data);
           if (!success) throw error;
 
-          // 2. Refresh local state
+          // 2. Prevent immediate streak reset by setting last check date to today BEFORE refreshing
+          const todayStr = getLocalDateString();
+          set({ lastMissedCheckDate: todayStr });
+
+          // 3. Refresh local state and profiles
           await get().refreshData();
           await get().fetchUserProfile();
-
+          
           if (data.onboardingStep) {
             set({ onboardingStep: data.onboardingStep });
           }
-          if (data.lastMissedCheckDate) {
-            set({ lastMissedCheckDate: data.lastMissedCheckDate });
-          }
+          
           if (data.notificationsEnabled !== undefined) {
             set({ notificationsEnabled: data.notificationsEnabled });
           }

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
-import { FaArrowLeft, FaGamepad, FaIceCream, FaTicketAlt, FaGift, FaChevronDown, FaCheck, FaInfinity, FaCheckCircle, FaTrophy, FaPizzaSlice, FaBicycle, FaBook, FaPalette, FaStar, FaImage } from 'react-icons/fa';
+import { FaArrowLeft, FaChevronDown, FaCheck, FaInfinity, FaCheckCircle, FaTrophy, FaStar, FaImage } from 'react-icons/fa';
 import { AlertModal } from '../../components/design-system';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
 import { convertToWebP } from '../../utils/imageUtils';

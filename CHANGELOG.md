@@ -29,6 +29,23 @@ All notable changes to the Star Habit project will be documented in this file.
 - **Admin Dashboard Unified**: The "Verification Center" now shows both pending task approvals and pending exemption requests in a single merged queue, each with contextual action buttons.
 - **Child Profile Delete**: Moved to the "Danger Zone" section within Settings with a confirmation modal.
 
+## [1.3.6] - 2026-04-15
+
+### Fixed
+- **Backup Persistence**: Resolved a data loss issue where task and reward `description` fields were being stripped during export/import cycles.
+- **Streak Data Stability**: Fixed a critical timing bug in the import process that caused streaks to reset to 0 immediately when restoring ancient backups. Streaks are now "frozen" on the day of import to ensure they survive restoration for testing.
+- **Universal Descriptions**: Mission descriptions are now visible in **Yesterday's Unfinished** and **Rewards Shop** list views for better context.
+- **Consolidated Celebrations**: Streak milestone popups (3, 7, 14 days, etc.) now trigger globally, including when tasks are completed via the "My Missions" menu.
+
+### Changed
+- **Feature Suppression**: Hid the Streak UI (Fire badges, streak counters, and celebration popups) across the entire application (both child and admin interfaces) per user request. The logic and data remain in place for future re-activation.
+
+## [1.3.5] - 2026-04-15
+
+### Fixed
+- **Admin Details Popups**: Refactored management lists to solve event bubbling issues. Mission and Reward cards in the parent view are now correctly clickable to open details popups without conflicting with Edit/Delete actions.
+- **Build stability**: Resolved several TypeScript lint errors to ensure successful Android builds.
+
 ## [1.3.4] - 2026-03-27
 
 ### Added

@@ -35,6 +35,7 @@ import Playground from './pages/Playground'; // Design System Verification
 import Layout from './components/layout/Layout';
 import ChildSelector from './components/ChildSelector';
 import { notificationService } from './services/notificationService';
+import StreakCelebrationModal from './components/modals/StreakCelebrationModal';
 
 function App() {
   const { activeChildId, setActiveChild, isAdminMode, onboardingStep, userProfile, refreshData, fetchUserProfile } = useAppStore();
@@ -180,7 +181,7 @@ const ParentRoute = ({ children }: { children: ReactNode }) => {
 
 const AnimatedRoutes = () => {
   const location = useLocation();
-  const isAdminMode = useAppStore(state => state.isAdminMode);
+  const { isAdminMode, streakMilestone, clearStreakMilestone } = useAppStore();
 
   // Apply Global Theme
   useEffect(() => {
@@ -192,144 +193,148 @@ const AnimatedRoutes = () => {
   }, [isAdminMode, location.pathname]);
 
   return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<RootRedirect />} />
+    <>
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<RootRedirect />} />
 
-        <Route path="/parent" element={
-          <ParentRoute>
+          <Route path="/parent" element={
+            <ParentRoute>
+              <PageTransition>
+                <Dashboard />
+              </PageTransition>
+            </ParentRoute>
+          } />
+          <Route path="/parent/tasks" element={
+            <ParentRoute>
+              <PageTransition>
+                <Tasks />
+              </PageTransition>
+            </ParentRoute>
+          } />
+          <Route path="/parent/rewards" element={
+            <ParentRoute>
+              <PageTransition>
+                <Rewards />
+              </PageTransition>
+            </ParentRoute>
+          } />
+          <Route path="/parent/stats" element={
+            <ParentRoute>
+              <PageTransition>
+                <Stats />
+              </PageTransition>
+            </ParentRoute>
+          } />
+          <Route path="/parent/history" element={
+            <ParentRoute>
+              <PageTransition>
+                <AdminHistory />
+              </PageTransition>
+            </ParentRoute>
+          } />
+
+          <Route path="/child" element={
             <PageTransition>
               <Dashboard />
             </PageTransition>
-          </ParentRoute>
-        } />
-        <Route path="/parent/tasks" element={
-          <ParentRoute>
+          } />
+          <Route path="/child/tasks" element={
             <PageTransition>
               <Tasks />
             </PageTransition>
-          </ParentRoute>
-        } />
-        <Route path="/parent/rewards" element={
-          <ParentRoute>
+          } />
+          <Route path="/child/rewards" element={
             <PageTransition>
               <Rewards />
             </PageTransition>
-          </ParentRoute>
-        } />
-        <Route path="/parent/stats" element={
-          <ParentRoute>
+          } />
+          <Route path="/child/stats" element={
             <PageTransition>
               <Stats />
             </PageTransition>
-          </ParentRoute>
-        } />
-        <Route path="/parent/history" element={
-          <ParentRoute>
+          } />
+          <Route path="/child/claimed-rewards" element={
             <PageTransition>
-              <AdminHistory />
+              <ClaimedRewardsHistory />
             </PageTransition>
-          </ParentRoute>
-        } />
+          } />
+          <Route path="/child/history" element={
+            <PageTransition>
+              <ChildHistory />
+            </PageTransition>
+          } />
 
-        <Route path="/child" element={
-          <PageTransition>
-            <Dashboard />
-          </PageTransition>
-        } />
-        <Route path="/child/tasks" element={
-          <PageTransition>
-            <Tasks />
-          </PageTransition>
-        } />
-        <Route path="/child/rewards" element={
-          <PageTransition>
-            <Rewards />
-          </PageTransition>
-        } />
-        <Route path="/child/stats" element={
-          <PageTransition>
-            <Stats />
-          </PageTransition>
-        } />
-        <Route path="/child/claimed-rewards" element={
-          <PageTransition>
-            <ClaimedRewardsHistory />
-          </PageTransition>
-        } />
-        <Route path="/child/history" element={
-          <PageTransition>
-            <ChildHistory />
-          </PageTransition>
-        } />
+          {/* Legacy Redirects */}
+          <Route path="/tasks" element={<Navigate to={isAdminMode ? "/parent/tasks" : "/child/tasks"} replace />} />
+          <Route path="/rewards" element={<Navigate to={isAdminMode ? "/parent/rewards" : "/child/rewards"} replace />} />
+          <Route path="/stats" element={<Navigate to={isAdminMode ? "/parent/stats" : "/child/stats"} replace />} />
 
-        {/* Legacy Redirects */}
-        <Route path="/tasks" element={<Navigate to={isAdminMode ? "/parent/tasks" : "/child/tasks"} replace />} />
-        <Route path="/rewards" element={<Navigate to={isAdminMode ? "/parent/rewards" : "/child/rewards"} replace />} />
-        <Route path="/stats" element={<Navigate to={isAdminMode ? "/parent/stats" : "/child/stats"} replace />} />
-
-        <Route path="/admin/tasks/new" element={
-          <PageTransition>
-            <AdminTaskForm />
-          </PageTransition>
-        } />
-        <Route path="/admin/tasks/:id/edit" element={
-          <PageTransition>
-            <AdminTaskForm />
-          </PageTransition>
-        } />
+          <Route path="/admin/tasks/new" element={
+            <PageTransition>
+              <AdminTaskForm />
+            </PageTransition>
+          } />
+          <Route path="/admin/tasks/:id/edit" element={
+            <PageTransition>
+              <AdminTaskForm />
+            </PageTransition>
+          } />
 
 
-        <Route path="/admin/rewards/new" element={
-          <PageTransition>
-            <AdminRewardForm />
-          </PageTransition>
-        } />
-        <Route path="/admin/rewards/:id/edit" element={
-          <PageTransition>
-            <AdminRewardForm />
-          </PageTransition>
-        } />
+          <Route path="/admin/rewards/new" element={
+            <PageTransition>
+              <AdminRewardForm />
+            </PageTransition>
+          } />
+          <Route path="/admin/rewards/:id/edit" element={
+            <PageTransition>
+              <AdminRewardForm />
+            </PageTransition>
+          } />
 
-        <Route path="/admin/categories" element={
-          <PageTransition>
-            <CategoryManagement />
-          </PageTransition>
-        } />
+          <Route path="/admin/categories" element={
+            <PageTransition>
+              <CategoryManagement />
+            </PageTransition>
+          } />
 
-        <Route path="/settings" element={
-          <PageTransition>
-            <Settings />
-          </PageTransition>
-        } />
-        <Route path="/settings/add-child" element={
-          <PageTransition>
-            <AddChildSettings />
-          </PageTransition>
-        } />
-        <Route path="/settings/security" element={
-          <PageTransition>
-            <SecuritySettings />
-          </PageTransition>
-        } />
-        <Route path="/privacy" element={
-          <PageTransition>
-            <Privacy />
-          </PageTransition>
-        } />
-        <Route path="/terms" element={
-          <PageTransition>
-            <Terms />
-          </PageTransition>
-        } />
-        <Route path="/playground" element={
-          <PageTransition>
-            <Playground />
-          </PageTransition>
-        } />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </AnimatePresence>
+          <Route path="/settings" element={
+            <PageTransition>
+              <Settings />
+            </PageTransition>
+          } />
+          <Route path="/settings/add-child" element={
+            <PageTransition>
+              <AddChildSettings />
+            </PageTransition>
+          } />
+          <Route path="/settings/security" element={
+            <PageTransition>
+              <SecuritySettings />
+            </PageTransition>
+          } />
+          <Route path="/privacy" element={
+            <PageTransition>
+              <Privacy />
+            </PageTransition>
+          } />
+          <Route path="/terms" element={
+            <PageTransition>
+              <Terms />
+            </PageTransition>
+          } />
+          <Route path="/playground" element={
+            <PageTransition>
+              <Playground />
+            </PageTransition>
+          } />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AnimatePresence>
+      {/* Streak Celebration (Hidden for now) */}
+      {false && <StreakCelebrationModal milestone={streakMilestone} onClose={clearStreakMilestone} />}
+    </>
   );
 };
 

@@ -72,7 +72,7 @@ export const notificationService = {
      * Scheduled for 8:00 PM (20:00) if called after 7:00 PM (19:00).
      * If count is 0, it cancels any pending notification.
      */
-    scheduleMissedChildNotification: async (count: number) => {
+    scheduleMissedChildNotification: async (count: number, hasAtRiskStreak: boolean = false) => {
         if (!Capacitor.isNativePlatform()) return;
         const { notificationsEnabled, notifyMissedTasks } = useAppStore.getState();
         if (!notificationsEnabled || !notifyMissedTasks) return;
@@ -94,11 +94,16 @@ export const notificationService = {
             // If it's already past 8 PM, don't schedule for today.
             if (now.getTime() > targetTime.getTime()) return;
 
+            const title = hasAtRiskStreak ? '⚠️ Awas Streak Putus!' : 'Waktu Tugas Hampir Habis! ⏰';
+            const body = hasAtRiskStreak 
+                ? `Ada streak yang terancam putus! Selesaikan ${count} tugas sebelum tidur.` 
+                : `Jangan lupa selesaikan ${count} misi harian sebelum tidur!`;
+
             await LocalNotifications.schedule({
                 notifications: [
                     {
-                        title: 'Waktu Tugas Hampir Habis! ⏰',
-                        body: `Jangan lupa selesaikan ${count} misi harian sebelum tidur!`,
+                        title: title,
+                        body: body,
                         id: NOTIFICATION_IDS.MISSED_CHILD,
                         schedule: { at: targetTime },
                         sound: 'beep.wav',

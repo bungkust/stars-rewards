@@ -767,7 +767,8 @@ export const localStorageService = {
                 target_unit: t.target_unit ?? undefined,
                 max_completions_per_day: t.max_completions_per_day ?? undefined,
                 current_streak: t.current_streak ?? undefined,
-                best_streak: t.best_streak ?? undefined
+                best_streak: t.best_streak ?? undefined,
+                description: t.description ?? undefined
             }));
 
             const validRewards = (validData.rewards || []).map(r => ({
@@ -777,7 +778,8 @@ export const localStorageService = {
                 required_task_id: r.required_task_id ?? undefined,
                 required_task_count: r.required_task_count ?? undefined,
                 created_at: r.created_at ?? undefined,
-                assigned_to: r.assigned_to || []
+                assigned_to: r.assigned_to || [],
+                description: r.description ?? undefined
             }));
 
             // Filter logs to ensure referential integrity

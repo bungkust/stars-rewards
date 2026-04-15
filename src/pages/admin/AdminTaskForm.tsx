@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
-import { FaArrowLeft, FaTrash, FaSoap, FaClock, FaUserCheck, FaBook, FaUsers, FaCommentDots, FaTshirt, FaSmile, FaShapes, FaStar, FaImage, FaBed, FaBath, FaUtensils, FaBroom, FaCar, FaDog, FaRunning, FaMusic } from 'react-icons/fa';
+import { FaArrowLeft, FaUserCheck, FaCommentDots, FaTshirt, FaSmile, FaShapes, FaStar, FaImage, FaSoap, FaClock, FaBook, FaUsers, FaTrash } from 'react-icons/fa';
 import { AlertModal, AppCard, ToggleButton } from '../../components/design-system';
 import { generateRRule, parseRRule, WEEKDAYS } from '../../utils/recurrence';
 import type { RecurrenceOptions } from '../../utils/recurrence';
