@@ -105,23 +105,23 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, task, onClo
                                     </div>
 
                                     {/* Streak Info (Hidden for now) */}
-                                    {false && task && ( (task.current_streak !== undefined && task.current_streak > 0) || (task.best_streak !== undefined && task.best_streak > 0) ) && (
+                                    {false && task && ( ((task?.current_streak ?? 0) > 0) || ((task?.best_streak ?? 0) > 0) ) && (
                                         <div className="flex items-center justify-center gap-6 p-3 bg-orange-50 rounded-xl border border-orange-100">
                                             <div className="flex flex-col items-center">
                                                 <span className="text-[10px] uppercase font-bold text-orange-400 tracking-wider">Streak</span>
                                                 <div className="flex items-center gap-1.5 text-orange-600 font-black text-xl">
                                                     <span className="text-lg">🔥</span>
-                                                    <span>{task.current_streak || 0}</span>
+                                                    <span>{task?.current_streak || 0}</span>
                                                 </div>
                                             </div>
-                                            {(task.best_streak || 0) > (task.current_streak || 0) && (
+                                            {(task?.best_streak || 0) > (task?.current_streak || 0) && (
                                                 <>
                                                     <div className="w-px h-8 bg-orange-200" />
                                                     <div className="flex flex-col items-center">
                                                         <span className="text-[10px] uppercase font-bold text-orange-400 tracking-wider">Best</span>
                                                         <div className="flex items-center gap-1.5 text-orange-600 font-black text-xl">
                                                             <FaTrophy className="w-4 h-4 text-orange-400" />
-                                                            <span>{task.best_streak}</span>
+                                                            <span>{task?.best_streak}</span>
                                                         </div>
                                                     </div>
                                                 </>
