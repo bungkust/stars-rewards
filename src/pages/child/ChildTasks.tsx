@@ -5,6 +5,7 @@ import TaskDetailsModal from '../../components/modals/TaskDetailsModal';
 import { useState, useMemo } from 'react';
 import { ICON_MAP, getTaskIconComponent } from '../../utils/icons';
 import type { Task } from '../../types';
+import { getLocalDateString } from '../../utils/timeUtils';
 
 const ChildTasks = () => {
   const { activeChildId, getTasksByChildId, categories, completeTask, isLoading, childLogs } = useAppStore();
@@ -196,8 +197,8 @@ const ChildTasks = () => {
           ...selectedTaskDetails,
           status: (() => {
             const logs = childLogs.filter(l => l.child_id === activeChildId && l.task_id === selectedTaskDetails.id);
-            const todayStr = new Date().toISOString().split('T')[0];
-            const todayLogs = logs.filter(l => new Date(l.completed_at).toISOString().split('T')[0] === todayStr);
+            const todayStr = getLocalDateString();
+            const todayLogs = logs.filter(l => getLocalDateString(new Date(l.completed_at)) === todayStr);
             const validLogs = todayLogs.filter(l => ['VERIFIED', 'PENDING', 'PENDING_EXCUSE', 'EXCUSED'].includes(l.status));
             if (validLogs.length > 0) return validLogs[0].status;
             if (todayLogs.find(l => l.status === 'IN_PROGRESS')) return 'IN_PROGRESS';

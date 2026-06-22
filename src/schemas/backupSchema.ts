@@ -73,6 +73,16 @@ export const transactionSchema = z.object({
     created_at: z.string(),
 });
 
+export const xpTransactionSchema = z.object({
+    id: z.string(),
+    parent_id: z.string(),
+    child_id: z.string(),
+    amount: z.number(),
+    type: z.enum(['MISSION_APPROVED', 'DAILY_QUEST', 'STREAK_BONUS', 'FAMILY_QUEST', 'ACHIEVEMENT']),
+    reference_id: z.string().nullish(),
+    created_at: z.string(),
+});
+
 export const categorySchema = z.object({
     id: z.string(),
     name: z.string(),
@@ -90,21 +100,28 @@ export const profileSchema = z.object({
     parent_name: z.string().nullish(),
     biometric_enabled: z.boolean().nullish(),
     notifications_enabled: z.boolean().nullish(),
+    notify_mission_approvals: z.boolean().nullish(),
+    notify_missed_tasks: z.boolean().nullish(),
+    notify_daily_report: z.boolean().nullish(),
     onboarding_step: z.string().nullish(),
 });
 
 export const backupSchema = z.object({
     profile: profileSchema.nullable().optional(),
+    userProfile: profileSchema.nullable().optional(),
     children: z.array(childSchema).nullish(),
     tasks: z.array(taskSchema).nullish(),
     rewards: z.array(rewardSchema).nullish(),
     logs: z.array(logSchema).nullish(),
     childLogs: z.array(logSchema).nullish(), // Handle legacy key
     transactions: z.array(transactionSchema).nullish(),
+    xpTransactions: z.array(xpTransactionSchema).nullish(),
+    xp_transactions: z.array(xpTransactionSchema).nullish(),
     categories: z.array(categorySchema).nullish(),
 
     // Legacy flat fields support and State settings
     adminName: z.string().nullish(),
+    parentName: z.string().nullish(),
     familyName: z.string().nullish(),
     adminPin: z.string().nullish(),
     parentPin: z.string().nullish(),
@@ -114,6 +131,9 @@ export const backupSchema = z.object({
     lastMissedCheckDate: z.string().nullish(),
     biometricEnabled: z.boolean().nullish(),
     notificationsEnabled: z.boolean().nullish(),
+    notifyMissionApprovals: z.boolean().nullish(),
+    notifyMissedTasks: z.boolean().nullish(),
+    notifyDailyReport: z.boolean().nullish(),
     redeemedHistory: z.array(z.object({
         child_id: z.string(),
         reward_id: z.string()

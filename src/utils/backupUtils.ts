@@ -5,7 +5,9 @@ import type { AppState } from '../store/useAppStore';
 export interface BackupData {
     version: number;
     timestamp: string;
-    data: Partial<AppState>;
+    data: Partial<AppState> & {
+        profile?: AppState['userProfile'];
+    };
 }
 
 const BACKUP_VERSION = 1;
@@ -20,12 +22,16 @@ export const generateBackupData = (state: AppState): string => {
             rewards: state.rewards,
             childLogs: state.childLogs,
             transactions: state.transactions,
+            xpTransactions: state.xpTransactions,
             redeemedHistory: state.redeemedHistory,
             pendingVerifications: state.pendingVerifications,
             categories: state.categories,
             // Settings
             isAdminMode: state.isAdminMode,
             notificationsEnabled: state.notificationsEnabled,
+            notifyMissionApprovals: state.notifyMissionApprovals,
+            notifyMissedTasks: state.notifyMissedTasks,
+            notifyDailyReport: state.notifyDailyReport,
             parentName: state.parentName,
             familyName: state.familyName,
             parentPin: state.parentPin,
@@ -34,6 +40,7 @@ export const generateBackupData = (state: AppState): string => {
             biometricEnabled: state.biometricEnabled,
             onboardingStep: state.onboardingStep,
             lastMissedCheckDate: state.lastMissedCheckDate,
+            profile: state.userProfile,
             userProfile: state.userProfile,
         },
     };

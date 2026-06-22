@@ -11,6 +11,7 @@ import TaskRejectionDetailsModal from '../../components/modals/TaskRejectionDeta
 import ExemptionModal from '../../components/modals/ExemptionModal';
 import TaskDetailsModal from '../../components/modals/TaskDetailsModal';
 import { getTaskIconComponent } from '../../utils/icons';
+import { calculateLevelProgress, getTotalXpForChild } from '../../utils/xpUtils';
 
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -21,9 +22,12 @@ const getGreeting = () => {
 };
 
 const ChildDashboard = () => {
-  const { activeChildId, children, getTasksByChildId, updateChild, deleteChild, completeTask, completeTaskOnDate, updateTaskProgress, updateTaskProgressOnDate, isLoading, childLogs, setStreakMilestone } = useAppStore();
+  const { activeChildId, children, getTasksByChildId, updateChild, deleteChild, completeTask, completeTaskOnDate, updateTaskProgress, updateTaskProgressOnDate, isLoading, childLogs, xpTransactions, setStreakMilestone } = useAppStore();
   const child = children.find(c => c.id === activeChildId);
   const allTasks = activeChildId ? getTasksByChildId(activeChildId) : [];
+  const xpProgress = activeChildId
+    ? calculateLevelProgress(getTotalXpForChild(xpTransactions, activeChildId))
+    : calculateLevelProgress(0);
 
   const [filter, setFilter] = useState<'today' | 'daily' | 'once' | 'all'>('today');
   const [visibleCount, setVisibleCount] = useState(20);
@@ -455,6 +459,30 @@ const ChildDashboard = () => {
             <FaStar className="w-6 h-6" />
             <span className="text-3xl font-bold text-gray-700">{child.current_balance}</span>
           </div>
+        </div>
+      </div>
+
+      {/* XP & Level */}
+      <div className="card bg-white shadow-md rounded-xl p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-primary">Level {xpProgress.level}</p>
+            <h3 className="text-lg font-bold text-gray-800">{xpProgress.levelName}</h3>
+          </div>
+          <div className="rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
+            {xpProgress.totalXp} XP
+          </div>
+        </div>
+        <div className="mt-3">
+          <div className="h-3 w-full overflow-hidden rounded-full bg-base-200">
+            <div
+              className="h-full rounded-full bg-primary transition-all duration-500"
+              style={{ width: `${xpProgress.progressPercent}%` }}
+            />
+          </div>
+          <p className="mt-2 text-xs font-medium text-gray-500">
+            {xpProgress.xpNeededForNextLevel} XP to Level {xpProgress.level + 1}
+          </p>
         </div>
       </div>
 

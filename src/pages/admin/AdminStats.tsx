@@ -8,6 +8,7 @@ import HistoryDetailModal from '../../components/modals/HistoryDetailModal';
 import { useAppStore } from '../../store/useAppStore';
 import { calculateCoinMetrics, getRecommendations, getCategoryPerformance } from '../../utils/analytics';
 import { ICON_MAP } from '../../utils/icons';
+import { getLocalDateString } from '../../utils/timeUtils';
 import type { TimeFilter } from '../../utils/analytics';
 
 const AdminStats = () => {
@@ -15,14 +16,14 @@ const AdminStats = () => {
   const { transactions, childLogs, children, tasks, categories, isLoading, deleteTransaction, deleteChildLog } = useAppStore();
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('today');
   const [selectedChildId, setSelectedChildId] = useState<string>('all');
-  const [tempDate, setTempDate] = useState(new Date().toISOString().split('T')[0]);
-  const [specificDate, setSpecificDate] = useState(new Date().toISOString().split('T')[0]);
+  const [tempDate, setTempDate] = useState(getLocalDateString());
+  const [specificDate, setSpecificDate] = useState(getLocalDateString());
   const [dismissedInsights, setDismissedInsights] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem('dismissed_insights');
       if (stored) {
         const parsed: Record<string, string> = JSON.parse(stored);
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalDateString();
         // Only keep IDs dismissed TODAY
         return Object.keys(parsed).filter(id => parsed[id] === today);
       }
@@ -43,7 +44,7 @@ const AdminStats = () => {
       const stored = localStorage.getItem('dismissed_insights');
       if (stored) {
         const parsed: Record<string, string> = JSON.parse(stored);
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalDateString();
         const newStorage: Record<string, string> = {};
         let changed = false;
 
@@ -77,7 +78,7 @@ const AdminStats = () => {
       const newDismissed = [...prev, id];
       // Update Local Storage
       try {
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalDateString();
         const stored = localStorage.getItem('dismissed_insights');
         const parsed = stored ? JSON.parse(stored) : {};
         parsed[id] = today;

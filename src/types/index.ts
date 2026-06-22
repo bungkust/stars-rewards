@@ -58,6 +58,7 @@ export interface Reward {
   parent_id: string;
   name: string;
   cost_value: number;
+  created_at?: string;
   category?: string;
   type: 'ONE_TIME' | 'UNLIMITED' | 'ACCUMULATIVE';
   required_task_id?: string;
@@ -91,6 +92,23 @@ export interface CoinTransaction {
   reference_id?: string;
   description?: string;
   created_at: string;
+}
+
+export interface XpTransaction {
+  id: string;
+  parent_id: string;
+  child_id: string;
+  amount: number;
+  type: 'MISSION_APPROVED' | 'DAILY_QUEST' | 'STREAK_BONUS' | 'FAMILY_QUEST' | 'ACHIEVEMENT';
+  reference_id?: string;
+  created_at: string;
+}
+
+export interface ChildProgress {
+  child_id: string;
+  total_xp: number;
+  level: number;
+  updated_at: string;
 }
 
 export interface VerificationRequest extends ChildTaskLog {

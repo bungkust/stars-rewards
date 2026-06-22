@@ -9,7 +9,11 @@ export const browserService = {
     async openUrl(url: string): Promise<void> {
         try {
             if (Capacitor.isNativePlatform()) {
-                await Browser.open({ url });
+                if (url.startsWith('market://')) {
+                    window.open(url, '_system');
+                } else {
+                    await Browser.open({ url });
+                }
             } else {
                 // Fallback for web
                 window.open(url, '_blank', 'noopener,noreferrer');

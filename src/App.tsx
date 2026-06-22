@@ -36,9 +36,12 @@ import Layout from './components/layout/Layout';
 import ChildSelector from './components/ChildSelector';
 import { notificationService } from './services/notificationService';
 import StreakCelebrationModal from './components/modals/StreakCelebrationModal';
+import ReviewPromptModal from './components/modals/ReviewPromptModal';
+import { browserService } from './services/browserService';
+import { getReviewUrl } from './utils/reviewPromptUtils';
 
 function App() {
-  const { activeChildId, setActiveChild, isAdminMode, onboardingStep, userProfile, refreshData, fetchUserProfile } = useAppStore();
+  const { activeChildId, setActiveChild, isAdminMode, onboardingStep, userProfile, refreshData, fetchUserProfile, requestReviewPrompt } = useAppStore();
   const [isChildSelectorOpen, setIsChildSelectorOpen] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
@@ -82,6 +85,7 @@ function App() {
         if (isActive && isAuthenticated) {
           console.log('App resumed, refreshing data...');
           refreshData();
+          requestReviewPrompt('app_launch');
         }
       });
     };
@@ -90,14 +94,15 @@ function App() {
     return () => {
       CapacitorApp.removeAllListeners();
     };
-  }, [activeChildId, isAdminMode, needsOnboarding, isAuthenticated, isCheckingAuth, refreshData]);
+  }, [activeChildId, isAdminMode, needsOnboarding, isAuthenticated, isCheckingAuth, refreshData, requestReviewPrompt]);
 
   // Fetch Data on Mount if Authenticated
   useEffect(() => {
     if (!isCheckingAuth && isAuthenticated) {
       refreshData();
+      requestReviewPrompt('app_launch');
     }
-  }, [isAuthenticated, refreshData, isCheckingAuth]);
+  }, [isAuthenticated, refreshData, isCheckingAuth, requestReviewPrompt]);
 
   const handleChildSelect = (childId: string) => {
     setActiveChild(childId);
@@ -181,7 +186,12 @@ const ParentRoute = ({ children }: { children: ReactNode }) => {
 
 const AnimatedRoutes = () => {
   const location = useLocation();
-  const { isAdminMode, streakMilestone, clearStreakMilestone } = useAppStore();
+  const { isAdminMode, streakMilestone, clearStreakMilestone, reviewPromptVisible, closeReviewPrompt } = useAppStore();
+
+  const handleRateNow = async () => {
+    closeReviewPrompt('rated');
+    await browserService.openUrl(getReviewUrl());
+  };
 
   // Apply Global Theme
   useEffect(() => {
@@ -334,6 +344,12 @@ const AnimatedRoutes = () => {
       </AnimatePresence>
       {/* Streak Celebration (Hidden for now) */}
       {false && <StreakCelebrationModal milestone={streakMilestone} onClose={clearStreakMilestone} />}
+      <ReviewPromptModal
+        isOpen={reviewPromptVisible}
+        onRateNow={handleRateNow}
+        onMaybeLater={() => closeReviewPrompt('later')}
+        onNoThanks={() => closeReviewPrompt('dismissed')}
+      />
     </>
   );
 };

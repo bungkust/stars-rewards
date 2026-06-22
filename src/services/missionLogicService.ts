@@ -219,15 +219,16 @@ export const missionLogicService = {
         if (newLogs.length > 0) {
             // Reset streaks for failed tasks
             const failedTaskIds = new Set(newLogs.map(l => l.task_id));
+            const streakResetPromises: Promise<unknown>[] = [];
 
             updatedTasks = tasks.map(t => {
                 if (failedTaskIds.has(t.id)) {
-                    // Reset streak to 0
-                    dataService.updateTask(t.id, { current_streak: 0 });
+                    streakResetPromises.push(dataService.updateTask(t.id, { current_streak: 0 }));
                     return { ...t, current_streak: 0 };
                 }
                 return t;
             });
+            await Promise.all(streakResetPromises);
 
             // Schedule Missed Daily Report
             import('../services/notificationService').then(({ notificationService }) => {

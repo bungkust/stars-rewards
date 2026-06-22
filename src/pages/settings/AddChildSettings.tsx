@@ -5,6 +5,7 @@ import { downloadAvatarAsDataUri } from '../../utils/avatarUtils';
 import { FaArrowLeft } from 'react-icons/fa';
 import { PrimaryButton } from '../../components/design-system/PrimaryButton';
 import { H1Header } from '../../components/design-system/H1Header';
+import { getLocalDateString } from '../../utils/timeUtils';
 
 const AVATAR_OPTIONS = [
     'https://api.dicebear.com/9.x/adventurer/svg?seed=Felix',
@@ -29,7 +30,7 @@ const AddChildSettings = () => {
     const [successMsg, setSuccessMsg] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateString();
 
     const saveChild = async () => {
         setErrorMsg('');

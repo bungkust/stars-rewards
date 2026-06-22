@@ -1,5 +1,5 @@
 import { localStorageService } from './localStorageService';
-import type { Child, Task, Reward, VerificationRequest, CoinTransaction, ChildTaskLog, Category } from '../types';
+import type { Child, Task, Reward, VerificationRequest, CoinTransaction, ChildTaskLog, Category, XpTransaction } from '../types';
 
 export const dataService = {
   /**
@@ -112,6 +112,13 @@ export const dataService = {
    */
   fetchTransactions: async (_parentId: string): Promise<CoinTransaction[]> => {
     return localStorageService.fetchTransactions();
+  },
+
+  /**
+   * Retrieves XP transaction history.
+   */
+  fetchXpTransactions: async (_parentId: string): Promise<XpTransaction[]> => {
+    return localStorageService.fetchXpTransactions();
   },
 
   /**

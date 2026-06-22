@@ -2,6 +2,18 @@
 
 All notable changes to the Star Habit project will be documented in this file.
 
+## [1.3.7] - 2026-06-22
+
+### Added
+- **Google Play Store Review Prompt**: Introduced a new review flow prompting parents to rate the app after a minimum of 5 verified missions or after redeeming rewards. Added a "Rate Star Habit" option under Support in Settings.
+- **Fine-Grained Notification Settings**: Added granular controls in Settings to enable/disable notifications specifically for mission approvals, missed tasks, and daily reports.
+- **Profile Export in Backups**: Integrated parent profiles and customized notification settings into the backup & restore data schema.
+
+### Fixed
+- **Timezone & Local Date Handling**: Fixed timezone offset bugs by replacing `.toISOString().split('T')[0]` with local-date helpers across all stats, history, onboarding, and tasks pages.
+- **Child Balance Integrity**: Fixed transaction amount updates on verification/redemption to properly add/deduct the correct values.
+- **Backup Format Fallbacks**: Added legacy flat field parsers to the backup schema restore logic to support compatibility with older backup formats.
+
 ## [Unreleased] - Post 1.3.4
 
 ### Added

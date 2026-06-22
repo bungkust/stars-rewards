@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { Link } from 'react-router-dom';
-import { FaUsers, FaBell, FaShieldAlt, FaDatabase, FaCloudDownloadAlt, FaFileUpload, FaChevronRight, FaExclamationTriangle, FaPlus, FaShapes, FaFingerprint } from 'react-icons/fa';
+import { FaUsers, FaBell, FaShieldAlt, FaDatabase, FaCloudDownloadAlt, FaFileUpload, FaChevronRight, FaExclamationTriangle, FaPlus, FaShapes, FaFingerprint, FaStar } from 'react-icons/fa';
 import { useAppStore } from '../../store/useAppStore';
 import type { Child } from '../../types';
 import { AppCard } from '../../components/design-system/AppCard';
@@ -14,6 +14,7 @@ import ResetConfirmationModal from '../../components/modals/ResetConfirmationMod
 import AlertModal from '../../components/design-system/AlertModal';
 import EditChildModal from '../../components/modals/EditChildModal';
 import { browserService } from '../../services/browserService';
+import { getLocalDateString } from '../../utils/timeUtils';
 
 const Settings = () => {
   const {
@@ -30,7 +31,8 @@ const Settings = () => {
     setNotifyMissedTasks,
     setNotifyDailyReport,
     updateChild,
-    deleteChild
+    deleteChild,
+    requestReviewPrompt
   } = useAppStore();
 
   const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
@@ -291,6 +293,30 @@ const Settings = () => {
         </Link>
       </AppCard>
 
+      {/* Support */}
+      <AppCard>
+        <div className="flex items-center gap-3 mb-4">
+          <IconWrapper icon={FaStar} />
+          <h3 className="font-bold text-lg text-neutral">Support</h3>
+        </div>
+        <button
+          type="button"
+          onClick={() => requestReviewPrompt('manual')}
+          className="flex w-full items-center justify-between p-3 hover:bg-base-200 rounded-lg transition-colors text-left"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-warning/10 text-warning rounded-full">
+              <FaStar />
+            </div>
+            <div>
+              <p className="font-bold text-neutral">Rate Star Habit</p>
+              <p className="text-xs text-neutral/60">Share a quick review if the app helps your family</p>
+            </div>
+          </div>
+          <FaChevronRight className="text-neutral/20" />
+        </button>
+      </AppCard>
+
       {/* Data Management */}
       <AppCard>
         <div className="flex items-center gap-3 mb-4">
@@ -488,7 +514,7 @@ const Settings = () => {
             : 'NoChildren';
 
           const now = new Date();
-          const datePart = now.toISOString().split('T')[0]; // YYYY-MM-DD
+          const datePart = getLocalDateString(now);
           const timePart = now.toTimeString().split(' ')[0].replace(/:/g, ''); // HHMMSS
 
           const filename = `StarsRewards_${familyPart}_${childrenPart}_${datePart}_${timePart}.json`

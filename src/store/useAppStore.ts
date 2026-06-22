@@ -1,11 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Profile, Child, Task, Reward, VerificationRequest, CoinTransaction, ChildTaskLog, Category } from '../types';
+import type { Profile, Child, Task, Reward, VerificationRequest, CoinTransaction, ChildTaskLog, Category, XpTransaction } from '../types';
 import { dataService } from '../services/dataService';
 import { localStorageService } from '../services/localStorageService';
 import { getNextDueDate } from '../utils/recurrence';
 import { getLocalDateString } from '../utils/timeUtils';
 import { missionLogicService } from '../services/missionLogicService';
+import { getReviewPromptSnoozeDate, shouldShowReviewPrompt, type ReviewPromptChoice, type ReviewPromptTrigger } from '../utils/reviewPromptUtils';
 
 export type OnboardingStep = 'family-setup' | 'parent-setup' | 'add-child' | 'first-task' | 'first-reward' | 'completed';
 
@@ -34,6 +35,7 @@ export interface AppState {
   pendingVerifications: VerificationRequest[]; // Tasks waiting for approval
   rewards: Reward[];
   transactions: CoinTransaction[];
+  xpTransactions: XpTransaction[];
   redeemedHistory: { child_id: string; reward_id: string }[]; // Full history of redemptions for logic checks
 
   onboardingStep: OnboardingStep;
@@ -44,8 +46,15 @@ export interface AppState {
 
   // Streak milestone state
   streakMilestone: { taskName: string; streak: number } | null;
+  reviewPromptVisible: boolean;
+  reviewPromptLastShownAt?: string;
+  reviewPromptDismissed: boolean;
+  reviewPromptRated: boolean;
+  reviewPromptShownTodayCount?: number;
   setStreakMilestone: (milestone: { taskName: string; streak: number } | null) => void;
   clearStreakMilestone: () => void;
+  requestReviewPrompt: (trigger: ReviewPromptTrigger) => void;
+  closeReviewPrompt: (choice: ReviewPromptChoice) => void;
 
   // Actions
   setActiveChild: (childId: string | null) => void;
@@ -132,6 +141,7 @@ export const useAppStore = create<AppState>()(
       pendingVerifications: [],
       rewards: [],
       transactions: [],
+      xpTransactions: [],
       redeemedHistory: [],
       onboardingStep: 'family-setup',
 
@@ -139,8 +149,40 @@ export const useAppStore = create<AppState>()(
       isLoading: false,
 
       streakMilestone: null,
+      reviewPromptVisible: false,
+      reviewPromptDismissed: false,
+      reviewPromptRated: false,
+      reviewPromptShownTodayCount: 0,
       setStreakMilestone: (milestone) => set({ streakMilestone: milestone }),
       clearStreakMilestone: () => set({ streakMilestone: null }),
+      requestReviewPrompt: (trigger) => {
+        const state = get();
+        if (!shouldShowReviewPrompt(state, trigger)) return;
+
+        const todayStr = getLocalDateString();
+        const lastShownDateStr = state.reviewPromptLastShownAt
+          ? getLocalDateString(new Date(state.reviewPromptLastShownAt))
+          : '';
+
+        let newCount = 1;
+        if (lastShownDateStr === todayStr) {
+          newCount = (state.reviewPromptShownTodayCount || 0) + 1;
+        }
+
+        set({
+          reviewPromptVisible: true,
+          reviewPromptLastShownAt: trigger === 'manual' ? state.reviewPromptLastShownAt : new Date().toISOString(),
+          reviewPromptShownTodayCount: trigger === 'manual' ? state.reviewPromptShownTodayCount : newCount
+        });
+      },
+      closeReviewPrompt: (choice) => {
+        set({
+          reviewPromptVisible: false,
+          reviewPromptRated: choice === 'rated' ? true : get().reviewPromptRated,
+          reviewPromptDismissed: choice === 'dismissed' ? true : get().reviewPromptDismissed,
+          reviewPromptLastShownAt: choice === 'later' ? getReviewPromptSnoozeDate() : get().reviewPromptLastShownAt
+        });
+      },
 
       setActiveChild: (childId) => set({ activeChildId: childId }),
 
@@ -227,12 +269,13 @@ export const useAppStore = create<AppState>()(
           const userId = 'local-user';
 
           // Fetch ALL data including REWARDS and TRANSACTIONS
-          const [children, tasks, verifications, rewards, transactions, logs, redeemedHistory, categories] = await Promise.all([
+          const [children, tasks, verifications, rewards, transactions, xpTransactions, logs, redeemedHistory, categories] = await Promise.all([
             dataService.fetchChildren(userId),
             dataService.fetchActiveTasks(userId),
             dataService.fetchPendingVerifications(userId),
             dataService.fetchRewards(userId),
             dataService.fetchTransactions(userId),
+            dataService.fetchXpTransactions(userId),
             dataService.fetchChildLogs(userId),
             dataService.fetchRedeemedRewards(userId),
             dataService.fetchCategories(userId)
@@ -272,6 +315,7 @@ export const useAppStore = create<AppState>()(
             pendingVerifications: verifications,
             rewards,
             transactions,
+            xpTransactions,
             childLogs: logs,
             redeemedHistory
           });
@@ -585,6 +629,9 @@ export const useAppStore = create<AppState>()(
               parentName: profile.parent_name || state.parentName || undefined,
               biometricEnabled: profile.biometric_enabled ?? state.biometricEnabled ?? false,
               notificationsEnabled: profile.notifications_enabled ?? state.notificationsEnabled ?? true,
+              notifyMissionApprovals: profile.notify_mission_approvals ?? state.notifyMissionApprovals ?? true,
+              notifyMissedTasks: profile.notify_missed_tasks ?? state.notifyMissedTasks ?? true,
+              notifyDailyReport: profile.notify_daily_report ?? state.notifyDailyReport ?? true,
               onboardingStep: (profile.onboarding_step as OnboardingStep) || state.onboardingStep || 'family-setup',
             }));
           }
@@ -1040,7 +1087,7 @@ export const useAppStore = create<AppState>()(
           const updatedLogs = childLogs.map(l => l.id === logId ? { ...l, status: 'VERIFIED' as const, verified_at: new Date().toISOString() } : l);
 
           // 2. Update Balance
-          const updatedChildren = children.map(c => c.id === childId ? { ...c, current_balance: (c.current_balance || 0) + rewardValue } : c);
+          const updatedChildren = children.map(c => c.id === childId ? { ...c, current_balance: (c.current_balance || 0) + newTx.amount } : c);
 
 
           set({
@@ -1050,6 +1097,9 @@ export const useAppStore = create<AppState>()(
             transactions: [newTx, ...transactions],
             pendingVerifications: get().pendingVerifications.filter(v => v.id !== logId)
           });
+          const xpTransactions = await dataService.fetchXpTransactions('local-user');
+          set({ xpTransactions });
+          get().requestReviewPrompt('mission_approved');
 
           return { error: null };
         } catch (error) {
@@ -1063,7 +1113,7 @@ export const useAppStore = create<AppState>()(
       deleteTransaction: async (transactionId: string) => {
         set({ isLoading: true });
         try {
-          const { transactions, children, childLogs } = get();
+          const { transactions, children, childLogs, xpTransactions } = get();
           const tx = transactions.find(t => t.id === transactionId);
           if (!tx) throw new Error('Transaction not found');
 
@@ -1094,13 +1144,16 @@ export const useAppStore = create<AppState>()(
             if (log) {
               const task = get().tasks.find(t => t.id === log.task_id);
               const child = children.find(c => c.id === log.child_id);
-              newPending = [...newPending, {
-                ...log,
-                status: 'PENDING',
-                task_title: task?.name || 'Unknown',
-                reward_value: task?.reward_value || 0,
-                child_name: child?.name || 'Unknown'
-              }];
+              const isAlreadyPending = newPending.some(v => v.id === log.id);
+              if (!isAlreadyPending) {
+                newPending = [...newPending, {
+                  ...log,
+                  status: 'PENDING',
+                  task_title: task?.name || 'Unknown',
+                  reward_value: task?.reward_value || 0,
+                  child_name: child?.name || 'Unknown'
+                }];
+              }
             }
           }
 
@@ -1108,7 +1161,13 @@ export const useAppStore = create<AppState>()(
             transactions: transactions.filter(t => t.id !== transactionId),
             children: updatedChildren,
             childLogs: updatedLogs,
-            pendingVerifications: newPending
+            pendingVerifications: newPending,
+            xpTransactions: tx.type === 'TASK_VERIFIED' && tx.reference_id
+              ? xpTransactions.filter(xp => !(xp.type === 'MISSION_APPROVED' && xp.reference_id === tx.reference_id && xp.child_id === tx.child_id))
+              : xpTransactions,
+            redeemedHistory: tx.type === 'REWARD_REDEEMED' && tx.reference_id
+              ? get().redeemedHistory.filter(h => !(h.child_id === tx.child_id && h.reward_id === tx.reference_id))
+              : get().redeemedHistory
           });
 
           return { error: null };
@@ -1128,6 +1187,7 @@ export const useAppStore = create<AppState>()(
 
           set((state) => ({
             childLogs: state.childLogs.filter(l => l.id !== logId),
+            xpTransactions: state.xpTransactions.filter(xp => xp.reference_id !== logId),
             pendingVerifications: state.pendingVerifications.filter(v => v.id !== logId)
           }));
 
@@ -1233,7 +1293,7 @@ export const useAppStore = create<AppState>()(
 
           set((state) => ({
             children: state.children.map(c =>
-              c.id === childId ? { ...c, current_balance: (c.current_balance || 0) - cost } : c
+              c.id === childId ? { ...c, current_balance: (c.current_balance || 0) + newTx.amount } : c
             ),
             // Update local redemption history immediately
             redeemedHistory: rewardId
@@ -1242,6 +1302,7 @@ export const useAppStore = create<AppState>()(
             // Add to transactions
             transactions: [newTx, ...state.transactions]
           }));
+          get().requestReviewPrompt('reward_redeemed');
 
           return { error: null };
         } catch (error) {
@@ -1339,6 +1400,7 @@ export const useAppStore = create<AppState>()(
           rewards: [],
           childLogs: [],
           transactions: [],
+          xpTransactions: [],
           pendingVerifications: [],
           redeemedHistory: [],
           onboardingStep: 'family-setup'
@@ -1386,6 +1448,15 @@ export const useAppStore = create<AppState>()(
           if (data.notificationsEnabled !== undefined) {
             set({ notificationsEnabled: data.notificationsEnabled });
           }
+          if (data.notifyMissionApprovals !== undefined) {
+            set({ notifyMissionApprovals: data.notifyMissionApprovals });
+          }
+          if (data.notifyMissedTasks !== undefined) {
+            set({ notifyMissedTasks: data.notifyMissedTasks });
+          }
+          if (data.notifyDailyReport !== undefined) {
+            set({ notifyDailyReport: data.notifyDailyReport });
+          }
           if (data.biometricEnabled !== undefined) {
             set({ biometricEnabled: data.biometricEnabled });
           }
@@ -1414,6 +1485,13 @@ export const useAppStore = create<AppState>()(
         lastMissedCheckDate: state.lastMissedCheckDate,
         biometricEnabled: state.biometricEnabled,
         notificationsEnabled: state.notificationsEnabled,
+        notifyMissionApprovals: state.notifyMissionApprovals,
+        notifyMissedTasks: state.notifyMissedTasks,
+        notifyDailyReport: state.notifyDailyReport,
+        reviewPromptLastShownAt: state.reviewPromptLastShownAt,
+        reviewPromptDismissed: state.reviewPromptDismissed,
+        reviewPromptRated: state.reviewPromptRated,
+        reviewPromptShownTodayCount: state.reviewPromptShownTodayCount,
         userProfile: state.userProfile,
         // Persist important data
         children: state.children,
@@ -1423,6 +1501,7 @@ export const useAppStore = create<AppState>()(
         childLogs: state.childLogs,
         redeemedHistory: state.redeemedHistory,
         transactions: state.transactions,
+        xpTransactions: state.xpTransactions,
         categories: state.categories,
       }),
     }

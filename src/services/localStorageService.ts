@@ -1,6 +1,8 @@
-import type { Child, Task, Reward, ChildTaskLog, CoinTransaction, VerificationRequest, Profile, Category } from '../types';
+import type { Child, Task, Reward, ChildTaskLog, CoinTransaction, VerificationRequest, Profile, Category, XpTransaction } from '../types';
 import { AppError } from '../types/error';
 import { backupSchema } from '../schemas/backupSchema';
+import { getLocalDateString } from '../utils/timeUtils';
+import { getMissionXpValue } from '../utils/xpUtils';
 
 const STORAGE_KEY = 'stars-rewards-db';
 
@@ -11,6 +13,7 @@ interface LocalDB {
     rewards: Reward[];
     logs: ChildTaskLog[];
     transactions: CoinTransaction[];
+    xp_transactions: XpTransaction[];
     categories: Category[];
 }
 
@@ -23,6 +26,7 @@ const getDB = (): LocalDB => {
         rewards: [],
         logs: [],
         transactions: [],
+        xp_transactions: [],
         categories: []
     };
 
@@ -53,6 +57,7 @@ const getDB = (): LocalDB => {
             rewards: Array.isArray(parsed.rewards) ? parsed.rewards : defaults.rewards,
             logs: Array.isArray(parsed.logs) ? parsed.logs : defaults.logs,
             transactions: Array.isArray(parsed.transactions) ? parsed.transactions : defaults.transactions,
+            xp_transactions: Array.isArray(parsed.xp_transactions) ? parsed.xp_transactions : defaults.xp_transactions,
             categories: Array.isArray(parsed.categories) ? parsed.categories : defaults.categories
         };
     } catch (e) {
@@ -66,6 +71,40 @@ const saveDB = (db: LocalDB) => {
 };
 
 const generateId = () => crypto.randomUUID();
+
+const isSameLocalDate = (isoDate: string, localDateString: string): boolean => {
+    return getLocalDateString(new Date(isoDate)) === localDateString;
+};
+
+const backfillMissionXp = (db: LocalDB): boolean => {
+    let changed = false;
+
+    db.logs
+        .filter(log => log.status === 'VERIFIED')
+        .forEach(log => {
+            const existingXp = db.xp_transactions.some(tx =>
+                tx.child_id === log.child_id &&
+                tx.type === 'MISSION_APPROVED' &&
+                tx.reference_id === log.id
+            );
+
+            if (existingXp) return;
+
+            const task = db.tasks.find(t => t.id === log.task_id);
+            db.xp_transactions.push({
+                id: generateId(),
+                parent_id: 'local-user',
+                child_id: log.child_id,
+                amount: getMissionXpValue(task),
+                type: 'MISSION_APPROVED',
+                reference_id: log.id,
+                created_at: log.verified_at || log.completed_at
+            });
+            changed = true;
+        });
+
+    return changed;
+};
 
 export const localStorageService = {
     // --- Profile / Auth ---
@@ -236,10 +275,14 @@ export const localStorageService = {
             created_at: new Date().toISOString(),
             assigned_to: task.assigned_to || [],
             category_id: task.category_id,
+            next_due_date: task.next_due_date,
             expiry_time: task.expiry_time,
             max_completions_per_day: task.max_completions_per_day,
             total_target_value: task.total_target_value,
-            target_unit: task.target_unit
+            target_unit: task.target_unit,
+            description: task.description,
+            icon: task.icon,
+            image_url: task.image_url
         };
         db.tasks.push(newTask);
         saveDB(db);
@@ -270,11 +313,15 @@ export const localStorageService = {
             parent_id: 'local-user',
             name: reward.name,
             cost_value: reward.cost_value,
+            created_at: new Date().toISOString(),
             category: reward.category,
             type: reward.type,
             required_task_id: reward.required_task_id,
             required_task_count: reward.required_task_count,
-            assigned_to: reward.assigned_to
+            assigned_to: reward.assigned_to,
+            description: reward.description,
+            icon: reward.icon,
+            image_url: reward.image_url
         };
         db.rewards.push(newReward);
         saveDB(db);
@@ -488,16 +535,21 @@ export const localStorageService = {
         // Prevent double verification at DB level
         if (db.logs[logIndex].status === 'VERIFIED') {
             console.warn('Task already verified in DB, skipping.');
-            // Find existing transaction to return
-            return db.transactions.find(t => t.type === 'TASK_VERIFIED' && t.reference_id === logId) || null;
+            return null;
         }
+
+        if (db.logs[logIndex].child_id !== childId) return null;
+
+        const task = db.tasks.find(t => t.id === db.logs[logIndex].task_id);
+        const verifiedRewardValue = task?.reward_value ?? rewardValue;
+        if (verifiedRewardValue < 0) return null;
 
         db.logs[logIndex].status = 'VERIFIED';
 
         // 2. Update Balance
         const childIndex = db.children.findIndex(c => c.id === childId);
         if (childIndex !== -1) {
-            db.children[childIndex].current_balance = (db.children[childIndex].current_balance || 0) + rewardValue;
+            db.children[childIndex].current_balance = (db.children[childIndex].current_balance || 0) + verifiedRewardValue;
         }
 
         // 3. Add Transaction
@@ -505,12 +557,31 @@ export const localStorageService = {
             id: generateId(),
             parent_id: 'local-user',
             child_id: childId,
-            amount: rewardValue,
+            amount: verifiedRewardValue,
             type: 'TASK_VERIFIED',
             reference_id: logId,
             created_at: new Date().toISOString()
         };
         db.transactions.push(newTx);
+
+        const hasExistingXp = db.xp_transactions.some(t =>
+            t.child_id === childId &&
+            t.type === 'MISSION_APPROVED' &&
+            t.reference_id === logId
+        );
+
+        if (!hasExistingXp) {
+            const newXpTx: XpTransaction = {
+                id: generateId(),
+                parent_id: 'local-user',
+                child_id: childId,
+                amount: getMissionXpValue(task),
+                type: 'MISSION_APPROVED',
+                reference_id: logId,
+                created_at: newTx.created_at
+            };
+            db.xp_transactions.push(newXpTx);
+        }
 
         saveDB(db);
         return newTx;
@@ -563,14 +634,14 @@ export const localStorageService = {
 
     updateTaskProgress: async (childId: string, taskId: string, value: number, target: number): Promise<ChildTaskLog | null> => {
         const db = getDB();
-        const todayStr = new Date().toISOString().split('T')[0];
+        const todayStr = getLocalDateString();
         const nowIso = new Date().toISOString();
 
         // Find existing log for today
         let logIndex = db.logs.findIndex(l =>
             l.child_id === childId &&
             l.task_id === taskId &&
-            l.completed_at.startsWith(todayStr)
+            isSameLocalDate(l.completed_at, todayStr)
         );
 
         let log: ChildTaskLog;
@@ -604,13 +675,13 @@ export const localStorageService = {
 
     updateTaskProgressOnDate: async (childId: string, taskId: string, value: number, target: number, dateIso: string): Promise<ChildTaskLog | null> => {
         const db = getDB();
-        const targetDateStr = dateIso.split('T')[0];
+        const targetDateStr = getLocalDateString(new Date(dateIso));
 
         // Find existing log for the target date
         let logIndex = db.logs.findIndex(l =>
             l.child_id === childId &&
             l.task_id === taskId &&
-            l.completed_at.startsWith(targetDateStr)
+            isSameLocalDate(l.completed_at, targetDateStr)
         );
 
         let log: ChildTaskLog;
@@ -650,17 +721,54 @@ export const localStorageService = {
         if (childIndex === -1) return null;
 
         const child = db.children[childIndex];
-        if ((child.current_balance || 0) < cost) return null;
+        let finalCost = cost;
+
+        if (rewardId) {
+            const reward = db.rewards.find(r => r.id === rewardId);
+            if (!reward) return null;
+
+            if (reward.assigned_to && reward.assigned_to.length > 0 && !reward.assigned_to.includes(childId)) {
+                return null;
+            }
+
+            const alreadyRedeemed = db.transactions.some(t =>
+                t.child_id === childId &&
+                t.type === 'REWARD_REDEEMED' &&
+                t.reference_id === rewardId
+            );
+            const isOneTime = reward.type === 'ONE_TIME';
+            const isFreeMilestone = reward.type === 'ACCUMULATIVE' && reward.cost_value === 0;
+            if ((isOneTime || isFreeMilestone) && alreadyRedeemed) {
+                return null;
+            }
+
+            if (reward.type === 'ACCUMULATIVE' && reward.required_task_id) {
+                const completedCount = db.logs.filter(log =>
+                    log.child_id === childId &&
+                    log.task_id === reward.required_task_id &&
+                    log.status === 'VERIFIED'
+                ).length;
+
+                if (completedCount < (reward.required_task_count || 1)) {
+                    return null;
+                }
+            }
+
+            finalCost = reward.cost_value;
+        }
+
+        if (finalCost < 0) return null;
+        if ((child.current_balance || 0) < finalCost) return null;
 
         // 1. Deduct Balance
-        child.current_balance = (child.current_balance || 0) - cost;
+        child.current_balance = (child.current_balance || 0) - finalCost;
 
         // 2. Add Transaction
         const newTx: CoinTransaction = {
             id: generateId(),
             parent_id: 'local-user',
             child_id: childId,
-            amount: -cost,
+            amount: -finalCost,
             type: rewardId ? 'REWARD_REDEEMED' : 'MANUAL_ADJ',
             reference_id: rewardId,
             created_at: new Date().toISOString()
@@ -700,6 +808,14 @@ export const localStorageService = {
         return db.transactions.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 10000);
     },
 
+    fetchXpTransactions: async (): Promise<XpTransaction[]> => {
+        const db = getDB();
+        if (backfillMissionXp(db)) {
+            saveDB(db);
+        }
+        return db.xp_transactions.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 10000);
+    },
+
     // --- Backup / Restore ---
 
     restoreBackup: async (data: any): Promise<boolean> => {
@@ -714,9 +830,10 @@ export const localStorageService = {
 
             const validData = result.data;
 
-            // Reconstruct Profile if missing but flat fields exist
-            let profile = validData.profile;
-            if (!profile && (validData.adminName || validData.familyName)) {
+            // Reconstruct Profile if missing but flat fields exist.
+            // Newer backups generated from Zustand use `userProfile`; older ones use flat fields.
+            let profile = validData.profile || validData.userProfile;
+            if (!profile && (validData.adminName || validData.parentName || validData.familyName || validData.parentPin || validData.adminPin)) {
                 profile = {
                     id: 'local-user',
                     created_at: new Date().toISOString(),
@@ -724,9 +841,12 @@ export const localStorageService = {
                     parent_pattern: validData.parentPattern || undefined,
                     preferred_auth_method: validData.preferredAuthMethod || undefined,
                     family_name: validData.familyName || 'My Family',
-                    parent_name: validData.adminName || 'Parent',
+                    parent_name: validData.adminName || validData.parentName || 'Parent',
                     biometric_enabled: validData.biometricEnabled || false,
                     notifications_enabled: validData.notificationsEnabled || true,
+                    notify_mission_approvals: validData.notifyMissionApprovals ?? undefined,
+                    notify_missed_tasks: validData.notifyMissedTasks ?? undefined,
+                    notify_daily_report: validData.notifyDailyReport ?? undefined,
                     onboarding_step: validData.onboardingStep || 'family-setup',
                 };
             } else if (profile) {
@@ -741,6 +861,9 @@ export const localStorageService = {
                     preferred_auth_method: profile.preferred_auth_method ?? undefined,
                     biometric_enabled: profile.biometric_enabled ?? undefined,
                     notifications_enabled: profile.notifications_enabled ?? undefined,
+                    notify_mission_approvals: profile.notify_mission_approvals ?? undefined,
+                    notify_missed_tasks: profile.notify_missed_tasks ?? undefined,
+                    notify_daily_report: profile.notify_daily_report ?? undefined,
                     onboarding_step: profile.onboarding_step ?? undefined
                 };
             }
@@ -768,7 +891,9 @@ export const localStorageService = {
                 max_completions_per_day: t.max_completions_per_day ?? undefined,
                 current_streak: t.current_streak ?? undefined,
                 best_streak: t.best_streak ?? undefined,
-                description: t.description ?? undefined
+                description: t.description ?? undefined,
+                icon: t.icon ?? undefined,
+                image_url: t.image_url ?? undefined
             }));
 
             const validRewards = (validData.rewards || []).map(r => ({
@@ -779,7 +904,9 @@ export const localStorageService = {
                 required_task_count: r.required_task_count ?? undefined,
                 created_at: r.created_at ?? undefined,
                 assigned_to: r.assigned_to || [],
-                description: r.description ?? undefined
+                description: r.description ?? undefined,
+                icon: r.icon ?? undefined,
+                image_url: r.image_url ?? undefined
             }));
 
             // Filter logs to ensure referential integrity
@@ -808,6 +935,9 @@ export const localStorageService = {
                     preferred_auth_method: profile.preferred_auth_method ?? undefined,
                     biometric_enabled: profile.biometric_enabled ?? undefined,
                     notifications_enabled: profile.notifications_enabled ?? undefined,
+                    notify_mission_approvals: profile.notify_mission_approvals ?? undefined,
+                    notify_missed_tasks: profile.notify_missed_tasks ?? undefined,
+                    notify_daily_report: profile.notify_daily_report ?? undefined,
                     onboarding_step: profile.onboarding_step ?? undefined
                 } : null,
                 children: validChildren,
@@ -818,6 +948,12 @@ export const localStorageService = {
                     ...t,
                     reference_id: t.reference_id ?? undefined,
                     description: t.description ?? undefined
+                })),
+                xp_transactions: (validData.xpTransactions || validData.xp_transactions || []).filter(t =>
+                    validChildren.some(c => c.id === t.child_id)
+                ).map(t => ({
+                    ...t,
+                    reference_id: t.reference_id ?? undefined
                 })),
                 categories: (validData.categories || []).map(c => ({
                     ...c,
@@ -856,6 +992,9 @@ export const localStorageService = {
             if (logIndex !== -1) {
                 db.logs[logIndex].status = 'PENDING';
             }
+            db.xp_transactions = db.xp_transactions.filter(xp =>
+                !(xp.type === 'MISSION_APPROVED' && xp.reference_id === tx.reference_id && xp.child_id === tx.child_id)
+            );
         }
 
         // 3. Remove Transaction
@@ -869,6 +1008,7 @@ export const localStorageService = {
         const initialLength = db.logs.length;
         db.logs = db.logs.filter(l => l.id !== logId);
         if (db.logs.length !== initialLength) {
+            db.xp_transactions = db.xp_transactions.filter(xp => xp.reference_id !== logId);
             saveDB(db);
             return true;
         }

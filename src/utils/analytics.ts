@@ -1,6 +1,6 @@
 import type { Task, ChildTaskLog, CoinTransaction, Child, Category } from '../types';
 import { parseRRule, isDateValid } from './recurrence';
-import { getLocalStartOfDay } from './timeUtils';
+import { getLocalDateString, getLocalStartOfDay } from './timeUtils';
 
 export type TimeFilter = 'today' | 'week' | 'month' | 'all' | 'specific';
 
@@ -100,7 +100,7 @@ export const getSuccessRatio = (
     // Iterate through each day in the range to calculate Total Expected (Recurring Only)
     for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
         const currentDate = new Date(d);
-        const currentDateStr = getLocalStartOfDay(currentDate).toISOString().split('T')[0]; // YYYY-MM-DD
+        const currentDateStr = getLocalDateString(currentDate);
 
         activeTasks.forEach(task => {
             if (task.recurrence_rule === 'Once') return; // Handled separately
@@ -126,7 +126,7 @@ export const getSuccessRatio = (
                             if (l.task_id !== task.id || l.child_id !== childId) return false;
                             // Compare dates (local YYYY-MM-DD)
                             const logDate = new Date(l.completed_at);
-                            const logDateStr = getLocalStartOfDay(logDate).toISOString().split('T')[0];
+                            const logDateStr = getLocalDateString(logDate);
                             return logDateStr === currentDateStr;
                         });
 

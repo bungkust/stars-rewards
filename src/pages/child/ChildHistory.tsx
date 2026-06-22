@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import HistoryList, { type HistoryItemType, type HistoryItemEntry } from '../../components/shared/HistoryList';
 import HistoryDetailModal from '../../components/modals/HistoryDetailModal';
+import { getLocalDateString } from '../../utils/timeUtils';
 
 type SortOption = 'date_desc' | 'date_asc';
 type DateFilter = 'all' | 'today' | 'week' | 'month' | 'specific';
@@ -23,8 +24,8 @@ const ChildHistory = () => {
     const [showFilters, setShowFilters] = useState(false);
 
     // Specific date filter state
-    const [tempDate, setTempDate] = useState<string>(new Date().toISOString().split('T')[0]);
-    const [specificDate, setSpecificDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [tempDate, setTempDate] = useState<string>(getLocalDateString());
+    const [specificDate, setSpecificDate] = useState<string>(getLocalDateString());
     const [visibleCount, setVisibleCount] = useState(10);
     const LOAD_MORE_INCREMENT = 10;
 
