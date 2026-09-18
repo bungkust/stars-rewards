@@ -80,6 +80,7 @@ const GamificationPanel = ({ childId, logs, tasks, xpTransactions, transactions 
   const nextUnlock = getNextLevelReward(levelProgress.level);
   const xpToNextUnlock = nextUnlock ? Math.max(0, getXpRequiredForLevel(nextUnlock.level) - totalXp) : 0;
   const completedQuests = quests.filter(quest => quest.isComplete).length;
+  const claimableQuestsCount = quests.filter(quest => quest.isComplete && !quest.isClaimed).length;
   const unlockedAchievements = achievements.filter(achievement => achievement.unlocked).length;
   const claimableStars = claimableAchievementRewards.reduce((total, achievement) => total + achievement.starReward, 0);
   const latestXp = xpTransactions.filter(tx => tx.child_id === childId)[0];
@@ -227,7 +228,14 @@ const GamificationPanel = ({ childId, logs, tasks, xpTransactions, transactions 
       >
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-2xl font-bold text-neutral">{completedQuests}/{quests.length}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-2xl font-bold text-neutral">{completedQuests}/{quests.length}</p>
+              {claimableQuestsCount > 0 && (
+                <span className="badge badge-warning font-black text-[11px] animate-pulse">
+                  {claimableQuestsCount} Siap Klaim!
+                </span>
+              )}
+            </div>
             <p className="text-xs font-bold text-neutral/50">completed today</p>
           </div>
           <div className="flex -space-x-1">

@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowLeft,
   CheckCircle,
@@ -89,9 +91,22 @@ const ProgressHeader = ({ title, subtitle }: { title: string; subtitle: string }
 
 const ChildProgressDetail = () => {
   const { section } = useParams();
-  const { activeChildId, childLogs, tasks, xpTransactions, transactions, getTasksByChildId, claimAchievementReward, isLoading } = useAppStore();
+  const {
+    activeChildId,
+    childLogs,
+    tasks,
+    xpTransactions,
+    transactions,
+    getTasksByChildId,
+    claimAchievementReward,
+    claimDailyQuestReward,
+    isLoading
+  } = useAppStore();
   const childTasks = activeChildId ? getTasksByChildId(activeChildId) : tasks;
   const navigate = useNavigate();
+
+  const [claimingQuestId, setClaimingQuestId] = useState<string | null>(null);
+  const [celebration, setCelebration] = useState<{ questTitle: string; xp: number } | null>(null);
 
   if (!activeChildId) return null;
 
@@ -101,28 +116,159 @@ const ChildProgressDetail = () => {
   const achievements = getUnlockedAchievements(activeChildId, childLogs, childTasks, xpTransactions, transactions);
   const history = getHistoryWithLevelUps(activeChildId, xpTransactions);
 
+  const handleClaimQuest = async (questId: string, questTitle: string, xpReward: number) => {
+    if (!activeChildId || claimingQuestId) return;
+    setClaimingQuestId(questId);
+    try {
+      const res = await claimDailyQuestReward(activeChildId, questId);
+      if (!res.error) {
+        setCelebration({ questTitle, xp: xpReward });
+        setTimeout(() => {
+          setCelebration(null);
+        }, 3500);
+      }
+    } finally {
+      setClaimingQuestId(null);
+    }
+  };
+
   if (section === 'quests') {
+    const completedCount = quests.filter(q => q.isComplete).length;
+    const claimableCount = quests.filter(q => q.isComplete && !q.isClaimed).length;
+
     return (
-      <div className="flex flex-col gap-4">
-        <ProgressHeader title="Daily Quests" subtitle="Small goals that add bonus XP today." />
-        {quests.map(quest => (
-          <div key={quest.id} className="card bg-base-100 p-4 shadow-sm rounded-xl">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h3 className="font-bold text-neutral">{quest.title}</h3>
-                <p className="mt-1 text-sm font-medium text-neutral/60">{quest.description}</p>
+      <div className="flex flex-col gap-4 relative">
+        <ProgressHeader title="Daily Quests" subtitle="Target harian untuk boost XP dan level-up lebih cepat." />
+
+        {/* Floating Celebration Banner */}
+        <AnimatePresence>
+          {celebration && (
+            <motion.div
+              initial={{ opacity: 0, y: -24, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -24, scale: 0.9 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              className="sticky top-2 z-50 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 p-4 text-white shadow-xl flex items-center gap-3.5 border border-amber-300/40"
+            >
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white/25 text-2xl shadow-inner select-none">
+                🎉
               </div>
-              <span className="badge badge-warning badge-outline shrink-0 font-bold">+{quest.xpReward} XP</span>
-            </div>
-            <div className="mt-4 flex items-center gap-3">
-              <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-base-200">
-                <div className="h-full rounded-full bg-primary" style={{ width: `${Math.round((quest.current / quest.target) * 100)}%` }} />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-black">Daily Quest Berhasil Diklaim!</p>
+                <p className="text-xs font-semibold text-white/95 mt-0.5">
+                  +{celebration.xp} XP ditambahkan untuk &quot;{celebration.questTitle}&quot; 🌟
+                </p>
               </div>
-              <span className="text-xs font-bold text-neutral/60">{quest.current}/{quest.target}</span>
-              {quest.isClaimed && <CheckCircle className="h-5 w-5 text-success" weight="fill" />}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Daily Progress Status Bar */}
+        <div className="card bg-gradient-to-r from-primary/10 to-base-100 p-4 shadow-sm rounded-xl border border-primary/15">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold text-neutral/60">Progress Hari Ini</p>
+              <p className="text-lg font-black text-neutral mt-0.5">{completedCount} dari {quests.length} Quest Selesai</p>
             </div>
+            {claimableCount > 0 ? (
+              <span className="badge badge-warning font-black text-xs px-3 py-2 animate-bounce shadow-xs">
+                {claimableCount} Siap Diklaim! 🎁
+              </span>
+            ) : completedCount === quests.length ? (
+              <span className="badge badge-success font-black text-xs px-3 py-2 text-white">
+                Semua Selesai! ⭐
+              </span>
+            ) : (
+              <span className="badge badge-ghost font-bold text-xs text-neutral/50">
+                Reset tiap tengah malam
+              </span>
+            )}
           </div>
-        ))}
+        </div>
+
+        {/* Quests List */}
+        <div className="flex flex-col gap-3">
+          {quests.map(quest => {
+            const canClaim = quest.isComplete && !quest.isClaimed;
+            const progressPercent = Math.min(100, Math.round((quest.current / quest.target) * 100));
+
+            return (
+              <div
+                key={quest.id}
+                className={`card bg-base-100 p-4 shadow-sm rounded-2xl border transition-all ${
+                  canClaim
+                    ? 'border-warning/50 bg-gradient-to-br from-warning/10 via-base-100 to-base-100 shadow-md ring-1 ring-warning/30'
+                    : quest.isClaimed
+                    ? 'border-base-200/80 opacity-90'
+                    : 'border-base-200/80'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-neutral text-base">{quest.title}</h3>
+                      {quest.isClaimed && (
+                        <CheckCircle className="h-4 w-4 text-success shrink-0" weight="fill" />
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs font-medium text-neutral/60 leading-relaxed">{quest.description}</p>
+                  </div>
+                  <span className="badge badge-warning badge-outline shrink-0 font-black text-xs">
+                    +{quest.xpReward} XP
+                  </span>
+                </div>
+
+                {/* Progress Bar & Indicators */}
+                <div className="mt-3.5">
+                  <div className="flex items-center justify-between text-xs font-bold text-neutral/60 mb-1.5">
+                    <span>Progress: {quest.current}/{quest.target}</span>
+                    <span>{progressPercent}%</span>
+                  </div>
+                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-base-200">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        quest.isComplete ? 'bg-success' : 'bg-primary'
+                      }`}
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Action / Claim Area */}
+                <div className="mt-4 pt-3 border-t border-base-200/70 flex items-center justify-between gap-3">
+                  <span className="text-xs font-semibold text-neutral/50">
+                    Hadiah: <strong className="text-primary">+{quest.xpReward} XP</strong>
+                  </span>
+
+                  {quest.isClaimed ? (
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-success bg-success/10 border border-success/20 px-3 py-1.5 rounded-xl">
+                      <CheckCircle className="h-4 w-4" weight="fill" />
+                      <span>Selesai & Diklaim</span>
+                    </div>
+                  ) : canClaim ? (
+                    <button
+                      type="button"
+                      disabled={claimingQuestId === quest.id || isLoading}
+                      onClick={() => handleClaimQuest(quest.id, quest.title, quest.xpReward)}
+                      className="btn btn-sm btn-primary text-white font-black rounded-xl gap-1.5 shadow-md shadow-primary/25 hover:scale-105 active:scale-95 transition-all"
+                    >
+                      {claimingQuestId === quest.id ? (
+                        <span className="loading loading-spinner loading-xs" />
+                      ) : (
+                        <Sparkle className="h-4 w-4" weight="fill" />
+                      )}
+                      Klaim +{quest.xpReward} XP
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-neutral/40 bg-base-200/50 px-3 py-1.5 rounded-xl">
+                      <span>{quest.target - quest.current} lagi untuk klaim</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   }

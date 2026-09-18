@@ -7,8 +7,8 @@ import { getNextDueDate } from '../utils/recurrence';
 import { getLocalDateString } from '../utils/timeUtils';
 import { missionLogicService } from '../services/missionLogicService';
 import { getReviewPromptSnoozeDate, shouldShowReviewPrompt, type ReviewPromptChoice, type ReviewPromptTrigger } from '../utils/reviewPromptUtils';
-import { calculateLevelProgress, getLevelRewardsBetween, getTotalXpForChild, type LevelReward } from '../utils/xpUtils';
-import { getClaimableAchievements, getClaimableDailyQuests, getUnlockedAchievements } from '../utils/gamificationUtils';
+import { calculateLevelProgress, getLevelRewards, getLevelRewardsBetween, getTotalXpForChild, type LevelReward } from '../utils/xpUtils';
+import { getClaimableAchievements, getDailyQuests, getUnlockedAchievements } from '../utils/gamificationUtils';
 import { checkVersionStatus, type VersionCheckResult } from '../services/versionCheckService';
 
 export type OnboardingStep = 'family-setup' | 'parent-setup' | 'add-child' | 'first-task' | 'first-reward' | 'completed';
@@ -132,6 +132,7 @@ export interface AppState {
   redeemReward: (childId: string, cost: number, rewardId: string) => Promise<{ error: any }>;
   manualAdjustment: (childId: string, amount: number, reason?: string) => Promise<{ error: any }>;
   claimAchievementReward: (childId: string, achievementId: string) => Promise<{ error: any }>;
+  claimDailyQuestReward: (childId: string, questId: string) => Promise<{ error: any }>;
   checkMissedMissions: () => Promise<void>;
   deleteTransaction: (transactionId: string) => Promise<{ error: any }>;
   deleteChildLog: (logId: string) => Promise<{ error: any }>;
@@ -1158,13 +1159,7 @@ export const useAppStore = create<AppState>()(
           });
           let xpTransactions = await dataService.fetchXpTransactions('local-user');
 
-          const claimableQuests = getClaimableDailyQuests(childId, updatedLogs, updatedTasks, xpTransactions);
-          if (claimableQuests.length > 0) {
-            await Promise.all(claimableQuests.map(quest =>
-              dataService.awardXpTransaction(childId, quest.xpReward, 'DAILY_QUEST', `${getLocalDateString()}:${quest.id}`)
-            ));
-            xpTransactions = await dataService.fetchXpTransactions('local-user');
-          }
+          // Daily quests are now claimed directly by the child via claimDailyQuestReward in the UI
 
           const claimableAchievements = getClaimableAchievements(childId, updatedLogs, updatedTasks, xpTransactions);
           if (claimableAchievements.length > 0) {
@@ -1473,6 +1468,58 @@ export const useAppStore = create<AppState>()(
           return { error: null };
         } catch (error) {
           console.error('Error claiming achievement reward:', error);
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      claimDailyQuestReward: async (childId: string, questId: string) => {
+        set({ isLoading: true });
+        try {
+          const { childLogs, tasks, xpTransactions } = get();
+          const quests = getDailyQuests(childId, childLogs, tasks, xpTransactions);
+          const quest = quests.find(q => q.id === questId);
+
+          if (!quest || !quest.isComplete || quest.isClaimed) {
+            throw new Error('Quest is not claimable');
+          }
+
+          const previousTotalXp = getTotalXpForChild(xpTransactions, childId);
+          const previousLevel = calculateLevelProgress(previousTotalXp);
+
+          const dateKey = getLocalDateString();
+          const referenceId = `${dateKey}:${quest.id}`;
+          const newTx = await dataService.awardXpTransaction(childId, quest.xpReward, 'DAILY_QUEST', referenceId);
+          if (!newTx) throw new Error('Failed to award quest XP');
+
+          const updatedXpTxs = await dataService.fetchXpTransactions('local-user');
+          set({ xpTransactions: updatedXpTxs });
+
+          const nextTotalXp = getTotalXpForChild(updatedXpTxs, childId);
+          const nextLevel = calculateLevelProgress(nextTotalXp);
+          const celebratedLevel = get().celebratedLevelByChild[childId] || previousLevel.level;
+          if (nextLevel.level > previousLevel.level && nextLevel.level > celebratedLevel) {
+            const child = get().children.find(c => c.id === childId);
+            set({
+              celebratedLevelByChild: {
+                ...get().celebratedLevelByChild,
+                [childId]: nextLevel.level
+              },
+              levelUpMilestone: {
+                childName: child ? child.name : 'Champion',
+                previousLevel: previousLevel.level,
+                level: nextLevel.level,
+                levelName: nextLevel.levelName,
+                totalXp: nextTotalXp,
+                rewards: getLevelRewards(nextLevel.level)
+              }
+            });
+          }
+
+          return { error: null };
+        } catch (error) {
+          console.error('Error claiming daily quest reward:', error);
           return { error };
         } finally {
           set({ isLoading: false });
