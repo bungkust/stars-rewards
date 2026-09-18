@@ -20,6 +20,12 @@ export const FEATURE_FLAGS = {
 
   /** Enable Design System Playground Page (Dev mode only) */
   ENABLE_PLAYGROUND_PAGE: import.meta.env.DEV,
+
+  /**
+   * Enable Gamification Progress Menu (Daily Quests, Achievements, XP History,
+   * Personal League, Rewards Shelf). Set to true when the revamp is ready to ship.
+   */
+  ENABLE_PROGRESS_MENU: false,
 } as const;
 
 export type FeatureFlagKey = keyof typeof FEATURE_FLAGS;

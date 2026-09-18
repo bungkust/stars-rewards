@@ -1,11 +1,22 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ChartLineUp, ClipboardText, Gift, House, Trophy } from '@phosphor-icons/react';
 import { useAppStore } from '../../store/useAppStore';
+import { FEATURE_FLAGS } from '../../config/featureFlags';
 
 const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAdminMode } = useAppStore();
+
+  const childItems = [
+      { id: 'home', icon: House, label: 'Home', path: '/child' },
+      { id: 'tasks', icon: ClipboardText, label: 'Missions', path: '/child/tasks' },
+      ...(FEATURE_FLAGS.ENABLE_PROGRESS_MENU
+        ? [{ id: 'progress', icon: Trophy, label: 'Progress', path: '/child/progress' }]
+        : []),
+      { id: 'rewards', icon: Gift, label: 'Rewards', path: '/child/rewards' },
+      { id: 'stats', icon: ChartLineUp, label: 'Stats', path: '/child/stats' },
+    ];
 
   const navItems = isAdminMode
     ? [
@@ -14,20 +25,14 @@ const BottomNav = () => {
       { id: 'rewards', icon: Gift, label: 'Rewards', path: '/parent/rewards' },
       { id: 'stats', icon: ChartLineUp, label: 'Stats', path: '/parent/stats' },
     ]
-    : [
-      { id: 'home', icon: House, label: 'Home', path: '/child' },
-      { id: 'tasks', icon: ClipboardText, label: 'Missions', path: '/child/tasks' },
-      { id: 'progress', icon: Trophy, label: 'Progress', path: '/child/progress' },
-      { id: 'rewards', icon: Gift, label: 'Rewards', path: '/child/rewards' },
-      { id: 'stats', icon: ChartLineUp, label: 'Stats', path: '/child/stats' },
-    ];
+    : childItems;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-base-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 flex justify-around items-center h-auto min-h-[4rem] pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]">
       {navItems.map((item) => {
         const isActive = location.pathname === item.path || (item.path === '/child/progress' && location.pathname.startsWith('/child/progress/'));
         const activeColor = isAdminMode ? 'text-emerald-600' : 'text-primary';
-        const stateClasses = isActive ? `${activeColor} font-semibold` : 'text-gray-400';
+        const stateClasses = isActive ? `${activeColor} font-semibold` : 'text-neutral/40';
         return (
           <button
             key={item.id}

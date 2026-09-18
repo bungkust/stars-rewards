@@ -16,6 +16,7 @@ import ClaimedRewardsHistory from './pages/child/ClaimedRewardsHistory';
 import ChildHistory from './pages/child/ChildHistory';
 import ChildProgress from './pages/child/ChildProgress';
 import ChildProgressDetail from './pages/child/ChildProgressDetail';
+import { FEATURE_FLAGS } from './config/featureFlags';
 import Settings from './pages/settings/Settings';
 import AddChild from './pages/onboarding/AddChild';
 import AddChildSettings from './pages/settings/AddChildSettings';
@@ -293,14 +294,14 @@ const AnimatedRoutes = () => {
             </PageTransition>
           } />
           <Route path="/child/progress" element={
-            <PageTransition>
-              <ChildProgress />
-            </PageTransition>
+            FEATURE_FLAGS.ENABLE_PROGRESS_MENU
+              ? <PageTransition><ChildProgress /></PageTransition>
+              : <Navigate to="/child" replace />
           } />
           <Route path="/child/progress/:section" element={
-            <PageTransition>
-              <ChildProgressDetail />
-            </PageTransition>
+            FEATURE_FLAGS.ENABLE_PROGRESS_MENU
+              ? <PageTransition><ChildProgressDetail /></PageTransition>
+              : <Navigate to="/child" replace />
           } />
           <Route path="/child/claimed-rewards" element={
             <PageTransition>
