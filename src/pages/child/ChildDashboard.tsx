@@ -455,10 +455,10 @@ const ChildDashboard = () => {
           </div>
         </div>
         <div className="flex-1">
-          <h2 className="text-2xl font-bold text-gray-800">{getGreeting()}, {child.name}!</h2>
+          <h2 className="text-2xl font-bold text-neutral">{getGreeting()}, {child.name}!</h2>
           <div className="flex items-center gap-2 text-warning mt-1">
             <FaStar className="w-6 h-6" />
-            <span className="text-3xl font-bold text-gray-700">{child.current_balance}</span>
+            <span className="text-3xl font-bold text-neutral">{child.current_balance}</span>
           </div>
         </div>
       </div>
@@ -468,7 +468,7 @@ const ChildDashboard = () => {
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-bold uppercase tracking-wide text-primary">Level {xpProgress.level}</p>
-            <h3 className="text-lg font-bold text-gray-800">{xpProgress.levelName}</h3>
+            <h3 className="text-lg font-bold text-neutral">{xpProgress.levelName}</h3>
           </div>
           <div className="rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
             {xpProgress.totalXp} XP
@@ -481,7 +481,7 @@ const ChildDashboard = () => {
               style={{ width: `${xpProgress.progressPercent}%` }}
             />
           </div>
-          <p className="mt-2 text-xs font-medium text-gray-500">
+          <p className="mt-2 text-xs font-medium text-neutral/50">
             {xpProgress.xpNeededForNextLevel} XP to Level {xpProgress.level + 1}
           </p>
           {nextLevelReward && (
@@ -539,8 +539,8 @@ const ChildDashboard = () => {
       {/* Today's Tasks Section */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 px-1">
-          <h3 className="text-xl font-bold text-gray-700">
-            Daily Mission, <span className="text-black">{new Date().toLocaleDateString('en-US', { weekday: 'long' })}</span>
+          <h3 className="text-xl font-bold text-neutral">
+            Daily Mission, <span className="text-neutral">{new Date().toLocaleDateString('en-US', { weekday: 'long' })}</span>
           </h3>
 
           {/* Filter Tabs */}
@@ -569,7 +569,7 @@ const ChildDashboard = () => {
         </div>
 
         {visibleTasks.length === 0 ? (
-          <div className="text-center p-8 bg-base-100 rounded-xl border-2 border-dashed border-gray-300 text-gray-400">
+          <div className="text-center p-8 bg-base-100 rounded-xl border-2 border-dashed border-base-300 text-neutral/40">
             <p>No missions found for this filter.</p>
           </div>
         ) : (
@@ -605,8 +605,8 @@ const ChildDashboard = () => {
               return (
                 <div key={task.id} className="relative">
                   {/* Background for Swipe Action */}
-                  <div className="absolute inset-0 bg-gray-100 rounded-xl flex items-center justify-start px-6">
-                    <span className="text-gray-400 font-medium text-sm">Swipe to Skip &rarr;</span>
+                  <div className="absolute inset-0 bg-base-200 rounded-xl flex items-center justify-start px-6">
+                    <span className="text-neutral/40 font-medium text-sm">Swipe to Skip &rarr;</span>
                   </div>
 
                   <motion.div
@@ -616,18 +616,18 @@ const ChildDashboard = () => {
                     onDragEnd={(e, info) => handleSwipe(e, info, task)}
                     whileDrag={{ scale: 1.02 }}
                     onClick={() => handleTaskClick(task)}
-                    className={`relative card bg-white shadow-sm rounded-xl p-4 flex flex-row items-center justify-between border-l-4 cursor-pointer active:scale-95 transition-transform ${finalDisplayStatus === 'VERIFIED' ? 'border-success' :
+                    className={`relative card bg-base-100 shadow-sm rounded-xl p-4 flex flex-row items-center justify-between border-l-4 cursor-pointer active:scale-95 transition-transform ${finalDisplayStatus === 'VERIFIED' ? 'border-success' :
                       finalDisplayStatus === 'FAILED' ? 'border-error' :
                         finalDisplayStatus === 'PENDING' ? 'border-warning' :
                           finalDisplayStatus === 'PENDING_EXCUSE' ? 'border-warning' :
-                            finalDisplayStatus === 'EXCUSED' ? 'border-gray-300' :
-                              finalDisplayStatus === 'IN_PROGRESS' ? 'border-blue-400' :
+                            finalDisplayStatus === 'EXCUSED' ? 'border-neutral/30' :
+                              finalDisplayStatus === 'IN_PROGRESS' ? 'border-info' :
                                 isLatestRejected ? 'border-error' : 'border-primary'
                       }`}
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       {task.image_url ? (
-                        <div className="w-12 h-12 rounded-full flex-shrink-0 overflow-hidden shadow-sm border border-gray-200 bg-white">
+                        <div className="w-12 h-12 rounded-full flex-shrink-0 overflow-hidden shadow-sm border border-base-200 bg-base-100">
                           <img src={task.image_url} alt={task.name} className="w-full h-full object-cover" />
                         </div>
                       ) : (
@@ -636,7 +636,7 @@ const ChildDashboard = () => {
                             finalDisplayStatus === 'PENDING' ? 'bg-warning/10 text-warning' :
                               finalDisplayStatus === 'PENDING_EXCUSE' ? 'bg-warning/10 text-warning' :
                                 finalDisplayStatus === 'EXCUSED' ? 'bg-neutral/10 text-neutral' :
-                                  finalDisplayStatus === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-600' :
+                                  finalDisplayStatus === 'IN_PROGRESS' ? 'bg-info/10 text-info' :
                                     isLatestRejected ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'
                           }`}>
                           {task.icon ? (
@@ -651,8 +651,8 @@ const ChildDashboard = () => {
                         </div>
                       )}
                       <div className="min-w-0">
-                        <h4 className="font-bold text-gray-800 line-clamp-2 leading-tight break-words">{task.name}</h4>
-                        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 mt-0.5">
+                        <h4 className="font-bold text-neutral line-clamp-2 leading-tight break-words">{task.name}</h4>
+                        <div className="flex flex-wrap items-center gap-2 text-sm text-neutral/50 mt-0.5">
                           {task.reward_value > 0 && (
                             <span className="flex items-center gap-1 text-warning font-bold">
                               <FaStar className="w-3 h-3" /> {task.reward_value}
@@ -676,10 +676,10 @@ const ChildDashboard = () => {
                           )}
                         </div>
                         {task.description && (
-                          <p className="text-xs text-gray-400 italic mt-1 line-clamp-1">{task.description}</p>
+                          <p className="text-xs text-neutral/40 italic mt-1 line-clamp-1">{task.description}</p>
                         )}
                         {isProgressTask && finalDisplayStatus !== 'VERIFIED' && finalDisplayStatus !== 'PENDING' && (
-                          <div className="mt-2 w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-700">
+                          <div className="mt-2 w-full bg-base-200 rounded-full h-1.5">
                             <div className="bg-primary h-1.5 rounded-full" style={{ width: `${Math.min((currentProgress / (task.total_target_value || 1)) * 100, 100)}%` }}></div>
                           </div>
                         )}
@@ -695,7 +695,7 @@ const ChildDashboard = () => {
                     ) : finalDisplayStatus === 'PENDING_EXCUSE' ? (
                       <span className="badge badge-warning text-white font-bold p-3">Pending</span>
                     ) : finalDisplayStatus === 'EXCUSED' ? (
-                      <span className="badge badge-ghost text-gray-500 font-bold p-3">Skipped</span>
+                      <span className="badge badge-ghost text-neutral/50 font-bold p-3">Skipped</span>
                     ) : (
                       <div className="flex flex-col items-end gap-1">
                         {!isProgressTask ? (
@@ -717,7 +717,7 @@ const ChildDashboard = () => {
                         )}
 
                         {max > 1 && !isProgressTask && (
-                          <span className="text-[10px] font-bold text-gray-400">
+                          <span className="text-[10px] font-bold text-neutral/40">
                             {count}/{max} completed
                           </span>
                         )}
@@ -738,7 +738,7 @@ const ChildDashboard = () => {
 
             {hasMore && (
               <button
-                className="btn btn-ghost btn-sm w-full text-gray-500"
+                className="btn btn-ghost btn-sm w-full text-neutral/50"
                 onClick={() => setVisibleCount(prev => prev + 20)}
               >
                 Load More
@@ -756,10 +756,10 @@ const ChildDashboard = () => {
             onClick={() => setIsYesterdayCollapsed(prev => !prev)}
           >
             <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-gray-100 text-gray-500">
+              <div className="p-1.5 rounded-lg bg-base-200 text-neutral/50">
                 <FaHistory className="w-3.5 h-3.5" />
               </div>
-              <h3 className="text-sm font-bold text-gray-600 uppercase tracking-wide">
+              <h3 className="text-sm font-bold text-neutral/60 uppercase tracking-wide">
                 Yesterday's Unfinished
               </h3>
               <span className="text-[10px] font-black text-white bg-error px-2 py-0.5 rounded-full">
@@ -767,8 +767,8 @@ const ChildDashboard = () => {
               </span>
             </div>
             {isYesterdayCollapsed
-              ? <FaChevronDown className="text-gray-400 w-3 h-3" />
-              : <FaChevronUp className="text-gray-400 w-3 h-3" />
+              ? <FaChevronDown className="text-neutral/40 w-3 h-3" />
+              : <FaChevronUp className="text-neutral/40 w-3 h-3" />
             }
           </button>
 
@@ -797,9 +797,9 @@ const ChildDashboard = () => {
                     status === 'VERIFIED' ? 'border-success' :
                     status === 'PENDING' ? 'border-warning' :
                     status === 'PENDING_EXCUSE' ? 'border-warning' :
-                    status === 'EXCUSED' ? 'border-gray-300' :
+                    status === 'EXCUSED' ? 'border-neutral/20' :
                     status === 'REJECTED' ? 'border-error' :
-                    'border-gray-200'; // MISSED
+                    'border-base-200'; // MISSED
 
                   const iconBg =
                     status === 'VERIFIED' ? 'bg-success/10 text-success' :
@@ -807,15 +807,15 @@ const ChildDashboard = () => {
                     status === 'PENDING_EXCUSE' ? 'bg-warning/10 text-warning' :
                     status === 'EXCUSED' ? 'bg-neutral/10 text-neutral' :
                     status === 'REJECTED' ? 'bg-error/10 text-error' :
-                    'bg-gray-100 text-gray-400'; // MISSED
+                    'bg-base-200 text-neutral/40'; // MISSED
 
                   const badge =
                     status === 'VERIFIED' ? <span className="badge badge-success text-white font-bold p-3">Approved</span> :
                     status === 'PENDING' ? <span className="badge badge-warning text-white font-bold p-3">Pending</span> :
                     status === 'PENDING_EXCUSE' ? <span className="badge badge-warning text-white font-bold p-3">Pending</span> :
-                    status === 'EXCUSED' ? <span className="badge badge-ghost text-gray-500 text-[10px] font-bold">Skipped</span> :
+                    status === 'EXCUSED' ? <span className="badge badge-ghost text-neutral/50 text-[10px] font-bold">Skipped</span> :
                     status === 'REJECTED' ? <span className="badge badge-error text-white text-[10px] font-bold">Rejected</span> :
-                    <span className="badge badge-ghost text-gray-400 text-[10px] font-bold">Unfinished</span>;
+                    <span className="badge badge-ghost text-neutral/40 text-[10px] font-bold">Unfinished</span>;
 
                   return (
                     <div
@@ -825,7 +825,7 @@ const ChildDashboard = () => {
                     >
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         {task.image_url ? (
-                          <div className="w-9 h-9 rounded-full flex-shrink-0 overflow-hidden shadow-sm border border-gray-200 bg-white opacity-90">
+                          <div className="w-9 h-9 rounded-full flex-shrink-0 overflow-hidden shadow-sm border border-base-200 bg-base-100 opacity-90">
                             <img src={task.image_url} alt={task.name} className="w-full h-full object-cover" />
                           </div>
                         ) : (
@@ -842,7 +842,7 @@ const ChildDashboard = () => {
                           </div>
                         )}
                         <div className="min-w-0">
-                          <h4 className="font-semibold text-sm text-gray-600 line-clamp-2 leading-tight break-words">{task.name}</h4>
+                          <h4 className="font-semibold text-sm text-neutral/70 line-clamp-2 leading-tight break-words">{task.name}</h4>
                           <div className="flex flex-col gap-1 mt-0.5">
                             <div className="flex items-center gap-2">
                               {task.reward_value > 0 && (
@@ -860,7 +860,7 @@ const ChildDashboard = () => {
                               {status !== 'PENDING' && status !== 'VERIFIED' && status !== 'PENDING_EXCUSE' && badge}
                             </div>
                             {task.description && (
-                              <p className="text-[10px] text-gray-400 italic line-clamp-1">{task.description}</p>
+                              <p className="text-[10px] text-neutral/40 italic line-clamp-1">{task.description}</p>
                             )}
                           </div>
                         </div>
@@ -873,7 +873,7 @@ const ChildDashboard = () => {
                             {task.total_target_value && task.total_target_value > 1 ? (
                               <div className="flex flex-col items-end gap-1">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-[10px] font-bold text-gray-400">
+                                  <span className="text-[10px] font-bold text-neutral/40">
                                     {latestLog?.current_value || 0}/{task.total_target_value}
                                   </span>
                                   <button
@@ -906,7 +906,7 @@ const ChildDashboard = () => {
                                   Done
                                 </button>
                                 {max > 1 && (
-                                  <span className="text-[10px] font-bold text-gray-400">
+                                  <span className="text-[10px] font-bold text-neutral/40">
                                     {validLogs.length}/{max} completed
                                   </span>
                                 )}
