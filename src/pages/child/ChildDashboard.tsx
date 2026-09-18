@@ -12,6 +12,7 @@ import ExemptionModal from '../../components/modals/ExemptionModal';
 import TaskDetailsModal from '../../components/modals/TaskDetailsModal';
 import { getTaskIconComponent } from '../../utils/icons';
 import { calculateLevelProgress, getMissionXpValue, getNextLevelReward, getTotalXpForChild } from '../../utils/xpUtils';
+import { FEATURE_FLAGS } from '../../config/featureFlags';
 
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -464,33 +465,35 @@ const ChildDashboard = () => {
       </div>
 
       {/* XP & Level */}
-      <div className="card bg-white shadow-md rounded-xl p-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-primary">Level {xpProgress.level}</p>
-            <h3 className="text-lg font-bold text-neutral">{xpProgress.levelName}</h3>
+      {FEATURE_FLAGS.ENABLE_PROGRESS_MENU && (
+        <div className="card bg-white shadow-md rounded-xl p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-primary">Level {xpProgress.level}</p>
+              <h3 className="text-lg font-bold text-neutral">{xpProgress.levelName}</h3>
+            </div>
+            <div className="rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
+              {xpProgress.totalXp} XP
+            </div>
           </div>
-          <div className="rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
-            {xpProgress.totalXp} XP
-          </div>
-        </div>
-        <div className="mt-3">
-          <div className="h-3 w-full overflow-hidden rounded-full bg-base-200">
-            <div
-              className="h-full rounded-full bg-primary transition-all duration-500"
-              style={{ width: `${xpProgress.progressPercent}%` }}
-            />
-          </div>
-          <p className="mt-2 text-xs font-medium text-neutral/50">
-            {xpProgress.xpNeededForNextLevel} XP to Level {xpProgress.level + 1}
-          </p>
-          {nextLevelReward && (
-            <p className="mt-1 text-xs font-bold text-primary">
-              Next unlock: {nextLevelReward.title} at Level {nextLevelReward.level}
+          <div className="mt-3">
+            <div className="h-3 w-full overflow-hidden rounded-full bg-base-200">
+              <div
+                className="h-full rounded-full bg-primary transition-all duration-500"
+                style={{ width: `${xpProgress.progressPercent}%` }}
+              />
+            </div>
+            <p className="mt-2 text-xs font-medium text-neutral/50">
+              {xpProgress.xpNeededForNextLevel} XP to Level {xpProgress.level + 1}
             </p>
-          )}
+            {nextLevelReward && (
+              <p className="mt-1 text-xs font-bold text-primary">
+                Next unlock: {nextLevelReward.title} at Level {nextLevelReward.level}
+              </p>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Edit Child Modal */}
       <EditChildModal

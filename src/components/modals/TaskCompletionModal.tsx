@@ -3,6 +3,7 @@ import { Dialog } from '@headlessui/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { FaStar } from 'react-icons/fa';
 import { PrimaryButton } from '../design-system/PrimaryButton';
+import { FEATURE_FLAGS } from '../../config/featureFlags';
 
 interface TaskCompletionModalProps {
   isOpen: boolean;
@@ -59,14 +60,16 @@ const TaskCompletionModal: React.FC<TaskCompletionModalProps> = ({ isOpen, taskN
                     >
                       +{rewardValue}
                     </motion.div>
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: 0.5, type: 'spring' }}
-                      className="absolute -top-2 -right-3 bg-secondary text-neutral text-xs font-bold px-2 py-1 rounded-full"
-                    >
-                      +{xpValue} XP
-                    </motion.div>
+                    {FEATURE_FLAGS.ENABLE_PROGRESS_MENU && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.5, type: 'spring' }}
+                        className="absolute -top-2 -right-3 bg-secondary text-neutral text-xs font-bold px-2 py-1 rounded-full"
+                      >
+                        +{xpValue} XP
+                      </motion.div>
+                    )}
                   </div>
                 </div>
 
@@ -76,7 +79,7 @@ const TaskCompletionModal: React.FC<TaskCompletionModalProps> = ({ isOpen, taskN
                 <p className="text-gray-500 mb-6">
                   You finished <span className="font-bold text-primary">"{taskName}"</span>.
                   <br />
-                  Ask your parent to approve it to get your {rewardValue} stars and {xpValue} XP!
+                  Ask your parent to approve it to get your {rewardValue} stars{FEATURE_FLAGS.ENABLE_PROGRESS_MENU ? ` and ${xpValue} XP` : ''}!
                 </p>
 
                 <PrimaryButton 
