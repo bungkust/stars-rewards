@@ -283,3 +283,99 @@ export const getPersonalLeagueStatus = (
     progressPercent
   };
 };
+
+export interface DailyXpBar {
+  label: string;
+  xp: number;
+  isToday: boolean;
+  isFuture: boolean;
+}
+
+export interface PastWeekHistory {
+  label: string;
+  weeklyXp: number;
+  tier: string;
+  tierIcon: string;
+}
+
+export const getWeeklyDailyBreakdown = (
+  childId: string,
+  xpTransactions: XpTransaction[],
+  date = new Date()
+): DailyXpBar[] => {
+  const day = date.getDay();
+  const diffToMonday = (day + 6) % 7;
+  const weekStart = new Date(date);
+  weekStart.setHours(0, 0, 0, 0);
+  weekStart.setDate(weekStart.getDate() - diffToMonday);
+
+  const days = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+  const todayIndex = diffToMonday;
+  const dailyTotals = [0, 0, 0, 0, 0, 0, 0];
+
+  xpTransactions
+    .filter(tx => tx.child_id === childId)
+    .forEach(tx => {
+      const txDate = new Date(tx.created_at);
+      const diffMs = txDate.getTime() - weekStart.getTime();
+      const dayOffset = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+      if (dayOffset >= 0 && dayOffset < 7) {
+        dailyTotals[dayOffset] += tx.amount;
+      }
+    });
+
+  return days.map((label, idx) => ({
+    label,
+    xp: dailyTotals[idx],
+    isToday: idx === todayIndex,
+    isFuture: idx > todayIndex
+  }));
+};
+
+export const getPastWeeksHistory = (
+  childId: string,
+  xpTransactions: XpTransaction[],
+  count = 3,
+  now = new Date()
+): PastWeekHistory[] => {
+  const day = now.getDay();
+  const diffToMonday = (day + 6) % 7;
+  const currentWeekStart = new Date(now);
+  currentWeekStart.setHours(0, 0, 0, 0);
+  currentWeekStart.setDate(currentWeekStart.getDate() - diffToMonday);
+
+  const history: PastWeekHistory[] = [];
+
+  for (let i = 1; i <= count; i++) {
+    const weekStart = new Date(currentWeekStart);
+    weekStart.setDate(weekStart.getDate() - (i * 7));
+
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+
+    const weeklyXp = xpTransactions
+      .filter(tx => {
+        if (tx.child_id !== childId) return false;
+        const txDate = new Date(tx.created_at);
+        return txDate >= weekStart && txDate < weekEnd;
+      })
+      .reduce((sum, tx) => sum + tx.amount, 0);
+
+    const currentTierIndex = LEAGUE_TIERS.reduce(
+      (bestIndex, tier, index) => (weeklyXp >= tier.minXp ? index : bestIndex),
+      0
+    );
+    const tier = LEAGUE_TIERS[currentTierIndex];
+
+    const label = i === 1 ? 'Minggu Lalu' : `${i} Minggu Lalu`;
+    history.push({
+      label,
+      weeklyXp,
+      tier: tier.name,
+      tierIcon: tier.icon
+    });
+  }
+
+  return history;
+};
+

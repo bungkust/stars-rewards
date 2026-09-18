@@ -18,8 +18,10 @@ import type { ChildTaskLog, Task, XpTransaction } from '../../types';
 import {
   getDailyQuests,
   getInventoryUnlocks,
+  getPastWeeksHistory,
   getPersonalLeagueStatus,
   getUnlockedAchievements,
+  getWeeklyDailyBreakdown,
   LEAGUE_TIERS,
   type InventoryUnlock
 } from '../../utils/gamificationUtils';
@@ -379,6 +381,12 @@ const ChildProgressDetail = () => {
 
   if (section === 'league') {
     const league = getPersonalLeagueStatus(activeChildId, xpTransactions);
+    const dailyBreakdown = getWeeklyDailyBreakdown(activeChildId, xpTransactions);
+    const pastWeeks = getPastWeeksHistory(activeChildId, xpTransactions, 3);
+    const maxDailyXp = Math.max(20, ...dailyBreakdown.map(d => d.xp));
+    const now = new Date();
+    const daysUntilMonday = 7 - ((now.getDay() + 6) % 7);
+
     return (
       <div className="flex flex-col gap-4">
         <ProgressHeader title="Personal League" subtitle="Kompetisi mingguan melawan target diri sendiri." />
@@ -402,12 +410,15 @@ const ChildProgressDetail = () => {
               <span className="badge badge-warning badge-outline font-bold text-xs">
                 {league.nextTier ? `${league.xpToNextTier} XP lagi ke ${league.nextTier}` : 'Tier Tertinggi! 🌟'}
               </span>
+              <p className="text-[11px] font-semibold text-neutral/50 mt-1">
+                Reset dalam {daysUntilMonday} hari
+              </p>
             </div>
           </div>
 
           <div className="mt-4">
             <div className="flex items-center justify-between text-xs font-bold text-neutral/60 mb-1.5">
-              <span>Progress Tier</span>
+              <span>Progress Menuju {league.nextTier || 'Puncak'}</span>
               <span className="text-primary font-black">{league.progressPercent}%</span>
             </div>
             <div className="h-3 w-full overflow-hidden rounded-full bg-base-200">
@@ -419,9 +430,58 @@ const ChildProgressDetail = () => {
           </div>
         </div>
 
+        {/* Weekly Activity Bar Chart */}
+        <div className="card bg-base-100 p-4 shadow-sm rounded-2xl border border-base-200/80">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <div>
+              <h4 className="text-base font-bold text-neutral">Aktivitas Minggu Ini</h4>
+              <p className="text-xs font-medium text-neutral/50">XP harian Senin s/d Minggu</p>
+            </div>
+            <span className="badge badge-neutral/10 font-bold text-xs px-2.5 py-1 text-neutral/70">
+              Total {league.weeklyXp} XP
+            </span>
+          </div>
+
+          <div className="grid grid-cols-7 gap-2 pt-6 pb-1 items-end h-36">
+            {dailyBreakdown.map((item, idx) => {
+              const heightPercent = item.xp > 0 ? Math.max(16, Math.round((item.xp / maxDailyXp) * 100)) : 8;
+              return (
+                <div key={idx} className="flex flex-col items-center h-full justify-end gap-1.5 group">
+                  <span className={`text-[10px] font-black transition-opacity ${item.xp > 0 ? 'text-primary' : 'text-transparent'}`}>
+                    +{item.xp}
+                  </span>
+                  <div className="w-full max-w-[28px] h-20 bg-base-200/70 rounded-lg flex items-end overflow-hidden p-0.5">
+                    <div
+                      className={`w-full rounded-md transition-all duration-500 ${
+                        item.isToday
+                          ? 'bg-gradient-to-t from-primary to-amber-400 shadow-sm'
+                          : item.xp > 0
+                          ? 'bg-primary/70'
+                          : item.isFuture
+                          ? 'bg-base-200 opacity-30'
+                          : 'bg-base-200'
+                      }`}
+                      style={{ height: `${heightPercent}%` }}
+                    />
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className={`text-xs font-bold ${item.isToday ? 'text-primary font-black' : 'text-neutral/60'}`}>
+                      {item.label}
+                    </span>
+                    {item.isToday && (
+                      <span className="h-1 w-1 rounded-full bg-primary mt-0.5" />
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Tier Roadmap */}
-        <div className="card bg-base-100 p-4 shadow-sm rounded-xl border border-base-200/70">
-          <h4 className="text-base font-bold text-neutral mb-3">Tingkatan League</h4>
+        <div className="card bg-base-100 p-4 shadow-sm rounded-2xl border border-base-200/80">
+          <h4 className="text-base font-bold text-neutral mb-1">Tingkatan League</h4>
+          <p className="text-xs font-medium text-neutral/50 mb-3">Kumpulkan XP setiap minggu untuk naik tingkatan</p>
           <div className="flex flex-col gap-2.5">
             {LEAGUE_TIERS.map(tier => {
               const isCurrentTier = league.tier === tier.name;
@@ -431,7 +491,7 @@ const ChildProgressDetail = () => {
                   key={tier.name}
                   className={`flex items-center justify-between p-3 rounded-xl transition-all ${
                     isCurrentTier
-                      ? 'bg-primary/10 border-2 border-primary/40 shadow-xs'
+                      ? 'bg-primary/10 border-2 border-primary/40 shadow-xs ring-1 ring-primary/20'
                       : isAchieved
                       ? 'bg-base-200/60 border border-base-200'
                       : 'bg-base-100 border border-dashed border-base-300 opacity-60'
@@ -441,16 +501,16 @@ const ChildProgressDetail = () => {
                     <span className="text-2xl select-none">{tier.icon}</span>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-neutral">{tier.name}</span>
+                        <span className="font-bold text-neutral text-sm">{tier.name}</span>
                         {isCurrentTier && (
-                          <span className="badge badge-primary badge-xs font-black text-[10px]">Aktif</span>
+                          <span className="badge badge-primary badge-xs font-black text-[10px] px-2 py-1">Aktif</span>
                         )}
                       </div>
                       <p className="text-xs text-neutral/50 font-medium">{tier.desc}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="text-xs font-bold text-neutral/70">
+                    <span className="text-xs font-black text-neutral/70">
                       {tier.minXp === 0 ? 'Mulai' : `Min. ${tier.minXp} XP`}
                     </span>
                   </div>
@@ -460,13 +520,37 @@ const ChildProgressDetail = () => {
           </div>
         </div>
 
+        {/* Past Weeks History */}
+        <div className="card bg-base-100 p-4 shadow-sm rounded-2xl border border-base-200/80">
+          <h4 className="text-base font-bold text-neutral mb-1">Riwayat Minggu Sebelumnya</h4>
+          <p className="text-xs font-medium text-neutral/50 mb-3">Pencapaian tier pada minggu-minggu lalu</p>
+          <div className="flex flex-col gap-2">
+            {pastWeeks.map((week, idx) => (
+              <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-base-200/50 border border-base-200/70">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl select-none">{week.tierIcon}</span>
+                  <div>
+                    <p className="text-xs font-bold text-neutral">{week.label}</p>
+                    <p className="text-[11px] font-semibold text-neutral/50">Tier {week.tier}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="badge badge-warning badge-outline font-black text-xs">
+                    {week.weeklyXp} XP
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Kid-Friendly League Explainer */}
-        <div className="card bg-base-100 p-4 shadow-sm rounded-xl border border-base-200/70">
+        <div className="card bg-gradient-to-br from-info/10 via-base-100 to-base-100 p-4 shadow-sm rounded-2xl border border-info/20">
           <h4 className="text-sm font-bold text-neutral mb-1.5 flex items-center gap-2">
-            <span>💡</span> Info Personal League
+            <span>💡</span> Cara Kerja Personal League
           </h4>
           <p className="text-xs text-neutral/60 font-medium leading-relaxed">
-            Personal League melacak seberapa aktif kamu menyelesaikan misi setiap minggunya. XP League akan direset otomatis setiap hari Senin, jadi ayo kumpulkan XP sebanyak-banyaknya dan raih Diamond tier!
+            Personal League melacak konsistensi mingguanmu tanpa harus bersaing dengan orang lain. XP League akan direset otomatis setiap Senin pagi, jadi selesaikan misi setiap hari untuk mempertahankan dan meningkatkan tiermu!
           </p>
         </div>
       </div>
