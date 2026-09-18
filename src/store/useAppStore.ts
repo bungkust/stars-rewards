@@ -9,6 +9,7 @@ import { missionLogicService } from '../services/missionLogicService';
 import { getReviewPromptSnoozeDate, shouldShowReviewPrompt, type ReviewPromptChoice, type ReviewPromptTrigger } from '../utils/reviewPromptUtils';
 import { calculateLevelProgress, getLevelRewardsBetween, getTotalXpForChild, type LevelReward } from '../utils/xpUtils';
 import { getClaimableAchievements, getClaimableDailyQuests, getUnlockedAchievements } from '../utils/gamificationUtils';
+import { checkVersionStatus, type VersionCheckResult } from '../services/versionCheckService';
 
 export type OnboardingStep = 'family-setup' | 'parent-setup' | 'add-child' | 'first-task' | 'first-reward' | 'completed';
 
@@ -62,6 +63,19 @@ export interface AppState {
   reviewPromptDismissed: boolean;
   reviewPromptRated: boolean;
   reviewPromptShownTodayCount?: number;
+
+  // Version update state
+  updateModalState: {
+    isOpen: boolean;
+    isForce: boolean;
+    currentVersion: string;
+    latestVersion: string;
+    minVersion: string;
+    releaseNotes?: string;
+    storeUrl?: string;
+  } | null;
+  checkAppVersion: () => Promise<void>;
+  closeUpdateModal: () => void;
   setStreakMilestone: (milestone: { taskName: string; streak: number } | null) => void;
   clearStreakMilestone: () => void;
   clearLevelUpMilestone: () => void;
@@ -168,6 +182,34 @@ export const useAppStore = create<AppState>()(
       reviewPromptDismissed: false,
       reviewPromptRated: false,
       reviewPromptShownTodayCount: 0,
+
+      updateModalState: null,
+      checkAppVersion: async () => {
+        try {
+          const result: VersionCheckResult = await checkVersionStatus();
+          if (result.isForceUpdate || result.isOptionalUpdate) {
+            set({
+              updateModalState: {
+                isOpen: true,
+                isForce: result.isForceUpdate,
+                currentVersion: result.currentVersion,
+                latestVersion: result.latestVersion,
+                minVersion: result.minVersion,
+                releaseNotes: result.releaseNotes,
+                storeUrl: result.storeUrl,
+              }
+            });
+          }
+        } catch (err) {
+          console.warn('Error checking app version:', err);
+        }
+      },
+      closeUpdateModal: () => {
+        const current = get().updateModalState;
+        if (current && !current.isForce) {
+          set({ updateModalState: { ...current, isOpen: false } });
+        }
+      },
       setStreakMilestone: (milestone) => set({ streakMilestone: milestone }),
       clearStreakMilestone: () => set({ streakMilestone: null }),
       clearLevelUpMilestone: () => set({ levelUpMilestone: null }),

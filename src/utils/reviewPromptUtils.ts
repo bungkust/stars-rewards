@@ -36,10 +36,14 @@ export const getVerifiedMissionCount = (state: AppState): number => {
     return state.transactions.filter(transaction => transaction.type === 'TASK_VERIFIED').length;
 };
 
+import { FEATURE_FLAGS } from '../config/featureFlags';
+
 export const shouldShowReviewPrompt = (state: AppState, trigger: ReviewPromptTrigger): boolean => {
+    if (!FEATURE_FLAGS.ENABLE_REVIEW_PROMPT && trigger !== 'manual') return false;
     if (trigger === 'manual') return true;
     if (state.reviewPromptRated || state.reviewPromptDismissed) return false;
     if (state.reviewPromptVisible) return false;
+    if (state.levelUpMilestone || state.streakMilestone || state.updateModalState?.isOpen) return false;
     if (state.onboardingStep !== 'completed') return false;
     if (getFamilyAgeDays(state) < MIN_FAMILY_AGE_DAYS) return false;
 

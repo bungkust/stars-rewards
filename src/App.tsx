@@ -40,11 +40,22 @@ import { notificationService } from './services/notificationService';
 import StreakCelebrationModal from './components/modals/StreakCelebrationModal';
 import ReviewPromptModal from './components/modals/ReviewPromptModal';
 import LevelUpModal from './components/modals/LevelUpModal';
+import ForceUpdateModal from './components/modals/ForceUpdateModal';
 import { browserService } from './services/browserService';
 import { getReviewUrl } from './utils/reviewPromptUtils';
 
 function App() {
-  const { activeChildId, setActiveChild, isAdminMode, onboardingStep, userProfile, refreshData, fetchUserProfile, requestReviewPrompt } = useAppStore();
+  const {
+    activeChildId,
+    setActiveChild,
+    isAdminMode,
+    onboardingStep,
+    userProfile,
+    refreshData,
+    fetchUserProfile,
+    requestReviewPrompt,
+    checkAppVersion
+  } = useAppStore();
   const [isChildSelectorOpen, setIsChildSelectorOpen] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
@@ -58,9 +69,12 @@ function App() {
       if (Capacitor.isNativePlatform()) {
         notificationService.init();
       }
+
+      // Check app version status
+      await checkAppVersion();
     };
     initAuth();
-  }, [fetchUserProfile]);
+  }, [fetchUserProfile, checkAppVersion]);
 
   // Simplified Auth Check: Just check if we have a local user profile
   const isAuthenticated = !!userProfile;
@@ -88,6 +102,7 @@ function App() {
         if (isActive && isAuthenticated) {
           console.log('App resumed, refreshing data...');
           refreshData();
+          checkAppVersion();
           requestReviewPrompt('app_launch');
         }
       });
@@ -189,7 +204,17 @@ const ParentRoute = ({ children }: { children: ReactNode }) => {
 
 const AnimatedRoutes = () => {
   const location = useLocation();
-  const { isAdminMode, streakMilestone, clearStreakMilestone, levelUpMilestone, clearLevelUpMilestone, reviewPromptVisible, closeReviewPrompt } = useAppStore();
+  const {
+    isAdminMode,
+    streakMilestone,
+    clearStreakMilestone,
+    levelUpMilestone,
+    clearLevelUpMilestone,
+    reviewPromptVisible,
+    closeReviewPrompt,
+    updateModalState,
+    closeUpdateModal
+  } = useAppStore();
 
   const handleRateNow = async () => {
     closeReviewPrompt('rated');
@@ -355,15 +380,36 @@ const AnimatedRoutes = () => {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AnimatePresence>
+      {/* Force / Optional Update Modal */}
+      {updateModalState && (
+        <ForceUpdateModal
+          isOpen={updateModalState.isOpen}
+          isForce={updateModalState.isForce}
+          currentVersion={updateModalState.currentVersion}
+          latestVersion={updateModalState.latestVersion}
+          releaseNotes={updateModalState.releaseNotes}
+          storeUrl={updateModalState.storeUrl}
+          onClose={closeUpdateModal}
+        />
+      )}
+
       {/* Streak Celebration (Hidden for now) */}
       {false && <StreakCelebrationModal milestone={streakMilestone} onClose={clearStreakMilestone} />}
-      <LevelUpModal milestone={levelUpMilestone} onClose={clearLevelUpMilestone} />
-      <ReviewPromptModal
-        isOpen={reviewPromptVisible}
-        onRateNow={handleRateNow}
-        onMaybeLater={() => closeReviewPrompt('later')}
-        onNoThanks={() => closeReviewPrompt('dismissed')}
-      />
+
+      {/* Level Up Modal (Priority 2) - Only shown if no Force Update */}
+      {!updateModalState?.isForce && (
+        <LevelUpModal milestone={levelUpMilestone} onClose={clearLevelUpMilestone} />
+      )}
+
+      {/* Review Prompt Modal (Priority 4) - Only shown if no higher-priority modal active */}
+      {!updateModalState?.isForce && !levelUpMilestone && (
+        <ReviewPromptModal
+          isOpen={reviewPromptVisible}
+          onRateNow={handleRateNow}
+          onMaybeLater={() => closeReviewPrompt('later')}
+          onNoThanks={() => closeReviewPrompt('dismissed')}
+        />
+      )}
     </>
   );
 };
