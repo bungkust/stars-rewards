@@ -1,0 +1,11 @@
+# Taste Profile
+- Prefers pure MD3 (Material Design 3) implementation over daisyUI — no mixing of daisyUI classes with MD3 tokens. Confidence: 0.95
+- Uses CSS custom properties for theming (MD3 token format: `--md-sys-color-*`). Confidence: 0.95
+- Converts brand colors to full MD3 color roles (primary, on-primary, primary-container, on-primary-container, etc.). Confidence: 0.9
+- Two theme variants via `data-theme` attribute: `childTheme` (bright/playful: #38BDF8 primary) and `parentTheme` (warm/earthy: #ABC270 primary). Confidence: 0.9
+- MD3 component utility classes over daisyUI: `.md-filled-button`, `.md-outlined-button`, `.md-tonal-button`, `.md-fab`, `.md-card`, `.md-chip`, `.md-app-bar`, `.md-bottom-nav`, `.md-dialog`, `.md-text-field`, `.md-elevation-1` through `5`. Confidence: 0.9
+- Communicates in casual Indonesian/Malay mixed language (e.g., "km get palet collor nya, trus di implementasi pake md3"). Confidence: 0.85
+- Design system components in `src/components/design-system/` with barrel export via `index.ts`. Confidence: 0.8
+- Layout components (Header, BottomNav, Layout) separated from design-system primitives. Confidence: 0.8
+- Framer Motion for animations with MD3 emphasized easing curve `[0.2, 0, 0, 1]`. Confidence: 0.75
+- Uses multiple AI coding agents beyond Claude Code, including Antigravity and Gemini CLI — values cross-agent tool compatibility. Confidence: 0.75

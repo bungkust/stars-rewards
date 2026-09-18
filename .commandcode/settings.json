@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Shell(git:*)",
+      "Shell(npm:*)",
+      "Shell(brew:*)",
+      "Shell(rtk:*)",
+      "Shell(cat > ~/.claude/settings.json << 'EOF' { \"theme\": \"dark\", \"hooks\": { \"PreToolUse\": [{ \"matcher\": \"Bash\", \"hooks\": [{ \"type\": \"command\", \"command\": \"rtk hook claude\" }] }]} } EOF)",
+      "Shell(npx skills add JuliusBrussee/caveman -g)",
+      "Shell(claude:*)"
+    ],
+    "deny": [],
+    "defaultMode": "default"
+  }
+}
