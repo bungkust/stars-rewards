@@ -67,11 +67,11 @@ const ACHIEVEMENTS: AchievementDefinition[] = [
   { id: 'progress-five', title: 'Progress Builder', description: 'Finish 5 progress missions.', icon: '📈', xpReward: 25, starReward: 5 }
 ];
 
-const LEAGUE_TIERS = [
-  { name: 'Bronze', minXp: 0 },
-  { name: 'Silver', minXp: 75 },
-  { name: 'Gold', minXp: 175 },
-  { name: 'Diamond', minXp: 350 }
+export const LEAGUE_TIERS = [
+  { name: 'Bronze', minXp: 0, icon: '🥉', desc: 'Pemula semangat baru' },
+  { name: 'Silver', minXp: 75, icon: '🥈', desc: 'Konsistensi mulai terbentuk' },
+  { name: 'Gold', minXp: 175, icon: '🥇', desc: 'Kebiasaan makin mantap' },
+  { name: 'Diamond', minXp: 350, icon: '💎', desc: 'Bintang kebiasaan sejati' }
 ];
 
 const getVerifiedLogsForChild = (logs: ChildTaskLog[], childId: string) =>

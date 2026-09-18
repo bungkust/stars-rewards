@@ -4,8 +4,8 @@ import {
   ClockCounterClockwise,
   Lightning,
   Medal,
-  Star,
   Sparkle,
+  Star,
   Trophy
 } from '@phosphor-icons/react';
 import type { ReactNode } from 'react';
@@ -44,7 +44,7 @@ const SummaryCard = ({
   <button
     type="button"
     onClick={onClick}
-    className="card w-full bg-base-100 p-4 text-left shadow-sm rounded-xl transition-transform active:scale-[0.99]"
+    className="card w-full bg-base-100 p-4 text-left shadow-sm rounded-xl transition-transform active:scale-[0.99] border border-base-200/70"
   >
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0">
@@ -84,25 +84,141 @@ const GamificationPanel = ({ childId, logs, tasks, xpTransactions, transactions 
   const claimableStars = claimableAchievementRewards.reduce((total, achievement) => total + achievement.starReward, 0);
   const latestXp = xpTransactions.filter(tx => tx.child_id === childId)[0];
 
+  const activeStreaks = tasks
+    .filter(t => (t.current_streak || 0) > 0)
+    .sort((a, b) => (b.current_streak || 0) - (a.current_streak || 0));
+  const bestStreakEver = tasks.reduce(
+    (best, t) => Math.max(best, t.best_streak || t.current_streak || 0),
+    0
+  );
+
   return (
     <div className="flex flex-col gap-4">
-      {nextUnlock && (
-        <SummaryCard
-          title="Next Unlock"
-          subtitle="Keep going to open a new reward"
-          icon={<Sparkle className="h-5 w-5" weight="fill" />}
-          onClick={() => navigate('/child/progress/unlocks')}
-        >
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-            <p className="truncate text-base font-bold text-neutral">{nextUnlock.title}</p>
-            <p className="text-xs font-bold text-neutral/50">Level {nextUnlock.level} - {xpToNextUnlock} XP left</p>
+      {/* 1. Level Hero Card (MD3 Elevated Tonal Surface) */}
+      <div className="card w-full bg-gradient-to-br from-primary/15 via-primary/5 to-base-100 border border-primary/20 p-5 shadow-sm rounded-2xl">
+        {/* Top Row: Level Badge & Title */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3.5">
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary text-white shadow-md shadow-primary/25 font-black text-xl">
+              {levelProgress.level}
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-xl font-black text-neutral">Level {levelProgress.level}</h3>
+                <span className="badge badge-primary font-bold text-xs">
+                  {levelProgress.levelName}
+                </span>
+              </div>
+              <p className="text-xs font-semibold text-neutral/60 mt-0.5">
+                {totalXp.toLocaleString()} Total XP
+              </p>
+            </div>
           </div>
-          <span className="badge badge-warning badge-outline font-bold">Lv {nextUnlock.level}</span>
+          {nextUnlock && (
+            <button
+              type="button"
+              onClick={() => navigate('/child/progress/unlocks')}
+              className="btn btn-xs btn-ghost gap-1 font-bold text-primary hover:bg-primary/10 rounded-lg shrink-0"
+            >
+              <Sparkle className="h-3.5 w-3.5" weight="fill" />
+              Hadiah
+              <CaretRight className="h-3 w-3" weight="bold" />
+            </button>
+          )}
         </div>
-      </SummaryCard>
-      )}
 
+        {/* XP Progress Bar */}
+        <div className="mt-4">
+          <div className="flex items-center justify-between text-xs font-bold text-neutral/70 mb-1.5">
+            <span>Lv {levelProgress.level} ({levelProgress.xpIntoLevel} XP)</span>
+            <span className="text-primary font-black">{levelProgress.progressPercent}%</span>
+            <span>Lv {levelProgress.level + 1} ({levelProgress.xpNeededForNextLevel} XP)</span>
+          </div>
+          <div className="h-3 w-full overflow-hidden rounded-full bg-base-200 p-0.5 border border-primary/10">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-primary via-primary to-secondary transition-all duration-500"
+              style={{ width: `${Math.min(100, Math.max(0, levelProgress.progressPercent))}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Next Unlock Preview Banner */}
+        {nextUnlock && (
+          <div
+            onClick={() => navigate('/child/progress/unlocks')}
+            className="mt-3.5 flex items-center justify-between gap-3 p-3 rounded-xl bg-base-100/90 border border-primary/15 hover:border-primary/30 transition-all cursor-pointer shadow-xs"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-warning/15 text-warning">
+                <Sparkle className="h-4 w-4" weight="fill" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-neutral truncate">
+                  Unlock Berikutnya: <span className="text-primary">{nextUnlock.title}</span>
+                </p>
+                <p className="text-[11px] font-medium text-neutral/50">
+                  {xpToNextUnlock} XP lagi menuju Level {nextUnlock.level}
+                </p>
+              </div>
+            </div>
+            <span className="badge badge-warning badge-outline font-bold text-[10px] shrink-0">
+              Lv {nextUnlock.level}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* 2. Active Streaks Card */}
+      <div className="card w-full bg-base-100 p-4 text-left shadow-sm rounded-xl border border-base-200/70">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-bold text-neutral">Active Streaks</h3>
+              <span className="text-base select-none">🔥</span>
+            </div>
+            <p className="mt-0.5 text-sm font-medium text-neutral/60">Konsistensi misi harianmu</p>
+          </div>
+          <div className="badge badge-warning/20 border-warning/30 text-warning font-bold text-xs px-2.5 py-2 flex items-center gap-1 rounded-lg shrink-0">
+            <span>🏆 Rekor:</span>
+            <span className="font-black text-neutral">{bestStreakEver} hari</span>
+          </div>
+        </div>
+
+        <div className="mt-3.5">
+          {activeStreaks.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {activeStreaks.slice(0, 3).map(task => (
+                <div
+                  key={task.id}
+                  className="flex items-center justify-between p-2.5 rounded-xl bg-base-200/50 hover:bg-base-200/80 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="text-lg select-none">🔥</span>
+                    <span className="text-sm font-bold text-neutral truncate">{task.name}</span>
+                  </div>
+                  <span className="badge badge-warning font-black text-xs px-2.5 py-1 shrink-0">
+                    {task.current_streak} hari
+                  </span>
+                </div>
+              ))}
+              {activeStreaks.length > 3 && (
+                <p className="text-xs font-semibold text-neutral/50 text-center mt-1">
+                  +{activeStreaks.length - 3} misi streak aktif lainnya
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-base-200/40 border border-dashed border-base-300">
+              <span className="text-2xl select-none">🔥</span>
+              <p className="text-xs font-medium text-neutral/60 leading-relaxed">
+                Belum ada streak aktif hari ini. Selesaikan misimu untuk menyalakan api konsistensi!
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 3. Daily Quests Card */}
       <SummaryCard
         title="Daily Quests"
         subtitle="Finish small goals to reach unlocks faster"
@@ -127,11 +243,13 @@ const GamificationPanel = ({ childId, logs, tasks, xpTransactions, transactions 
         </div>
       </SummaryCard>
 
+      {/* 4. Personal League & Rewards Shelf Grid */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <SummaryCard
           title="Personal League"
           subtitle="A weekly target against your own progress"
           icon={<Trophy className="h-5 w-5" weight="fill" />}
+          onClick={() => navigate('/child/progress/league')}
         >
           <div className="flex items-end justify-between gap-3">
             <div>
@@ -166,6 +284,7 @@ const GamificationPanel = ({ childId, logs, tasks, xpTransactions, transactions 
         </SummaryCard>
       </div>
 
+      {/* 5. Achievements Card */}
       <SummaryCard
         title="Achievements"
         subtitle="Milestones can be claimed for Stars"
@@ -184,6 +303,7 @@ const GamificationPanel = ({ childId, logs, tasks, xpTransactions, transactions 
         </div>
       </SummaryCard>
 
+      {/* 6. XP History Card */}
       <SummaryCard
         title="XP History"
         subtitle="Know which actions moved the level"
