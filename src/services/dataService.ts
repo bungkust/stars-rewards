@@ -121,6 +121,15 @@ export const dataService = {
     return localStorageService.fetchXpTransactions();
   },
 
+  awardXpTransaction: async (
+    childId: string,
+    amount: number,
+    type: XpTransaction['type'],
+    referenceId: string
+  ): Promise<XpTransaction | null> => {
+    return localStorageService.awardXpTransaction(childId, amount, type, referenceId);
+  },
+
   /**
    * Retrieves all reward redemption history for the family.
    */
@@ -212,6 +221,10 @@ export const dataService = {
    */
   manualAdjustment: async (_parentId: string, childId: string, amount: number, reason?: string): Promise<CoinTransaction | null> => {
     return localStorageService.manualAdjustment(childId, amount, reason);
+  },
+
+  awardAchievementStars: async (childId: string, achievementId: string, amount: number, title: string): Promise<CoinTransaction | null> => {
+    return localStorageService.awardAchievementStars(childId, achievementId, amount, title);
   },
 
   /**

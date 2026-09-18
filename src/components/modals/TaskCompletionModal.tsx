@@ -8,10 +8,11 @@ interface TaskCompletionModalProps {
   isOpen: boolean;
   taskName: string;
   rewardValue: number;
+  xpValue: number;
   onClose: () => void;
 }
 
-const TaskCompletionModal: React.FC<TaskCompletionModalProps> = ({ isOpen, taskName, rewardValue, onClose }) => {
+const TaskCompletionModal: React.FC<TaskCompletionModalProps> = ({ isOpen, taskName, rewardValue, xpValue, onClose }) => {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -58,6 +59,14 @@ const TaskCompletionModal: React.FC<TaskCompletionModalProps> = ({ isOpen, taskN
                     >
                       +{rewardValue}
                     </motion.div>
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.5, type: 'spring' }}
+                      className="absolute -top-2 -right-3 bg-secondary text-neutral text-xs font-bold px-2 py-1 rounded-full"
+                    >
+                      +{xpValue} XP
+                    </motion.div>
                   </div>
                 </div>
 
@@ -67,7 +76,7 @@ const TaskCompletionModal: React.FC<TaskCompletionModalProps> = ({ isOpen, taskN
                 <p className="text-gray-500 mb-6">
                   You finished <span className="font-bold text-primary">"{taskName}"</span>.
                   <br />
-                  Ask your parent to approve it to get your stars!
+                  Ask your parent to approve it to get your {rewardValue} stars and {xpValue} XP!
                 </p>
 
                 <PrimaryButton 
@@ -88,4 +97,3 @@ const TaskCompletionModal: React.FC<TaskCompletionModalProps> = ({ isOpen, taskN
 };
 
 export default TaskCompletionModal;
-

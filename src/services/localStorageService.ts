@@ -269,6 +269,7 @@ export const localStorageService = {
             parent_id: 'local-user',
             name: task.name,
             reward_value: task.reward_value,
+            xp_reward: task.xp_reward,
             type: task.type,
             recurrence_rule: task.recurrence_rule,
             is_active: task.is_active !== undefined ? task.is_active : true,
@@ -803,6 +804,38 @@ export const localStorageService = {
         return newTx;
     },
 
+    awardAchievementStars: async (childId: string, achievementId: string, amount: number, title: string): Promise<CoinTransaction | null> => {
+        if (amount <= 0) return null;
+        const db = getDB();
+        const childIndex = db.children.findIndex(c => c.id === childId);
+        if (childIndex === -1) return null;
+
+        const referenceId = `achievement:${achievementId}`;
+        const existing = db.transactions.some(transaction =>
+            transaction.child_id === childId &&
+            transaction.type === 'MANUAL_ADJ' &&
+            transaction.reference_id === referenceId
+        );
+        if (existing) return null;
+
+        db.children[childIndex].current_balance = (db.children[childIndex].current_balance || 0) + amount;
+
+        const newTx: CoinTransaction = {
+            id: generateId(),
+            parent_id: 'local-user',
+            child_id: childId,
+            amount,
+            type: 'MANUAL_ADJ',
+            reference_id: referenceId,
+            description: `Achievement reward: ${title}`,
+            created_at: new Date().toISOString()
+        };
+        db.transactions.push(newTx);
+
+        saveDB(db);
+        return newTx;
+    },
+
     fetchTransactions: async (): Promise<CoinTransaction[]> => {
         const db = getDB();
         return db.transactions.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 10000);
@@ -814,6 +847,38 @@ export const localStorageService = {
             saveDB(db);
         }
         return db.xp_transactions.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 10000);
+    },
+
+    awardXpTransaction: async (
+        childId: string,
+        amount: number,
+        type: XpTransaction['type'],
+        referenceId: string
+    ): Promise<XpTransaction | null> => {
+        if (amount <= 0) return null;
+        const db = getDB();
+        const childExists = db.children.some(child => child.id === childId);
+        if (!childExists) return null;
+
+        const existing = db.xp_transactions.find(tx =>
+            tx.child_id === childId &&
+            tx.type === type &&
+            tx.reference_id === referenceId
+        );
+        if (existing) return null;
+
+        const newTx: XpTransaction = {
+            id: generateId(),
+            parent_id: 'local-user',
+            child_id: childId,
+            amount,
+            type,
+            reference_id: referenceId,
+            created_at: new Date().toISOString()
+        };
+        db.xp_transactions.push(newTx);
+        saveDB(db);
+        return newTx;
     },
 
     // --- Backup / Restore ---
@@ -881,6 +946,7 @@ export const localStorageService = {
                 type: t.type || 'ONE_TIME',
                 assigned_to: t.assigned_to || [],
                 recurrence_rule: t.recurrence_rule ?? undefined,
+                xp_reward: t.xp_reward ?? undefined,
                 is_active: t.is_active ?? undefined,
                 created_at: t.created_at ?? undefined,
                 category_id: t.category_id ?? undefined,
@@ -989,11 +1055,15 @@ export const localStorageService = {
         if (tx.type === 'TASK_VERIFIED' && tx.reference_id) {
             // Revert log status to PENDING
             const logIndex = db.logs.findIndex(l => l.id === tx.reference_id);
+            const questDate = logIndex !== -1
+                ? getLocalDateString(new Date(db.logs[logIndex].verified_at || db.logs[logIndex].completed_at))
+                : getLocalDateString(new Date(tx.created_at));
             if (logIndex !== -1) {
                 db.logs[logIndex].status = 'PENDING';
             }
             db.xp_transactions = db.xp_transactions.filter(xp =>
-                !(xp.type === 'MISSION_APPROVED' && xp.reference_id === tx.reference_id && xp.child_id === tx.child_id)
+                !(xp.type === 'MISSION_APPROVED' && xp.reference_id === tx.reference_id && xp.child_id === tx.child_id) &&
+                !(xp.type === 'DAILY_QUEST' && xp.child_id === tx.child_id && xp.reference_id?.startsWith(`${questDate}:`))
             );
         }
 
@@ -1006,9 +1076,16 @@ export const localStorageService = {
     deleteChildLog: async (logId: string): Promise<boolean> => {
         const db = getDB();
         const initialLength = db.logs.length;
+        const removedLog = db.logs.find(l => l.id === logId);
         db.logs = db.logs.filter(l => l.id !== logId);
         if (db.logs.length !== initialLength) {
-            db.xp_transactions = db.xp_transactions.filter(xp => xp.reference_id !== logId);
+            const questDate = removedLog
+                ? getLocalDateString(new Date(removedLog.verified_at || removedLog.completed_at))
+                : null;
+            db.xp_transactions = db.xp_transactions.filter(xp =>
+                xp.reference_id !== logId &&
+                !(questDate && xp.type === 'DAILY_QUEST' && xp.child_id === removedLog?.child_id && xp.reference_id?.startsWith(`${questDate}:`))
+            );
             saveDB(db);
             return true;
         }

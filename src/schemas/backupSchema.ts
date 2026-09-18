@@ -14,6 +14,7 @@ export const taskSchema = z.object({
     parent_id: z.string(),
     name: z.string(),
     reward_value: z.number(),
+    xp_reward: z.number().nullish(),
     type: z.enum(['ONE_TIME', 'RECURRING']).nullish(),
     recurrence_rule: z.string().nullish(),
     is_active: z.boolean().nullish(),

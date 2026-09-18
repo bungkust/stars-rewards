@@ -14,6 +14,8 @@ import Rewards from './pages/Rewards';
 import Stats from './pages/Stats';
 import ClaimedRewardsHistory from './pages/child/ClaimedRewardsHistory';
 import ChildHistory from './pages/child/ChildHistory';
+import ChildProgress from './pages/child/ChildProgress';
+import ChildProgressDetail from './pages/child/ChildProgressDetail';
 import Settings from './pages/settings/Settings';
 import AddChild from './pages/onboarding/AddChild';
 import AddChildSettings from './pages/settings/AddChildSettings';
@@ -37,6 +39,7 @@ import ChildSelector from './components/ChildSelector';
 import { notificationService } from './services/notificationService';
 import StreakCelebrationModal from './components/modals/StreakCelebrationModal';
 import ReviewPromptModal from './components/modals/ReviewPromptModal';
+import LevelUpModal from './components/modals/LevelUpModal';
 import { browserService } from './services/browserService';
 import { getReviewUrl } from './utils/reviewPromptUtils';
 
@@ -186,7 +189,7 @@ const ParentRoute = ({ children }: { children: ReactNode }) => {
 
 const AnimatedRoutes = () => {
   const location = useLocation();
-  const { isAdminMode, streakMilestone, clearStreakMilestone, reviewPromptVisible, closeReviewPrompt } = useAppStore();
+  const { isAdminMode, streakMilestone, clearStreakMilestone, levelUpMilestone, clearLevelUpMilestone, reviewPromptVisible, closeReviewPrompt } = useAppStore();
 
   const handleRateNow = async () => {
     closeReviewPrompt('rated');
@@ -262,6 +265,16 @@ const AnimatedRoutes = () => {
           <Route path="/child/stats" element={
             <PageTransition>
               <Stats />
+            </PageTransition>
+          } />
+          <Route path="/child/progress" element={
+            <PageTransition>
+              <ChildProgress />
+            </PageTransition>
+          } />
+          <Route path="/child/progress/:section" element={
+            <PageTransition>
+              <ChildProgressDetail />
             </PageTransition>
           } />
           <Route path="/child/claimed-rewards" element={
@@ -344,6 +357,7 @@ const AnimatedRoutes = () => {
       </AnimatePresence>
       {/* Streak Celebration (Hidden for now) */}
       {false && <StreakCelebrationModal milestone={streakMilestone} onClose={clearStreakMilestone} />}
+      <LevelUpModal milestone={levelUpMilestone} onClose={clearLevelUpMilestone} />
       <ReviewPromptModal
         isOpen={reviewPromptVisible}
         onRateNow={handleRateNow}

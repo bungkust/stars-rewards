@@ -8,22 +8,23 @@ import { generateRRule, WEEKDAYS } from '../../utils/recurrence';
 import { ICON_MAP, TASK_ICONS } from '../../utils/icons';
 import type { RecurrenceOptions } from '../../utils/recurrence';
 import { convertToWebP } from '../../utils/imageUtils';
+import { getDefaultMissionXpValue } from '../../utils/xpUtils';
 
 const DIFFICULTY_PRESETS = [
-  { label: 'MILESTONE', value: 0, desc: 'No Star Reward (Trigger for Milestone)', color: 'bg-gradient-to-br from-gray-50 to-gray-100 text-gray-600 border-gray-200' },
-  { label: 'EASY', value: 5, desc: 'Quick daily win (e.g., Brush teeth)', color: 'bg-gradient-to-br from-green-50 to-green-100 text-green-600 border-green-200' },
-  { label: 'MEDIUM', value: 10, desc: 'Daily responsibility (e.g., Make bed)', color: 'bg-gradient-to-br from-blue-50 to-blue-100 text-blue-600 border-blue-200' },
-  { label: 'HARD', value: 15, desc: 'Habit formation (e.g., Practice music)', color: 'bg-gradient-to-br from-purple-50 to-purple-100 text-purple-600 border-purple-200' },
-  { label: 'SPECIAL', value: 25, desc: 'One-off project (e.g., Wash car)', color: 'bg-gradient-to-br from-amber-50 to-amber-100 text-amber-600 border-amber-200' },
+  { label: 'MILESTONE', value: 0, xp: 5, desc: 'No Star Reward (Trigger for Milestone)', color: 'bg-gradient-to-br from-gray-50 to-gray-100 text-gray-600 border-gray-200' },
+  { label: 'EASY', value: 5, xp: 10, desc: 'Quick daily win (e.g., Brush teeth)', color: 'bg-gradient-to-br from-green-50 to-green-100 text-green-600 border-green-200' },
+  { label: 'MEDIUM', value: 10, xp: 10, desc: 'Daily responsibility (e.g., Make bed)', color: 'bg-gradient-to-br from-blue-50 to-blue-100 text-blue-600 border-blue-200' },
+  { label: 'HARD', value: 15, xp: 15, desc: 'Habit formation (e.g., Practice music)', color: 'bg-gradient-to-br from-purple-50 to-purple-100 text-purple-600 border-purple-200' },
+  { label: 'SPECIAL', value: 25, xp: 20, desc: 'One-off project (e.g., Wash car)', color: 'bg-gradient-to-br from-amber-50 to-amber-100 text-amber-600 border-amber-200' },
 ];
 
 const TASK_TEMPLATES = [
-  { title: 'Brush Teeth', reward: 5 },
-  { title: 'Make Bed', reward: 10 },
-  { title: 'Homework', reward: 15 },
-  { title: 'Clean Room', reward: 20 },
-  { title: 'Help at Home', reward: 10 },
-  { title: 'Read a Book', reward: 15 },
+  { title: 'Brush Teeth', reward: 5, xp: 10 },
+  { title: 'Make Bed', reward: 10, xp: 10 },
+  { title: 'Homework', reward: 15, xp: 10 },
+  { title: 'Clean Room', reward: 20, xp: 10 },
+  { title: 'Help at Home', reward: 10, xp: 10 },
+  { title: 'Read a Book', reward: 15, xp: 10 },
 ];
 
 const removeEmojis = (str: string) => str.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '');
@@ -35,6 +36,7 @@ const FirstTask = () => {
   const [title, setTitle] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [reward, setReward] = useState(10);
+  const [xpReward, setXpReward] = useState(10);
   const [expiryTime, setExpiryTime] = useState('');
   const [repetition, setRepetition] = useState('Daily');
   const [selectedChildIds, setSelectedChildIds] = useState<string[]>([]);
@@ -112,6 +114,7 @@ const FirstTask = () => {
       name: title,
       category_id: categoryId,
       reward_value: Number(reward),
+      xp_reward: Number(xpReward),
       type: (finalRule === 'Once' ? 'ONE_TIME' : 'RECURRING') as "ONE_TIME" | "RECURRING",
       recurrence_rule: finalRule,
       is_active: true,
@@ -134,6 +137,7 @@ const FirstTask = () => {
         name: 'Setup Profile 🚀',
         category_id: categories[0].id,
         reward_value: 10,
+        xp_reward: 10,
         type: 'ONE_TIME',
         recurrence_rule: 'Once',
         is_active: true,
@@ -146,7 +150,7 @@ const FirstTask = () => {
     navigate('/onboarding/first-reward');
   };
 
-  const isFormValid = title.trim().length > 0 && categoryId && selectedChildIds.length > 0 && reward >= 0 && (!isProgressTask || (targetValue > 0 && targetUnit.trim().length > 0));
+  const isFormValid = title.trim().length > 0 && categoryId && selectedChildIds.length > 0 && reward >= 0 && xpReward >= 0 && (!isProgressTask || (targetValue > 0 && targetUnit.trim().length > 0));
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center app-gradient p-6 py-12">
@@ -185,7 +189,7 @@ const FirstTask = () => {
                   <button
                     key={t.title}
                     type="button"
-                    onClick={() => { setTitle(t.title); setReward(t.reward); }}
+                    onClick={() => { setTitle(t.title); setReward(t.reward); setXpReward(t.xp); }}
                     className="group relative flex items-center justify-between w-full px-3 py-2 bg-white border-2 border-gray-100 rounded-xl text-xs font-bold text-gray-700 hover:border-primary hover:bg-primary/5 transition-all shadow-sm active:scale-95 text-left"
                   >
                     <span className="line-clamp-2 leading-tight mr-1">{t.title}</span> 
@@ -303,13 +307,19 @@ const FirstTask = () => {
               <ToggleButton
                 label="Simple (Checklist)"
                 isActive={!isProgressTask}
-                onClick={() => setIsProgressTask(false)}
+                onClick={() => {
+                  setIsProgressTask(false);
+                  setXpReward(getDefaultMissionXpValue(false));
+                }}
                 className="flex-1"
               />
               <ToggleButton
                 label="Progress (Target)"
                 isActive={isProgressTask}
-                onClick={() => setIsProgressTask(true)}
+                onClick={() => {
+                  setIsProgressTask(true);
+                  setXpReward(getDefaultMissionXpValue(true));
+                }}
                 className="flex-1"
               />
             </div>
@@ -354,7 +364,10 @@ const FirstTask = () => {
                 <button
                   key={preset.label}
                   type="button"
-                  onClick={() => setReward(preset.value)}
+                  onClick={() => {
+                    setReward(preset.value);
+                    setXpReward(preset.xp);
+                  }}
                   className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all duration-200 ${reward === preset.value
                     ? `border-current ${preset.color.split(' ')[1]} bg-white shadow-sm ring-1 ring-current`
                     : 'border-transparent bg-gray-50 hover:bg-gray-100 text-gray-400'
@@ -366,6 +379,7 @@ const FirstTask = () => {
                   <span className={`text-lg font-black ${reward === preset.value ? 'text-primary' : 'text-gray-300'}`}>
                     {preset.value}
                   </span>
+                  <span className="text-[10px] font-bold text-gray-400">{preset.xp} XP</span>
                 </button>
               ))}
             </div>
@@ -392,6 +406,21 @@ const FirstTask = () => {
               />
             </div>
 
+            <div className="form-control w-full">
+              <label className="label">
+                <span className="label-text font-bold">XP Reward</span>
+              </label>
+              <input
+                type="number"
+                className="input input-bordered w-full rounded-xl"
+                value={xpReward}
+                onChange={(e) => setXpReward(Number(e.target.value))}
+                min={0}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
             <div className="form-control w-full">
               <label className="label">
                 <span className="label-text font-bold">Expired Time</span>

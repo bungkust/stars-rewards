@@ -6,6 +6,7 @@ import { H1Header } from '../../components/design-system/H1Header';
 import RejectionReasonModal from '../../components/modals/RejectionReasonModal';
 import VerificationSuccessModal from '../../components/modals/VerificationSuccessModal';
 import StarAdjustmentModal from '../../components/modals/StarAdjustmentModal';
+import { getMissionXpValue } from '../../utils/xpUtils';
 
 
 
@@ -19,7 +20,8 @@ const AdminDashboard = () => {
 
   const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
   const [selectedChild, setSelectedChild] = useState<{ id: string, name: string, balance: number } | null>(null);
-  const [successType, setSuccessType] = useState<'approve' | 'reject'>('approve');
+  const [successType, setSuccessType] = useState<'approve' | 'reject' | 'excuse'>('approve');
+  const [successReward, setSuccessReward] = useState<{ stars: number; xp: number }>({ stars: 0, xp: 0 });
 
   const verifications = pendingVerifications || [];
   const excuses = getPendingExcuses() || [];
@@ -48,9 +50,13 @@ const AdminDashboard = () => {
   ];
 
   const handleApprove = async (logId: string, childId: string, rewardValue: number) => {
+    const log = pendingVerifications.find(item => item.id === logId);
+    const task = log ? tasks.find(item => item.id === log.task_id) : undefined;
+    const xpValue = getMissionXpValue(task);
     const { error } = await verifyTask(logId, childId, rewardValue);
     if (!error) {
       setSuccessType('approve');
+      setSuccessReward({ stars: rewardValue, xp: xpValue });
       setSuccessModalOpen(true);
     }
   };
@@ -58,7 +64,8 @@ const AdminDashboard = () => {
   const handleApproveExcuse = async (logId: string) => {
     const { error } = await approveExemption(logId);
     if (!error) {
-      setSuccessType('approve'); // Re-use success modal? Or maybe just toast.
+      setSuccessType('excuse');
+      setSuccessReward({ stars: 0, xp: 0 });
       // Success modal says "Stars have been added". For excuse, it should say "Exemption Approved".
       // Let's just use the same modal for now, or maybe we need to update the modal text dynamically.
       // The modal text is fixed based on type='approve' | 'reject'.
@@ -77,6 +84,7 @@ const AdminDashboard = () => {
     const { error } = await rejectExemption(logId);
     if (!error) {
       setSuccessType('reject');
+      setSuccessReward({ stars: 0, xp: 0 });
       setSuccessModalOpen(true);
     }
   };
@@ -93,6 +101,7 @@ const AdminDashboard = () => {
         setRejectionModalOpen(false);
         setSelectedLogId(null);
         setSuccessType('reject');
+        setSuccessReward({ stars: 0, xp: 0 });
         setSuccessModalOpen(true);
       }
     }
@@ -156,6 +165,8 @@ const AdminDashboard = () => {
       <VerificationSuccessModal
         isOpen={successModalOpen}
         type={successType}
+        starsValue={successReward.stars}
+        xpValue={successReward.xp}
         onClose={() => setSuccessModalOpen(false)}
       />
 

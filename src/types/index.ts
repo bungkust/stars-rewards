@@ -35,6 +35,7 @@ export interface Task {
   parent_id: string;
   name: string;
   reward_value: number;
+  xp_reward?: number;
   type: 'ONE_TIME' | 'RECURRING';
   recurrence_rule?: string;
   is_active?: boolean;

@@ -7,6 +7,8 @@ import { getNextDueDate } from '../utils/recurrence';
 import { getLocalDateString } from '../utils/timeUtils';
 import { missionLogicService } from '../services/missionLogicService';
 import { getReviewPromptSnoozeDate, shouldShowReviewPrompt, type ReviewPromptChoice, type ReviewPromptTrigger } from '../utils/reviewPromptUtils';
+import { calculateLevelProgress, getLevelRewardsBetween, getTotalXpForChild, type LevelReward } from '../utils/xpUtils';
+import { getClaimableAchievements, getClaimableDailyQuests, getUnlockedAchievements } from '../utils/gamificationUtils';
 
 export type OnboardingStep = 'family-setup' | 'parent-setup' | 'add-child' | 'first-task' | 'first-reward' | 'completed';
 
@@ -36,6 +38,7 @@ export interface AppState {
   rewards: Reward[];
   transactions: CoinTransaction[];
   xpTransactions: XpTransaction[];
+  celebratedLevelByChild: Record<string, number>;
   redeemedHistory: { child_id: string; reward_id: string }[]; // Full history of redemptions for logic checks
 
   onboardingStep: OnboardingStep;
@@ -46,6 +49,14 @@ export interface AppState {
 
   // Streak milestone state
   streakMilestone: { taskName: string; streak: number } | null;
+  levelUpMilestone: {
+    childName: string;
+    previousLevel: number;
+    level: number;
+    levelName: string;
+    totalXp: number;
+    rewards: LevelReward[];
+  } | null;
   reviewPromptVisible: boolean;
   reviewPromptLastShownAt?: string;
   reviewPromptDismissed: boolean;
@@ -53,6 +64,7 @@ export interface AppState {
   reviewPromptShownTodayCount?: number;
   setStreakMilestone: (milestone: { taskName: string; streak: number } | null) => void;
   clearStreakMilestone: () => void;
+  clearLevelUpMilestone: () => void;
   requestReviewPrompt: (trigger: ReviewPromptTrigger) => void;
   closeReviewPrompt: (choice: ReviewPromptChoice) => void;
 
@@ -105,6 +117,7 @@ export interface AppState {
   rejectTask: (logId: string, reason: string) => Promise<{ error: any }>;
   redeemReward: (childId: string, cost: number, rewardId: string) => Promise<{ error: any }>;
   manualAdjustment: (childId: string, amount: number, reason?: string) => Promise<{ error: any }>;
+  claimAchievementReward: (childId: string, achievementId: string) => Promise<{ error: any }>;
   checkMissedMissions: () => Promise<void>;
   deleteTransaction: (transactionId: string) => Promise<{ error: any }>;
   deleteChildLog: (logId: string) => Promise<{ error: any }>;
@@ -142,6 +155,7 @@ export const useAppStore = create<AppState>()(
       rewards: [],
       transactions: [],
       xpTransactions: [],
+      celebratedLevelByChild: {},
       redeemedHistory: [],
       onboardingStep: 'family-setup',
 
@@ -149,12 +163,14 @@ export const useAppStore = create<AppState>()(
       isLoading: false,
 
       streakMilestone: null,
+      levelUpMilestone: null,
       reviewPromptVisible: false,
       reviewPromptDismissed: false,
       reviewPromptRated: false,
       reviewPromptShownTodayCount: 0,
       setStreakMilestone: (milestone) => set({ streakMilestone: milestone }),
       clearStreakMilestone: () => set({ streakMilestone: null }),
+      clearLevelUpMilestone: () => set({ levelUpMilestone: null }),
       requestReviewPrompt: (trigger) => {
         const state = get();
         if (!shouldShowReviewPrompt(state, trigger)) return;
@@ -1063,7 +1079,7 @@ export const useAppStore = create<AppState>()(
         set({ isLoading: true });
         try {
           // Prevent double-verification
-          const { childLogs } = get();
+          const { childLogs, xpTransactions: currentXpTransactions } = get();
           const existingLog = childLogs.find(l => l.id === logId);
           if (existingLog && existingLog.status === 'VERIFIED') {
             console.warn('Task already verified, skipping double-credit');
@@ -1076,6 +1092,7 @@ export const useAppStore = create<AppState>()(
           // Update Streak Logic
           const { tasks, children, transactions } = get();
           let updatedTasks = tasks;
+          const previousLevel = calculateLevelProgress(getTotalXpForChild(currentXpTransactions, childId));
           // Optimistically update if log exists locally
           if (existingLog) {
             const result = await missionLogicService.incrementStreak(existingLog.task_id, tasks, childLogs, logId);
@@ -1097,8 +1114,44 @@ export const useAppStore = create<AppState>()(
             transactions: [newTx, ...transactions],
             pendingVerifications: get().pendingVerifications.filter(v => v.id !== logId)
           });
-          const xpTransactions = await dataService.fetchXpTransactions('local-user');
+          let xpTransactions = await dataService.fetchXpTransactions('local-user');
+
+          const claimableQuests = getClaimableDailyQuests(childId, updatedLogs, updatedTasks, xpTransactions);
+          if (claimableQuests.length > 0) {
+            await Promise.all(claimableQuests.map(quest =>
+              dataService.awardXpTransaction(childId, quest.xpReward, 'DAILY_QUEST', `${getLocalDateString()}:${quest.id}`)
+            ));
+            xpTransactions = await dataService.fetchXpTransactions('local-user');
+          }
+
+          const claimableAchievements = getClaimableAchievements(childId, updatedLogs, updatedTasks, xpTransactions);
+          if (claimableAchievements.length > 0) {
+            await Promise.all(claimableAchievements.map(achievement =>
+              dataService.awardXpTransaction(childId, achievement.xpReward, 'ACHIEVEMENT', achievement.id)
+            ));
+            xpTransactions = await dataService.fetchXpTransactions('local-user');
+          }
+
           set({ xpTransactions });
+          const nextLevel = calculateLevelProgress(getTotalXpForChild(xpTransactions, childId));
+          const celebratedLevel = get().celebratedLevelByChild[childId] || previousLevel.level;
+          if (nextLevel.level > previousLevel.level && nextLevel.level > celebratedLevel) {
+            const child = children.find(c => c.id === childId);
+            set({
+              celebratedLevelByChild: {
+                ...get().celebratedLevelByChild,
+                [childId]: nextLevel.level
+              },
+              levelUpMilestone: {
+                childName: child?.name || 'Child',
+                previousLevel: previousLevel.level,
+                level: nextLevel.level,
+                levelName: nextLevel.levelName,
+                totalXp: nextLevel.totalXp,
+                rewards: getLevelRewardsBetween(previousLevel.level, nextLevel.level)
+              }
+            });
+          }
           get().requestReviewPrompt('mission_approved');
 
           return { error: null };
@@ -1163,7 +1216,14 @@ export const useAppStore = create<AppState>()(
             childLogs: updatedLogs,
             pendingVerifications: newPending,
             xpTransactions: tx.type === 'TASK_VERIFIED' && tx.reference_id
-              ? xpTransactions.filter(xp => !(xp.type === 'MISSION_APPROVED' && xp.reference_id === tx.reference_id && xp.child_id === tx.child_id))
+              ? xpTransactions.filter(xp => {
+                const log = childLogs.find(l => l.id === tx.reference_id);
+                const questDate = log
+                  ? getLocalDateString(new Date(log.verified_at || log.completed_at))
+                  : getLocalDateString(new Date(tx.created_at));
+                return !(xp.type === 'MISSION_APPROVED' && xp.reference_id === tx.reference_id && xp.child_id === tx.child_id) &&
+                  !(xp.type === 'DAILY_QUEST' && xp.child_id === tx.child_id && xp.reference_id?.startsWith(`${questDate}:`));
+              })
               : xpTransactions,
             redeemedHistory: tx.type === 'REWARD_REDEEMED' && tx.reference_id
               ? get().redeemedHistory.filter(h => !(h.child_id === tx.child_id && h.reward_id === tx.reference_id))
@@ -1187,7 +1247,14 @@ export const useAppStore = create<AppState>()(
 
           set((state) => ({
             childLogs: state.childLogs.filter(l => l.id !== logId),
-            xpTransactions: state.xpTransactions.filter(xp => xp.reference_id !== logId),
+            xpTransactions: state.xpTransactions.filter(xp => {
+              const removedLog = state.childLogs.find(l => l.id === logId);
+              const questDate = removedLog
+                ? getLocalDateString(new Date(removedLog.verified_at || removedLog.completed_at))
+                : null;
+              return xp.reference_id !== logId &&
+                !(questDate && xp.type === 'DAILY_QUEST' && xp.child_id === removedLog?.child_id && xp.reference_id?.startsWith(`${questDate}:`));
+            }),
             pendingVerifications: state.pendingVerifications.filter(v => v.id !== logId)
           }));
 
@@ -1338,6 +1405,38 @@ export const useAppStore = create<AppState>()(
         }
       },
 
+      claimAchievementReward: async (childId: string, achievementId: string) => {
+        set({ isLoading: true });
+        try {
+          const { childLogs, tasks, xpTransactions, transactions } = get();
+          const achievement = getUnlockedAchievements(childId, childLogs, tasks, xpTransactions, transactions)
+            .find(item => item.id === achievementId);
+
+          if (!achievement || !achievement.unlocked || achievement.isStarClaimed || achievement.starReward <= 0) {
+            throw new Error('Achievement reward is not claimable');
+          }
+
+          const newTx = await dataService.awardAchievementStars(childId, achievement.id, achievement.starReward, achievement.title);
+          if (!newTx) throw new Error('Failed to claim achievement reward');
+
+          set((state) => ({
+            children: state.children.map(child =>
+              child.id === childId
+                ? { ...child, current_balance: (child.current_balance || 0) + newTx.amount }
+                : child
+            ),
+            transactions: [newTx, ...state.transactions]
+          }));
+
+          return { error: null };
+        } catch (error) {
+          console.error('Error claiming achievement reward:', error);
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
       checkMissedMissions: async () => {
         const { children, tasks, childLogs, lastMissedCheckDate } = get();
 
@@ -1401,6 +1500,7 @@ export const useAppStore = create<AppState>()(
           childLogs: [],
           transactions: [],
           xpTransactions: [],
+          celebratedLevelByChild: {},
           pendingVerifications: [],
           redeemedHistory: [],
           onboardingStep: 'family-setup'
@@ -1501,8 +1601,9 @@ export const useAppStore = create<AppState>()(
         childLogs: state.childLogs,
         redeemedHistory: state.redeemedHistory,
         transactions: state.transactions,
-        xpTransactions: state.xpTransactions,
-        categories: state.categories,
+          xpTransactions: state.xpTransactions,
+          celebratedLevelByChild: state.celebratedLevelByChild,
+          categories: state.categories,
       }),
     }
   )

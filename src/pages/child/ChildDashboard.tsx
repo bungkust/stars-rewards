@@ -11,7 +11,7 @@ import TaskRejectionDetailsModal from '../../components/modals/TaskRejectionDeta
 import ExemptionModal from '../../components/modals/ExemptionModal';
 import TaskDetailsModal from '../../components/modals/TaskDetailsModal';
 import { getTaskIconComponent } from '../../utils/icons';
-import { calculateLevelProgress, getTotalXpForChild } from '../../utils/xpUtils';
+import { calculateLevelProgress, getMissionXpValue, getNextLevelReward, getTotalXpForChild } from '../../utils/xpUtils';
 
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -28,6 +28,7 @@ const ChildDashboard = () => {
   const xpProgress = activeChildId
     ? calculateLevelProgress(getTotalXpForChild(xpTransactions, activeChildId))
     : calculateLevelProgress(0);
+  const nextLevelReward = getNextLevelReward(xpProgress.level);
 
   const [filter, setFilter] = useState<'today' | 'daily' | 'once' | 'all'>('today');
   const [visibleCount, setVisibleCount] = useState(20);
@@ -279,7 +280,7 @@ const ChildDashboard = () => {
 
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
-  const [lastCompletedTask, setLastCompletedTask] = useState<{ name: string, value: number } | null>(null);
+  const [lastCompletedTask, setLastCompletedTask] = useState<{ name: string, value: number, xpValue: number } | null>(null);
 
   const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
   const [selectedRejection, setSelectedRejection] = useState<{ taskName: string, reason: string } | null>(null);
@@ -317,7 +318,7 @@ const ChildDashboard = () => {
       if (isMilestone) {
         setStreakMilestone({ taskName: task.name, streak: predictedStreak });
       } else {
-        setLastCompletedTask({ name: task.name, value: task.reward_value });
+        setLastCompletedTask({ name: task.name, value: task.reward_value, xpValue: getMissionXpValue(task as any) });
         setIsCompletionModalOpen(true);
       }
     } else {
@@ -344,7 +345,7 @@ const ChildDashboard = () => {
       if (isMilestone) {
         setStreakMilestone({ taskName: task.name, streak: predictedStreak });
       } else {
-        setLastCompletedTask({ name: task.name, value: task.reward_value });
+        setLastCompletedTask({ name: task.name, value: task.reward_value, xpValue: getMissionXpValue(task) });
         setIsCompletionModalOpen(true);
       }
     }
@@ -372,7 +373,7 @@ const ChildDashboard = () => {
       if (isMilestone) {
         setStreakMilestone({ taskName: task.name, streak: predictedStreak });
       } else {
-        setLastCompletedTask({ name: task.name, value: task.reward_value });
+        setLastCompletedTask({ name: task.name, value: task.reward_value, xpValue: getMissionXpValue(task) });
         setIsCompletionModalOpen(true);
       }
     }
@@ -392,7 +393,7 @@ const ChildDashboard = () => {
       if (isMilestone) {
         setStreakMilestone({ taskName: task.name, streak: predictedStreak });
       } else {
-        setLastCompletedTask({ name: task.name, value: task.reward_value });
+        setLastCompletedTask({ name: task.name, value: task.reward_value, xpValue: getMissionXpValue(task as any) });
         setIsCompletionModalOpen(true);
       }
     } else {
@@ -483,6 +484,11 @@ const ChildDashboard = () => {
           <p className="mt-2 text-xs font-medium text-gray-500">
             {xpProgress.xpNeededForNextLevel} XP to Level {xpProgress.level + 1}
           </p>
+          {nextLevelReward && (
+            <p className="mt-1 text-xs font-bold text-primary">
+              Next unlock: {nextLevelReward.title} at Level {nextLevelReward.level}
+            </p>
+          )}
         </div>
       </div>
 
@@ -500,6 +506,7 @@ const ChildDashboard = () => {
         isOpen={isCompletionModalOpen}
         taskName={lastCompletedTask?.name || ''}
         rewardValue={lastCompletedTask?.value || 0}
+        xpValue={lastCompletedTask?.xpValue || 0}
         onClose={() => setIsCompletionModalOpen(false)}
       />
 

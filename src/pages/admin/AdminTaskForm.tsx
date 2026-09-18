@@ -7,23 +7,24 @@ import { generateRRule, parseRRule, WEEKDAYS } from '../../utils/recurrence';
 import type { RecurrenceOptions } from '../../utils/recurrence';
 import { convertToWebP } from '../../utils/imageUtils';
 import { TASK_ICONS } from '../../utils/icons';
+import { getDefaultMissionXpValue } from '../../utils/xpUtils';
 
 const DIFFICULTY_PRESETS = [
-  { label: 'MILESTONE', value: 0, desc: 'No Star Reward (Trigger for Milestone)', color: 'bg-gray-50 text-gray-600 border-gray-200' },
-  { label: 'EASY', value: 5, desc: 'Quick daily win (e.g., Brush teeth)', color: 'bg-green-50 text-green-600 border-green-200' },
-  { label: 'MEDIUM', value: 10, desc: 'Daily responsibility (e.g., Make bed)', color: 'bg-blue-50 text-blue-600 border-blue-200' },
-  { label: 'HARD', value: 15, desc: 'Habit formation (e.g., Practice music)', color: 'bg-purple-50 text-purple-600 border-purple-200' },
-  { label: 'SPECIAL', value: 25, desc: 'One-off project (e.g., Wash car)', color: 'bg-amber-50 text-amber-600 border-amber-200' },
-  { label: 'EPIC', value: 50, desc: 'Major achievement (e.g., Good grades)', color: 'bg-rose-50 text-rose-600 border-rose-200' },
+  { label: 'MILESTONE', value: 0, xp: 5, desc: 'No Star Reward (Trigger for Milestone)', color: 'bg-gray-50 text-gray-600 border-gray-200' },
+  { label: 'EASY', value: 5, xp: 10, desc: 'Quick daily win (e.g., Brush teeth)', color: 'bg-green-50 text-green-600 border-green-200' },
+  { label: 'MEDIUM', value: 10, xp: 10, desc: 'Daily responsibility (e.g., Make bed)', color: 'bg-blue-50 text-blue-600 border-blue-200' },
+  { label: 'HARD', value: 15, xp: 15, desc: 'Habit formation (e.g., Practice music)', color: 'bg-purple-50 text-purple-600 border-purple-200' },
+  { label: 'SPECIAL', value: 25, xp: 20, desc: 'One-off project (e.g., Wash car)', color: 'bg-amber-50 text-amber-600 border-amber-200' },
+  { label: 'EPIC', value: 50, xp: 30, desc: 'Major achievement (e.g., Good grades)', color: 'bg-rose-50 text-rose-600 border-rose-200' },
 ];
 
 const TASK_TEMPLATES = [
-  { title: 'Brush Teeth', reward: 5 },
-  { title: 'Make Bed', reward: 10 },
-  { title: 'Homework', reward: 15 },
-  { title: 'Clean Room', reward: 20 },
-  { title: 'Help at Home', reward: 10 },
-  { title: 'Read a Book', reward: 15 },
+  { title: 'Brush Teeth', reward: 5, xp: 10 },
+  { title: 'Make Bed', reward: 10, xp: 10 },
+  { title: 'Homework', reward: 15, xp: 10 },
+  { title: 'Clean Room', reward: 20, xp: 10 },
+  { title: 'Help at Home', reward: 10, xp: 10 },
+  { title: 'Read a Book', reward: 15, xp: 10 },
 ];
 
 const removeEmojis = (str: string) => str.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '');
@@ -48,6 +49,7 @@ const AdminTaskForm = () => {
   const [title, setTitle] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [reward, setReward] = useState(10);
+  const [xpReward, setXpReward] = useState(10);
   const [expiryTime, setExpiryTime] = useState(''); // Default empty (Optional)
   const [repetition, setRepetition] = useState('Once');
   const [selectedChildIds, setSelectedChildIds] = useState<string[]>([]);
@@ -91,6 +93,7 @@ const AdminTaskForm = () => {
         setTitle(taskToEdit.name);
         setCategoryId(taskToEdit.category_id || '');
         setReward(taskToEdit.reward_value);
+        setXpReward(taskToEdit.xp_reward ?? getDefaultMissionXpValue(!!taskToEdit.total_target_value && taskToEdit.total_target_value > 1));
         setExpiryTime(taskToEdit.expiry_time || '');
         setMaxCompletions(taskToEdit.max_completions_per_day || 1);
         setIsActive(taskToEdit.is_active !== false);
@@ -166,6 +169,7 @@ const AdminTaskForm = () => {
       name: title,
       category_id: categoryId,
       reward_value: Number(reward),
+      xp_reward: Number(xpReward),
       type: (finalRule === 'Once' ? 'ONE_TIME' : 'RECURRING') as "ONE_TIME" | "RECURRING",
       recurrence_rule: finalRule,
       is_active: isActive,
@@ -195,7 +199,7 @@ const AdminTaskForm = () => {
     }
   };
 
-  const isFormValid = title.trim().length > 0 && selectedChildIds.length > 0 && reward >= 0 && categoryId && (!isProgressTask || (targetValue > 0 && targetUnit.trim().length > 0));
+  const isFormValid = title.trim().length > 0 && selectedChildIds.length > 0 && reward >= 0 && xpReward >= 0 && categoryId && (!isProgressTask || (targetValue > 0 && targetUnit.trim().length > 0));
 
   return (
     <div className="flex flex-col gap-6 pb-24">
@@ -244,7 +248,7 @@ const AdminTaskForm = () => {
                   <button
                     key={t.title}
                     type="button"
-                    onClick={() => { setTitle(t.title); setReward(t.reward); }}
+                    onClick={() => { setTitle(t.title); setReward(t.reward); setXpReward(t.xp); }}
                     className="group relative flex items-center justify-between w-full px-3 py-2 bg-white border-2 border-gray-100 rounded-xl text-xs font-bold text-gray-700 hover:border-primary hover:bg-primary/5 transition-all shadow-sm active:scale-95 text-left"
                   >
                     <span className="line-clamp-2 leading-tight mr-1">{t.title}</span> 
@@ -379,13 +383,19 @@ const AdminTaskForm = () => {
             <ToggleButton
               label="Simple (Checklist)"
               isActive={!isProgressTask}
-              onClick={() => setIsProgressTask(false)}
+              onClick={() => {
+                setIsProgressTask(false);
+                setXpReward(getDefaultMissionXpValue(false));
+              }}
               className="flex-1"
             />
             <ToggleButton
               label="Progress (Target)"
               isActive={isProgressTask}
-              onClick={() => setIsProgressTask(true)}
+              onClick={() => {
+                setIsProgressTask(true);
+                setXpReward(getDefaultMissionXpValue(true));
+              }}
               className="flex-1"
             />
           </div>
@@ -436,7 +446,10 @@ const AdminTaskForm = () => {
               <button
                 key={preset.label}
                 type="button"
-                onClick={() => setReward(preset.value)}
+                onClick={() => {
+                  setReward(preset.value);
+                  setXpReward(preset.xp);
+                }}
                 className={`flex flex-col items-center justify-center p-2 rounded-xl border-2 transition-all duration-200 ${reward === preset.value
                   ? `border-current ${preset.color.split(' ')[1]} bg-white shadow-md ring-1 ring-current scale-105`
                   : 'border-gray-200 bg-white shadow-sm hover:border-gray-300 hover:bg-gray-50 text-gray-400 hover:shadow-md'
@@ -448,6 +461,7 @@ const AdminTaskForm = () => {
                 <span className={`text-lg font-black ${reward === preset.value ? 'text-primary' : 'text-gray-300'}`}>
                   {preset.value}
                 </span>
+                <span className="text-[10px] font-bold text-gray-400">{preset.xp} XP</span>
               </button>
             ))}
           </div>
@@ -477,6 +491,27 @@ const AdminTaskForm = () => {
             />
           </div>
 
+          <div className="form-control w-full">
+            <label className="label">
+              <span className="label-text font-bold">XP Reward</span>
+            </label>
+            <input
+              id="xpReward"
+              name="xpReward"
+              type="number"
+              className="input input-bordered w-full rounded-xl"
+              value={xpReward}
+              onChange={(e) => setXpReward(Number(e.target.value))}
+              onInput={(e) => setXpReward(Number(e.currentTarget.value))}
+              min={0}
+            />
+            <label className="label">
+              <span className="label-text-alt text-xs text-gray-600 font-medium">XP levels up badges and titles. It does not affect star balance.</span>
+            </label>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4">
           <div className="form-control w-full">
             <label className="label">
               <span className="label-text font-bold">Expired Time</span>
