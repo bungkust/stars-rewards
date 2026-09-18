@@ -5,12 +5,15 @@ import {
   CheckCircle,
   ClockCounterClockwise,
   Crown,
+  FrameCorners,
   LockKey,
   Medal,
+  Palette,
   ShieldCheck,
   Star,
   Sparkle,
-  Trophy
+  Trophy,
+  Lightning
 } from '@phosphor-icons/react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
@@ -25,7 +28,7 @@ import {
   LEAGUE_TIERS,
   type InventoryUnlock
 } from '../../utils/gamificationUtils';
-import { calculateLevelProgress } from '../../utils/xpUtils';
+import { calculateLevelProgress, getTotalXpForChild, getUpcomingMilestoneRewards } from '../../utils/xpUtils';
 
 const getXpSourceLabel = (transaction: XpTransaction, logs: ChildTaskLog[], tasks: Task[]) => {
   if (transaction.type === 'MISSION_APPROVED') {
@@ -33,7 +36,6 @@ const getXpSourceLabel = (transaction: XpTransaction, logs: ChildTaskLog[], task
     const task = tasks.find(item => item.id === log?.task_id);
     return task ? task.name : 'Mission approved';
   }
-
   if (transaction.type === 'DAILY_QUEST') return 'Daily Quest';
   if (transaction.type === 'ACHIEVEMENT') return 'Achievement';
   if (transaction.type === 'STREAK_BONUS') return 'Streak Bonus';
@@ -51,7 +53,6 @@ const getHistoryWithLevelUps = (childId: string, xpTransactions: XpTransaction[]
     const beforeLevel = calculateLevelProgress(runningXp).level;
     runningXp += transaction.amount;
     const afterLevel = calculateLevelProgress(runningXp).level;
-
     return {
       ...transaction,
       reachedLevel: afterLevel > beforeLevel ? afterLevel : null
@@ -59,37 +60,125 @@ const getHistoryWithLevelUps = (childId: string, xpTransactions: XpTransaction[]
   }).reverse();
 };
 
-const InventoryIcon = ({ item }: { item: InventoryUnlock }) => {
-  const className = 'h-5 w-5';
-  if (item.kind === 'title') return <Crown className={className} weight="fill" />;
-  if (item.kind === 'frame') return <Sparkle className={className} weight="fill" />;
-  if (item.kind === 'powerup') return <ShieldCheck className={className} weight="fill" />;
-  if (item.kind === 'theme') return <Sparkle className={className} weight="fill" />;
-  if (item.kind === 'achievement') return <Trophy className={className} weight="fill" />;
-  return <Medal className={className} weight="fill" />;
-};
+// ---- Shared design primitives (mirrors GamificationPanel) ----
 
-const getInventoryRank = (item: InventoryUnlock) => {
-  const match = item.source.match(/Level (\d+)/);
-  if (match) return Number(match[1]);
-  return 0;
-};
+const ProgressBar = ({ value, className = '' }: { value: number; className?: string }) => (
+  <div className={`h-2.5 w-full overflow-hidden rounded-full bg-base-200 ${className}`}>
+    <div
+      className="h-full rounded-full bg-primary transition-all duration-500"
+      style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
+    />
+  </div>
+);
 
-const ProgressHeader = ({ title, subtitle }: { title: string; subtitle: string }) => {
+const SectionHeader = ({ title, subtitle }: { title: string; subtitle: string }) => {
   const navigate = useNavigate();
-
   return (
-    <div className="flex items-center gap-3 px-1">
-      <button type="button" onClick={() => navigate('/child/progress')} className="btn btn-circle btn-ghost btn-sm">
+    <div className="flex items-center gap-3">
+      <button
+        type="button"
+        onClick={() => navigate('/child/progress')}
+        className="btn btn-circle btn-ghost btn-sm shrink-0"
+      >
         <ArrowLeft className="h-5 w-5" />
       </button>
       <div className="min-w-0">
-        <h2 className="text-2xl font-bold text-neutral">{title}</h2>
-        <p className="mt-0.5 text-sm font-medium text-neutral/60">{subtitle}</p>
+        <h2 className="text-xl font-bold text-neutral leading-tight">{title}</h2>
+        <p className="text-sm font-medium text-neutral/60 mt-0.5 leading-snug">{subtitle}</p>
       </div>
     </div>
   );
 };
+
+// Card used for individual list items — same look as other app cards
+const ItemCard = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
+  <div className={`card bg-base-100 shadow-sm rounded-xl border border-base-200/70 ${className}`}>
+    {children}
+  </div>
+);
+
+const InventoryIcon = ({ item }: { item: InventoryUnlock }) => {
+  const cls = 'h-5 w-5';
+  if (item.kind === 'title') return <Crown className={cls} weight="fill" />;
+  if (item.kind === 'frame') return <FrameCorners className={cls} weight="fill" />;
+  if (item.kind === 'powerup') return <ShieldCheck className={cls} weight="fill" />;
+  if (item.kind === 'theme') return <Palette className={cls} weight="fill" />;
+  if (item.kind === 'achievement') return <Trophy className={cls} weight="fill" />;
+  return <Medal className={cls} weight="fill" />;
+};
+
+const getUpcomingIcon = (title: string) => {
+  const l = title.toLowerCase();
+  const cls = 'h-5 w-5';
+  if (l.includes('title') || l.includes('gelar')) return <Crown className={cls} />;
+  if (l.includes('frame') || l.includes('bingkai')) return <FrameCorners className={cls} />;
+  if (l.includes('freeze') || l.includes('power')) return <ShieldCheck className={cls} />;
+  if (l.includes('theme') || l.includes('tema')) return <Palette className={cls} />;
+  return <Medal className={cls} />;
+};
+
+const getInventoryRank = (item: InventoryUnlock) => {
+  const m = item.source.match(/Level (\d+)/);
+  return m ? Number(m[1]) : 0;
+};
+
+// Toast banner for celebration feedback
+const CelebrationBanner = ({
+  show,
+  emoji,
+  title,
+  subtitle
+}: {
+  show: boolean;
+  emoji: string;
+  title: string;
+  subtitle: string;
+}) => (
+  <AnimatePresence>
+    {show && (
+      <motion.div
+        initial={{ opacity: 0, y: -20, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -20, scale: 0.95 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+        className="sticky top-2 z-50 card bg-primary text-primary-content p-4 shadow-lg rounded-xl flex-row items-center gap-3 border border-primary/30"
+      >
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/20 text-xl select-none">
+          {emoji}
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-bold leading-tight">{title}</p>
+          <p className="text-xs text-primary-content/80 mt-0.5">{subtitle}</p>
+        </div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
+
+// Filter chip — matches ToggleButton style from design-system
+const FilterChip = ({
+  label,
+  active,
+  onClick
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`btn btn-sm rounded-full normal-case transition-all shrink-0 ${
+      active
+        ? 'btn-primary text-white shadow-sm'
+        : 'bg-white border border-base-300 text-neutral/60 hover:bg-base-100 hover:text-neutral'
+    }`}
+  >
+    {label}
+  </button>
+);
+
+// ---- Main Component ----
 
 const ChildProgressDetail = () => {
   const { section } = useParams();
@@ -108,7 +197,11 @@ const ChildProgressDetail = () => {
   const navigate = useNavigate();
 
   const [claimingQuestId, setClaimingQuestId] = useState<string | null>(null);
-  const [celebration, setCelebration] = useState<{ questTitle: string; xp: number } | null>(null);
+  const [questToast, setQuestToast] = useState<{ title: string; xp: number } | null>(null);
+  const [achievementFilter, setAchievementFilter] = useState<'all' | 'mission' | 'streak' | 'milestone'>('all');
+  const [claimingAchievementId, setClaimingAchievementId] = useState<string | null>(null);
+  const [starToast, setStarToast] = useState<{ title: string; stars: number } | null>(null);
+  const [historyLimit, setHistoryLimit] = useState(15);
 
   if (!activeChildId) return null;
 
@@ -119,155 +212,138 @@ const ChildProgressDetail = () => {
   const history = getHistoryWithLevelUps(activeChildId, xpTransactions);
 
   const handleClaimQuest = async (questId: string, questTitle: string, xpReward: number) => {
-    if (!activeChildId || claimingQuestId) return;
+    if (claimingQuestId) return;
     setClaimingQuestId(questId);
     try {
       const res = await claimDailyQuestReward(activeChildId, questId);
       if (!res.error) {
-        setCelebration({ questTitle, xp: xpReward });
-        setTimeout(() => {
-          setCelebration(null);
-        }, 3500);
+        setQuestToast({ title: questTitle, xp: xpReward });
+        setTimeout(() => setQuestToast(null), 3200);
       }
     } finally {
       setClaimingQuestId(null);
     }
   };
 
+  const handleClaimStars = async (achievementId: string, title: string, starReward: number) => {
+    if (claimingAchievementId) return;
+    setClaimingAchievementId(achievementId);
+    try {
+      const res = await claimAchievementReward(activeChildId, achievementId);
+      if (!res.error) {
+        setStarToast({ title, stars: starReward });
+        setTimeout(() => setStarToast(null), 3200);
+      }
+    } finally {
+      setClaimingAchievementId(null);
+    }
+  };
+
+  // ── QUESTS ──────────────────────────────────────────────────────────
   if (section === 'quests') {
     const completedCount = quests.filter(q => q.isComplete).length;
     const claimableCount = quests.filter(q => q.isComplete && !q.isClaimed).length;
 
     return (
-      <div className="flex flex-col gap-4 relative">
-        <ProgressHeader title="Daily Quests" subtitle="Target harian untuk boost XP dan level-up lebih cepat." />
+      <div className="flex flex-col gap-4">
+        <SectionHeader
+          title="Daily Quests"
+          subtitle="Target harian untuk boost XP lebih cepat"
+        />
 
-        {/* Floating Celebration Banner */}
-        <AnimatePresence>
-          {celebration && (
-            <motion.div
-              initial={{ opacity: 0, y: -24, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -24, scale: 0.9 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-              className="sticky top-2 z-50 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 p-4 text-white shadow-xl flex items-center gap-3.5 border border-amber-300/40"
-            >
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white/25 text-2xl shadow-inner select-none">
-                🎉
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-black">Daily Quest Berhasil Diklaim!</p>
-                <p className="text-xs font-semibold text-white/95 mt-0.5">
-                  +{celebration.xp} XP ditambahkan untuk &quot;{celebration.questTitle}&quot; 🌟
-                </p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <CelebrationBanner
+          show={!!questToast}
+          emoji="🎉"
+          title={`+${questToast?.xp} XP berhasil diklaim!`}
+          subtitle={questToast?.title ?? ''}
+        />
 
-        {/* Daily Progress Status Bar */}
-        <div className="card bg-gradient-to-r from-primary/10 to-base-100 p-4 shadow-sm rounded-xl border border-primary/15">
+        {/* Summary bar — matches SummaryCard stat row */}
+        <ItemCard className="p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-bold text-neutral/60">Progress Hari Ini</p>
-              <p className="text-lg font-black text-neutral mt-0.5">{completedCount} dari {quests.length} Quest Selesai</p>
+              <p className="text-2xl font-bold text-neutral">{completedCount}/{quests.length}</p>
+              <p className="text-xs font-bold text-neutral/50 mt-0.5">quest selesai hari ini</p>
             </div>
             {claimableCount > 0 ? (
-              <span className="badge badge-warning font-black text-xs px-3 py-2 animate-bounce shadow-xs">
-                {claimableCount} Siap Diklaim! 🎁
+              <span className="badge badge-warning font-bold gap-1">
+                <Lightning className="h-3 w-3" weight="fill" />
+                {claimableCount} Siap Diklaim
               </span>
             ) : completedCount === quests.length ? (
-              <span className="badge badge-success font-black text-xs px-3 py-2 text-white">
-                Semua Selesai! ⭐
-              </span>
+              <span className="badge badge-success font-bold text-white">Semua Selesai ⭐</span>
             ) : (
-              <span className="badge badge-ghost font-bold text-xs text-neutral/50">
-                Reset tiap tengah malam
-              </span>
+              <span className="badge badge-ghost text-neutral/50 font-medium">Reset tiap tengah malam</span>
             )}
           </div>
-        </div>
+          <ProgressBar value={Math.round((completedCount / Math.max(1, quests.length)) * 100)} className="mt-3" />
+        </ItemCard>
 
-        {/* Quests List */}
+        {/* Quest list */}
         <div className="flex flex-col gap-3">
           {quests.map(quest => {
             const canClaim = quest.isComplete && !quest.isClaimed;
-            const progressPercent = Math.min(100, Math.round((quest.current / quest.target) * 100));
+            const pct = Math.min(100, Math.round((quest.current / quest.target) * 100));
 
             return (
-              <div
+              <ItemCard
                 key={quest.id}
-                className={`card bg-base-100 p-4 shadow-sm rounded-2xl border transition-all ${
-                  canClaim
-                    ? 'border-warning/50 bg-gradient-to-br from-warning/10 via-base-100 to-base-100 shadow-md ring-1 ring-warning/30'
-                    : quest.isClaimed
-                    ? 'border-base-200/80 opacity-90'
-                    : 'border-base-200/80'
-                }`}
+                className={`p-4 transition-all ${canClaim ? 'border-warning/50 ring-1 ring-warning/20' : ''}`}
               >
+                {/* Title row */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-neutral text-base">{quest.title}</h3>
+                    <div className="flex items-center gap-1.5">
+                      <h3 className="font-bold text-neutral">{quest.title}</h3>
                       {quest.isClaimed && (
                         <CheckCircle className="h-4 w-4 text-success shrink-0" weight="fill" />
                       )}
                     </div>
-                    <p className="mt-1 text-xs font-medium text-neutral/60 leading-relaxed">{quest.description}</p>
+                    <p className="mt-0.5 text-xs font-medium text-neutral/60">{quest.description}</p>
                   </div>
-                  <span className="badge badge-warning badge-outline shrink-0 font-black text-xs">
-                    +{quest.xpReward} XP
-                  </span>
+                  <span className="badge badge-warning badge-outline font-bold shrink-0">+{quest.xpReward} XP</span>
                 </div>
 
-                {/* Progress Bar & Indicators */}
-                <div className="mt-3.5">
-                  <div className="flex items-center justify-between text-xs font-bold text-neutral/60 mb-1.5">
-                    <span>Progress: {quest.current}/{quest.target}</span>
-                    <span>{progressPercent}%</span>
+                {/* Progress */}
+                <div className="mt-3">
+                  <div className="flex justify-between text-xs font-medium text-neutral/50 mb-1">
+                    <span>{quest.current}/{quest.target}</span>
+                    <span>{pct}%</span>
                   </div>
-                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-base-200">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-base-200">
                     <div
-                      className={`h-full rounded-full transition-all duration-500 ${
-                        quest.isComplete ? 'bg-success' : 'bg-primary'
-                      }`}
-                      style={{ width: `${progressPercent}%` }}
+                      className={`h-full rounded-full transition-all ${quest.isComplete ? 'bg-success' : 'bg-primary'}`}
+                      style={{ width: `${pct}%` }}
                     />
                   </div>
                 </div>
 
-                {/* Action / Claim Area */}
-                <div className="mt-4 pt-3 border-t border-base-200/70 flex items-center justify-between gap-3">
-                  <span className="text-xs font-semibold text-neutral/50">
-                    Hadiah: <strong className="text-primary">+{quest.xpReward} XP</strong>
-                  </span>
-
+                {/* Action row */}
+                <div className="mt-3 pt-3 border-t border-base-200/60 flex items-center justify-end">
                   {quest.isClaimed ? (
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-success bg-success/10 border border-success/20 px-3 py-1.5 rounded-xl">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-success">
                       <CheckCircle className="h-4 w-4" weight="fill" />
-                      <span>Selesai & Diklaim</span>
+                      Diklaim
                     </div>
                   ) : canClaim ? (
                     <button
                       type="button"
                       disabled={claimingQuestId === quest.id || isLoading}
                       onClick={() => handleClaimQuest(quest.id, quest.title, quest.xpReward)}
-                      className="btn btn-sm btn-primary text-white font-black rounded-xl gap-1.5 shadow-md shadow-primary/25 hover:scale-105 active:scale-95 transition-all"
+                      className="btn btn-primary btn-sm text-white gap-1.5"
                     >
-                      {claimingQuestId === quest.id ? (
-                        <span className="loading loading-spinner loading-xs" />
-                      ) : (
-                        <Sparkle className="h-4 w-4" weight="fill" />
-                      )}
+                      {claimingQuestId === quest.id
+                        ? <span className="loading loading-spinner loading-xs" />
+                        : <Sparkle className="h-4 w-4" weight="fill" />}
                       Klaim +{quest.xpReward} XP
                     </button>
                   ) : (
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-neutral/40 bg-base-200/50 px-3 py-1.5 rounded-xl">
-                      <span>{quest.target - quest.current} lagi untuk klaim</span>
-                    </div>
+                    <span className="text-xs font-medium text-neutral/40">
+                      {quest.target - quest.current} lagi untuk klaim
+                    </span>
                   )}
                 </div>
-              </div>
+              </ItemCard>
             );
           })}
         </div>
@@ -275,284 +351,506 @@ const ChildProgressDetail = () => {
     );
   }
 
+  // ── UNLOCKS ─────────────────────────────────────────────────────────
   if (section === 'unlocks') {
+    const totalXp = getTotalXpForChild(xpTransactions, activeChildId);
+    const { level: currentLevel } = calculateLevelProgress(totalXp);
+    const upcomingRewards = getUpcomingMilestoneRewards(currentLevel, 3);
+
     return (
       <div className="flex flex-col gap-4">
-        <ProgressHeader title="Rewards Shelf" subtitle="Badges, titles, frames, and special unlocks." />
-        {inventory.length === 0 ? (
-          <div className="card bg-base-100 p-4 shadow-sm rounded-xl text-sm font-medium text-neutral/60">Reach Level 2 to unlock the first badge.</div>
-        ) : inventory.map(item => (
-          <div key={item.id} className="card flex-row items-center gap-3 bg-base-100 p-4 shadow-sm rounded-xl">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
-              <InventoryIcon item={item} />
+        <SectionHeader
+          title="Rewards Shelf"
+          subtitle="Badge, gelar, frame, dan hadiah level-up kamu"
+        />
+
+        {/* Stats card — mirrors SummaryCard layout */}
+        <ItemCard className="p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-2xl font-bold text-neutral">{inventory.length}</p>
+              <p className="text-xs font-bold text-neutral/50 mt-0.5">item terbuka</p>
             </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="truncate font-bold text-neutral">{item.title}</h3>
-              <p className="text-sm font-medium text-neutral/60">{item.description}</p>
-              <p className="mt-1 text-xs font-bold text-primary">{item.source}</p>
+            <div className="text-right">
+              <span className="badge badge-primary font-bold">Level {currentLevel}</span>
+              <p className="text-xs text-neutral/50 font-medium mt-1">
+                {upcomingRewards.length > 0
+                  ? `${Math.max(0, upcomingRewards[0].xpRequired - totalXp)} XP ke reward berikutnya`
+                  : 'Semua reward terbuka 🌟'}
+              </p>
             </div>
           </div>
-        ))}
-      </div>
-    );
-  }
+        </ItemCard>
 
-  if (section === 'achievements') {
-    return (
-      <div className="flex flex-col gap-4">
-        <ProgressHeader title="Achievements" subtitle="Milestones that show long-term progress." />
-        {achievements.map(achievement => {
-          const canClaim = achievement.unlocked && !achievement.isStarClaimed && achievement.starReward > 0;
-
-          return (
-            <div key={achievement.id} className="card bg-base-100 p-4 shadow-sm rounded-xl">
-              <div className="flex items-start gap-3">
-                <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-full ${achievement.unlocked ? 'bg-primary/10 text-primary' : 'bg-base-200 text-neutral/40'}`}>
-                  {achievement.unlocked ? <Trophy className="h-5 w-5" weight="fill" /> : <LockKey className="h-5 w-5" />}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-3">
-                    <h3 className="truncate font-bold text-neutral">{achievement.title}</h3>
-                    <span className="shrink-0 text-xs font-bold text-primary">+{achievement.xpReward} XP</span>
+        {/* Unlocked items */}
+        {inventory.length === 0 ? (
+          <ItemCard className="p-6 text-center">
+            <p className="text-2xl mb-2 select-none">🎁</p>
+            <h5 className="font-bold text-neutral">Belum Ada Reward Terbuka</h5>
+            <p className="text-xs text-neutral/60 font-medium mt-1 leading-relaxed max-w-xs mx-auto">
+              Capai Level 2 untuk membuka badge pertamamu!
+            </p>
+          </ItemCard>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <p className="text-xs font-bold text-neutral/50 px-1">Koleksi Terbuka</p>
+            {inventory.map(item => (
+              <ItemCard key={item.id} className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+                    {item.kind === 'achievement' && item.icon
+                      ? <span className="text-lg select-none">{item.icon}</span>
+                      : <InventoryIcon item={item} />}
                   </div>
-                  <p className="mt-1 text-sm font-medium text-neutral/60">{achievement.description}</p>
-                  <div className="mt-3 flex items-center gap-2">
-                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-base-200">
-                      <div className="h-full rounded-full bg-primary" style={{ width: `${Math.round((achievement.progress / achievement.target) * 100)}%` }} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="font-bold text-neutral truncate">{item.title}</h3>
+                      <CheckCircle className="h-4 w-4 text-success shrink-0" weight="fill" />
                     </div>
-                    <span className="text-xs font-bold text-neutral/60">{achievement.progress}/{achievement.target}</span>
+                    <p className="text-xs font-medium text-neutral/60 mt-0.5 truncate">{item.description}</p>
+                    <p className="text-xs font-bold text-primary mt-0.5">{item.source}</p>
                   </div>
                 </div>
-              </div>
+              </ItemCard>
+            ))}
+          </div>
+        )}
 
-              <div className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-white p-3">
-                <div className="flex items-center gap-2 text-sm font-bold text-neutral">
-                  <Star className="h-4 w-4 text-warning" weight="fill" />
-                  {achievement.starReward} Stars reward
-                </div>
-                {achievement.isStarClaimed ? (
-                  <span className="badge badge-success badge-outline font-bold">Claimed</span>
-                ) : (
-                  <button
-                    type="button"
-                    disabled={!canClaim || isLoading}
-                    onClick={() => claimAchievementReward(activeChildId, achievement.id)}
-                    className={`btn btn-sm rounded-xl ${canClaim ? 'btn-primary text-white' : 'btn-disabled'}`}
-                  >
-                    {achievement.unlocked ? 'Claim Stars' : 'Locked'}
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
+        {/* Upcoming / locked rewards */}
+        {upcomingRewards.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <p className="text-xs font-bold text-neutral/50 px-1 flex items-center gap-1.5">
+              <LockKey className="h-3.5 w-3.5" />
+              Akan Terbuka Berikutnya
+            </p>
+            {upcomingRewards.map((reward, idx) => {
+              const xpLeft = Math.max(0, reward.xpRequired - totalXp);
+              const pct = Math.min(100, Math.round((totalXp / Math.max(1, reward.xpRequired)) * 100));
+              return (
+                <ItemCard key={`${reward.level}-${idx}`} className="p-4 opacity-75">
+                  <div className="flex items-center gap-3">
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-base-200 text-neutral/40">
+                      {getUpcomingIcon(reward.title)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="font-bold text-neutral truncate">{reward.title}</h3>
+                        <span className="badge badge-ghost font-bold text-neutral/60 shrink-0">Lv {reward.level}</span>
+                      </div>
+                      <p className="text-xs font-medium text-neutral/50 mt-0.5">{xpLeft} XP lagi</p>
+                    </div>
+                  </div>
+                  <ProgressBar value={pct} className="mt-3 h-1.5" />
+                </ItemCard>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   }
 
-  if (section === 'history') {
+  // ── ACHIEVEMENTS ────────────────────────────────────────────────────
+  if (section === 'achievements') {
+    const getCategory = (id: string): 'mission' | 'streak' | 'milestone' => {
+      if (id.includes('streak')) return 'streak';
+      if (id.startsWith('level-') || id.startsWith('xp-')) return 'milestone';
+      return 'mission';
+    };
+
+    const counts = {
+      all: achievements.length,
+      mission: achievements.filter(a => getCategory(a.id) === 'mission').length,
+      streak: achievements.filter(a => getCategory(a.id) === 'streak').length,
+      milestone: achievements.filter(a => getCategory(a.id) === 'milestone').length
+    };
+
+    const filtered = achievements.filter(a =>
+      achievementFilter === 'all' || getCategory(a.id) === achievementFilter
+    );
+
+    const unlockedCount = achievements.filter(a => a.unlocked).length;
+    const claimableCount = achievements.filter(a => a.unlocked && !a.isStarClaimed && a.starReward > 0).length;
+
     return (
       <div className="flex flex-col gap-4">
-        <ProgressHeader title="XP History" subtitle="Where XP came from and which action caused level-ups." />
-        {history.length === 0 ? (
-          <div className="card bg-base-100 p-4 shadow-sm rounded-xl text-sm font-medium text-neutral/60">XP history will appear after the first approval.</div>
-        ) : history.map(transaction => (
-          <div key={transaction.id} className="card bg-base-100 p-4 shadow-sm rounded-xl">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-info/20 text-gray-700">
-                  <ClockCounterClockwise className="h-5 w-5" weight="fill" />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="truncate font-bold text-neutral">{getXpSourceLabel(transaction, childLogs, childTasks)}</h3>
-                  <p className="text-xs font-medium text-neutral/50">{new Date(transaction.created_at).toLocaleDateString()}</p>
-                </div>
-              </div>
-              <span className="badge badge-warning badge-outline shrink-0 font-bold">+{transaction.amount} XP</span>
+        <SectionHeader
+          title="Achievements"
+          subtitle="Milestone jangka panjang yang bisa di-claim untuk Bintang"
+        />
+
+        <CelebrationBanner
+          show={!!starToast}
+          emoji="⭐"
+          title={`+${starToast?.stars} Bintang berhasil diklaim!`}
+          subtitle={starToast?.title ?? ''}
+        />
+
+        {/* Stats bar */}
+        <ItemCard className="p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-2xl font-bold text-neutral">{unlockedCount}/{achievements.length}</p>
+              <p className="text-xs font-bold text-neutral/50 mt-0.5">achievement terbuka</p>
             </div>
-            {transaction.reachedLevel && (
-              <p className="mt-3 rounded-xl bg-primary/10 px-3 py-2 text-xs font-bold text-primary">Reached Level {transaction.reachedLevel}</p>
+            {claimableCount > 0 ? (
+              <span className="badge badge-warning font-bold gap-1">
+                <Star className="h-3 w-3" weight="fill" />
+                {claimableCount} Siap Diklaim
+              </span>
+            ) : (
+              <span className="badge badge-ghost text-neutral/50 font-medium">
+                {Math.round((unlockedCount / Math.max(1, achievements.length)) * 100)}% Selesai
+              </span>
             )}
           </div>
-        ))}
+          <ProgressBar value={Math.round((unlockedCount / Math.max(1, achievements.length)) * 100)} className="mt-3" />
+        </ItemCard>
+
+        {/* Filter chips — matches ToggleButton pattern */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-0.5 no-scrollbar">
+          <FilterChip label={`Semua (${counts.all})`} active={achievementFilter === 'all'} onClick={() => setAchievementFilter('all')} />
+          <FilterChip label={`Misi 🎯 (${counts.mission})`} active={achievementFilter === 'mission'} onClick={() => setAchievementFilter('mission')} />
+          <FilterChip label={`Streak 🔥 (${counts.streak})`} active={achievementFilter === 'streak'} onClick={() => setAchievementFilter('streak')} />
+          <FilterChip label={`Level ⚡ (${counts.milestone})`} active={achievementFilter === 'milestone'} onClick={() => setAchievementFilter('milestone')} />
+        </div>
+
+        {/* Achievement list */}
+        <div className="flex flex-col gap-3">
+          {filtered.map(ach => {
+            const canClaim = ach.unlocked && !ach.isStarClaimed && ach.starReward > 0;
+            const pct = Math.min(100, Math.round((ach.progress / Math.max(1, ach.target)) * 100));
+
+            return (
+              <ItemCard
+                key={ach.id}
+                className={`p-4 transition-all ${canClaim ? 'border-warning/50 ring-1 ring-warning/20' : !ach.unlocked ? 'opacity-60' : ''}`}
+              >
+                <div className="flex items-start gap-3">
+                  {/* Icon */}
+                  <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-full text-2xl select-none ${ach.unlocked ? 'bg-primary/10' : 'bg-base-200 grayscale'}`}>
+                    {ach.unlocked ? ach.icon : '🔒'}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <h3 className="font-bold text-neutral truncate">{ach.title}</h3>
+                          {ach.unlocked && <CheckCircle className="h-3.5 w-3.5 text-success shrink-0" weight="fill" />}
+                        </div>
+                        <p className="mt-0.5 text-xs font-medium text-neutral/60">{ach.description}</p>
+                      </div>
+                      <span className="badge badge-warning badge-outline font-bold text-xs shrink-0">+{ach.xpReward} XP</span>
+                    </div>
+
+                    {/* Progress */}
+                    <div className="mt-2.5">
+                      <div className="flex justify-between text-xs text-neutral/50 mb-1">
+                        <span>{ach.progress}/{ach.target}</span>
+                        <span>{pct}%</span>
+                      </div>
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-base-200">
+                        <div
+                          className={`h-full rounded-full transition-all ${ach.unlocked ? 'bg-success' : 'bg-primary'}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stars claim row */}
+                <div className="mt-3 pt-3 border-t border-base-200/60 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-neutral/60">
+                    <Star className="h-3.5 w-3.5 text-warning" weight="fill" />
+                    {ach.starReward} Bintang
+                  </div>
+
+                  {ach.isStarClaimed ? (
+                    <div className="flex items-center gap-1 text-xs font-bold text-success">
+                      <CheckCircle className="h-3.5 w-3.5" weight="fill" />
+                      Diklaim
+                    </div>
+                  ) : canClaim ? (
+                    <button
+                      type="button"
+                      disabled={claimingAchievementId === ach.id || isLoading}
+                      onClick={() => handleClaimStars(ach.id, ach.title, ach.starReward)}
+                      className="btn btn-warning btn-sm text-neutral font-bold gap-1.5"
+                    >
+                      {claimingAchievementId === ach.id
+                        ? <span className="loading loading-spinner loading-xs" />
+                        : <Star className="h-3.5 w-3.5" weight="fill" />}
+                      Klaim {ach.starReward} Bintang
+                    </button>
+                  ) : (
+                    <span className="text-xs text-neutral/40 font-medium">
+                      {Math.max(0, ach.target - ach.progress)} lagi
+                    </span>
+                  )}
+                </div>
+              </ItemCard>
+            );
+          })}
+        </div>
       </div>
     );
   }
 
+  // ── XP HISTORY ──────────────────────────────────────────────────────
+  if (section === 'history') {
+    const totalXp = getTotalXpForChild(xpTransactions, activeChildId);
+    const levelUps = history.filter(h => h.reachedLevel).length;
+    const paged = history.slice(0, historyLimit);
+
+    return (
+      <div className="flex flex-col gap-4">
+        <SectionHeader
+          title="XP History"
+          subtitle="Semua aksi yang menggerakkan levelmu"
+        />
+
+        {/* Stats */}
+        <ItemCard className="p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-2xl font-bold text-neutral">{totalXp.toLocaleString()} XP</p>
+              <p className="text-xs font-bold text-neutral/50 mt-0.5">total XP diperoleh</p>
+            </div>
+            <div className="text-right">
+              <span className="badge badge-primary font-bold">{levelUps}× Naik Level</span>
+              <p className="text-xs text-neutral/50 mt-1">{history.length} catatan</p>
+            </div>
+          </div>
+        </ItemCard>
+
+        {/* List */}
+        {history.length === 0 ? (
+          <ItemCard className="p-6 text-center">
+            <p className="text-2xl mb-2 select-none">📜</p>
+            <h5 className="font-bold text-neutral">Belum Ada Riwayat XP</h5>
+            <p className="text-xs text-neutral/60 font-medium mt-1 max-w-xs mx-auto leading-relaxed">
+              Selesaikan misi untuk melihat riwayat XP-mu di sini!
+            </p>
+          </ItemCard>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {paged.map(tx => {
+              const date = new Date(tx.created_at).toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+              });
+
+              const isLevelUp = !!tx.reachedLevel;
+              const iconBg = isLevelUp
+                ? 'bg-warning/20 text-warning'
+                : tx.type === 'DAILY_QUEST'
+                ? 'bg-primary/10 text-primary'
+                : tx.type === 'ACHIEVEMENT'
+                ? 'bg-success/10 text-success'
+                : 'bg-base-200 text-neutral/60';
+
+              return (
+                <ItemCard key={tx.id} className={`p-4 ${isLevelUp ? 'border-warning/40' : ''}`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${iconBg}`}>
+                      {isLevelUp
+                        ? <Trophy className="h-5 w-5" weight="fill" />
+                        : tx.type === 'DAILY_QUEST'
+                        ? <Sparkle className="h-5 w-5" weight="fill" />
+                        : tx.type === 'ACHIEVEMENT'
+                        ? <Medal className="h-5 w-5" weight="fill" />
+                        : <ClockCounterClockwise className="h-5 w-5" weight="fill" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-bold text-neutral truncate text-sm">
+                        {getXpSourceLabel(tx, childLogs, childTasks)}
+                      </h3>
+                      <p className="text-xs text-neutral/50 mt-0.5">{date}</p>
+                    </div>
+                    <span className="badge badge-warning badge-outline font-bold shrink-0">+{tx.amount} XP</span>
+                  </div>
+
+                  {isLevelUp && (
+                    <div className="mt-2.5 flex items-center gap-2 text-xs font-bold text-warning bg-warning/10 rounded-lg px-3 py-1.5 border border-warning/20">
+                      <span>🎉</span>
+                      <span>Mencapai Level {tx.reachedLevel}!</span>
+                    </div>
+                  )}
+                </ItemCard>
+              );
+            })}
+
+            {history.length > historyLimit && (
+              <button
+                type="button"
+                onClick={() => setHistoryLimit(n => n + 15)}
+                className="btn btn-outline btn-primary w-full"
+              >
+                Tampilkan Lebih Banyak ({history.length - historyLimit} tersisa)
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── PERSONAL LEAGUE ─────────────────────────────────────────────────
   if (section === 'league') {
     const league = getPersonalLeagueStatus(activeChildId, xpTransactions);
     const dailyBreakdown = getWeeklyDailyBreakdown(activeChildId, xpTransactions);
     const pastWeeks = getPastWeeksHistory(activeChildId, xpTransactions, 3);
     const maxDailyXp = Math.max(20, ...dailyBreakdown.map(d => d.xp));
-    const now = new Date();
-    const daysUntilMonday = 7 - ((now.getDay() + 6) % 7);
+    const daysUntilMonday = 7 - ((new Date().getDay() + 6) % 7);
 
     return (
       <div className="flex flex-col gap-4">
-        <ProgressHeader title="Personal League" subtitle="Kompetisi mingguan melawan target diri sendiri." />
+        <SectionHeader
+          title="Personal League"
+          subtitle="Kompetisi mingguan melawan target diri sendiri"
+        />
 
-        {/* Current Tier Banner */}
-        <div className="card bg-gradient-to-br from-primary/15 via-primary/5 to-base-100 border border-primary/20 p-5 shadow-sm rounded-2xl">
+        {/* Current tier — matches Level Hero Card tonal surface */}
+        <div className="card w-full bg-gradient-to-br from-primary/15 via-primary/5 to-base-100 border border-primary/20 p-5 shadow-sm rounded-xl">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <span className="badge badge-primary font-bold text-xs mb-1.5">Tier Minggu Ini</span>
+              <span className="badge badge-primary font-bold text-xs mb-2">Tier Minggu Ini</span>
               <h3 className="text-3xl font-black text-neutral flex items-center gap-2">
                 {league.tier}
-                <span>
-                  {LEAGUE_TIERS.find(t => t.name === league.tier)?.icon || '🏆'}
-                </span>
+                <span className="select-none">{LEAGUE_TIERS.find(t => t.name === league.tier)?.icon ?? '🏆'}</span>
               </h3>
-              <p className="text-sm font-semibold text-neutral/60 mt-1">
-                {league.weeklyXp} XP terkumpul minggu ini
-              </p>
+              <p className="text-sm font-semibold text-neutral/60 mt-1">{league.weeklyXp} XP minggu ini</p>
             </div>
             <div className="text-right">
-              <span className="badge badge-warning badge-outline font-bold text-xs">
-                {league.nextTier ? `${league.xpToNextTier} XP lagi ke ${league.nextTier}` : 'Tier Tertinggi! 🌟'}
+              <span className="badge badge-warning badge-outline font-bold">
+                {league.nextTier ? `${league.xpToNextTier} XP → ${league.nextTier}` : 'Tier Tertinggi 🌟'}
               </span>
-              <p className="text-[11px] font-semibold text-neutral/50 mt-1">
-                Reset dalam {daysUntilMonday} hari
-              </p>
+              <p className="text-xs text-neutral/50 font-medium mt-1">Reset dalam {daysUntilMonday} hari</p>
             </div>
           </div>
-
           <div className="mt-4">
-            <div className="flex items-center justify-between text-xs font-bold text-neutral/60 mb-1.5">
-              <span>Progress Menuju {league.nextTier || 'Puncak'}</span>
-              <span className="text-primary font-black">{league.progressPercent}%</span>
+            <div className="flex justify-between text-xs font-bold text-neutral/60 mb-1.5">
+              <span>Progress ke {league.nextTier ?? 'Puncak'}</span>
+              <span className="text-primary">{league.progressPercent}%</span>
             </div>
-            <div className="h-3 w-full overflow-hidden rounded-full bg-base-200">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-primary to-secondary transition-all duration-500"
-                style={{ width: `${Math.min(100, Math.max(0, league.progressPercent))}%` }}
-              />
-            </div>
+            <ProgressBar value={league.progressPercent} />
           </div>
         </div>
 
-        {/* Weekly Activity Bar Chart */}
-        <div className="card bg-base-100 p-4 shadow-sm rounded-2xl border border-base-200/80">
-          <div className="flex items-center justify-between gap-2 mb-3">
+        {/* Weekly bar chart */}
+        <ItemCard className="p-4">
+          <div className="flex items-center justify-between mb-3">
             <div>
-              <h4 className="text-base font-bold text-neutral">Aktivitas Minggu Ini</h4>
-              <p className="text-xs font-medium text-neutral/50">XP harian Senin s/d Minggu</p>
+              <h4 className="font-bold text-neutral">Aktivitas Minggu Ini</h4>
+              <p className="text-xs text-neutral/50 font-medium">XP harian Sen–Min</p>
             </div>
-            <span className="badge badge-neutral/10 font-bold text-xs px-2.5 py-1 text-neutral/70">
-              Total {league.weeklyXp} XP
-            </span>
+            <span className="badge badge-ghost font-bold text-neutral/70">{league.weeklyXp} XP</span>
           </div>
-
-          <div className="grid grid-cols-7 gap-2 pt-6 pb-1 items-end h-36">
+          <div className="grid grid-cols-7 gap-1.5 items-end h-28 pt-4">
             {dailyBreakdown.map((item, idx) => {
-              const heightPercent = item.xp > 0 ? Math.max(16, Math.round((item.xp / maxDailyXp) * 100)) : 8;
+              const h = item.xp > 0 ? Math.max(15, Math.round((item.xp / maxDailyXp) * 100)) : 6;
               return (
-                <div key={idx} className="flex flex-col items-center h-full justify-end gap-1.5 group">
-                  <span className={`text-[10px] font-black transition-opacity ${item.xp > 0 ? 'text-primary' : 'text-transparent'}`}>
-                    +{item.xp}
+                <div key={idx} className="flex flex-col items-center h-full justify-end gap-1">
+                  <span className={`text-[10px] font-bold ${item.xp > 0 ? 'text-primary' : 'text-transparent'}`}>
+                    {item.xp > 0 ? `+${item.xp}` : ' '}
                   </span>
-                  <div className="w-full max-w-[28px] h-20 bg-base-200/70 rounded-lg flex items-end overflow-hidden p-0.5">
+                  <div className="w-full max-w-[28px] h-full bg-base-200/60 rounded flex items-end overflow-hidden">
                     <div
-                      className={`w-full rounded-md transition-all duration-500 ${
+                      className={`w-full rounded transition-all duration-500 ${
                         item.isToday
-                          ? 'bg-gradient-to-t from-primary to-amber-400 shadow-sm'
+                          ? 'bg-primary'
                           : item.xp > 0
-                          ? 'bg-primary/70'
+                          ? 'bg-primary/50'
                           : item.isFuture
-                          ? 'bg-base-200 opacity-30'
+                          ? 'bg-base-200/30'
                           : 'bg-base-200'
                       }`}
-                      style={{ height: `${heightPercent}%` }}
+                      style={{ height: `${h}%` }}
                     />
                   </div>
-                  <div className="flex flex-col items-center">
-                    <span className={`text-xs font-bold ${item.isToday ? 'text-primary font-black' : 'text-neutral/60'}`}>
-                      {item.label}
-                    </span>
-                    {item.isToday && (
-                      <span className="h-1 w-1 rounded-full bg-primary mt-0.5" />
-                    )}
-                  </div>
+                  <span className={`text-[11px] font-bold ${item.isToday ? 'text-primary' : 'text-neutral/50'}`}>
+                    {item.label}
+                  </span>
+                  {item.isToday && <span className="h-1 w-1 rounded-full bg-primary" />}
                 </div>
               );
             })}
           </div>
-        </div>
+        </ItemCard>
 
-        {/* Tier Roadmap */}
-        <div className="card bg-base-100 p-4 shadow-sm rounded-2xl border border-base-200/80">
-          <h4 className="text-base font-bold text-neutral mb-1">Tingkatan League</h4>
-          <p className="text-xs font-medium text-neutral/50 mb-3">Kumpulkan XP setiap minggu untuk naik tingkatan</p>
-          <div className="flex flex-col gap-2.5">
+        {/* Tier roadmap */}
+        <ItemCard className="p-4">
+          <h4 className="font-bold text-neutral mb-0.5">Tingkatan League</h4>
+          <p className="text-xs text-neutral/50 font-medium mb-3">Kumpulkan XP setiap minggu untuk naik tier</p>
+          <div className="flex flex-col gap-2">
             {LEAGUE_TIERS.map(tier => {
-              const isCurrentTier = league.tier === tier.name;
+              const isCurrent = league.tier === tier.name;
               const isAchieved = league.weeklyXp >= tier.minXp;
               return (
                 <div
                   key={tier.name}
                   className={`flex items-center justify-between p-3 rounded-xl transition-all ${
-                    isCurrentTier
-                      ? 'bg-primary/10 border-2 border-primary/40 shadow-xs ring-1 ring-primary/20'
+                    isCurrent
+                      ? 'bg-primary/10 border-2 border-primary/40'
                       : isAchieved
-                      ? 'bg-base-200/60 border border-base-200'
-                      : 'bg-base-100 border border-dashed border-base-300 opacity-60'
+                      ? 'bg-base-200/50 border border-base-200'
+                      : 'bg-base-100 border border-dashed border-base-300 opacity-55'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl select-none">{tier.icon}</span>
+                    <span className="text-xl select-none">{tier.icon}</span>
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-neutral text-sm">{tier.name}</span>
-                        {isCurrentTier && (
-                          <span className="badge badge-primary badge-xs font-black text-[10px] px-2 py-1">Aktif</span>
-                        )}
+                        {isCurrent && <span className="badge badge-primary badge-xs font-bold">Aktif</span>}
                       </div>
-                      <p className="text-xs text-neutral/50 font-medium">{tier.desc}</p>
+                      <p className="text-xs text-neutral/50">{tier.desc}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <span className="text-xs font-black text-neutral/70">
-                      {tier.minXp === 0 ? 'Mulai' : `Min. ${tier.minXp} XP`}
-                    </span>
-                  </div>
+                  <span className="text-xs font-bold text-neutral/60">
+                    {tier.minXp === 0 ? 'Mulai' : `≥${tier.minXp} XP`}
+                  </span>
                 </div>
               );
             })}
           </div>
-        </div>
+        </ItemCard>
 
-        {/* Past Weeks History */}
-        <div className="card bg-base-100 p-4 shadow-sm rounded-2xl border border-base-200/80">
-          <h4 className="text-base font-bold text-neutral mb-1">Riwayat Minggu Sebelumnya</h4>
-          <p className="text-xs font-medium text-neutral/50 mb-3">Pencapaian tier pada minggu-minggu lalu</p>
-          <div className="flex flex-col gap-2">
-            {pastWeeks.map((week, idx) => (
-              <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-base-200/50 border border-base-200/70">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl select-none">{week.tierIcon}</span>
-                  <div>
-                    <p className="text-xs font-bold text-neutral">{week.label}</p>
-                    <p className="text-[11px] font-semibold text-neutral/50">Tier {week.tier}</p>
+        {/* Past weeks */}
+        {pastWeeks.length > 0 && (
+          <ItemCard className="p-4">
+            <h4 className="font-bold text-neutral mb-0.5">Minggu Sebelumnya</h4>
+            <p className="text-xs text-neutral/50 font-medium mb-3">Pencapaian tier minggu lalu</p>
+            <div className="flex flex-col gap-2">
+              {pastWeeks.map((week, idx) => (
+                <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl bg-base-200/50">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-lg select-none">{week.tierIcon}</span>
+                    <div>
+                      <p className="text-xs font-bold text-neutral">{week.label}</p>
+                      <p className="text-[11px] text-neutral/50">Tier {week.tier}</p>
+                    </div>
                   </div>
+                  <span className="badge badge-warning badge-outline font-bold">{week.weeklyXp} XP</span>
                 </div>
-                <div className="text-right">
-                  <span className="badge badge-warning badge-outline font-black text-xs">
-                    {week.weeklyXp} XP
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+              ))}
+            </div>
+          </ItemCard>
+        )}
 
-        {/* Kid-Friendly League Explainer */}
-        <div className="card bg-gradient-to-br from-info/10 via-base-100 to-base-100 p-4 shadow-sm rounded-2xl border border-info/20">
-          <h4 className="text-sm font-bold text-neutral mb-1.5 flex items-center gap-2">
-            <span>💡</span> Cara Kerja Personal League
+        {/* Explainer */}
+        <ItemCard className="p-4 bg-base-200/40">
+          <h4 className="text-sm font-bold text-neutral mb-1 flex items-center gap-2">
+            💡 Cara Kerja Personal League
           </h4>
           <p className="text-xs text-neutral/60 font-medium leading-relaxed">
-            Personal League melacak konsistensi mingguanmu tanpa harus bersaing dengan orang lain. XP League akan direset otomatis setiap Senin pagi, jadi selesaikan misi setiap hari untuk mempertahankan dan meningkatkan tiermu!
+            Personal League melacak konsistensi mingguanmu tanpa harus bersaing dengan orang lain.
+            XP League direset otomatis setiap Senin — selesaikan misi tiap hari untuk naik tier!
           </p>
-        </div>
+        </ItemCard>
       </div>
     );
   }

@@ -144,3 +144,25 @@ export const getTotalXpForChild = (xpTransactions: XpTransaction[], childId: str
         .filter(transaction => transaction.child_id === childId)
         .reduce((total, transaction) => total + transaction.amount, 0);
 };
+
+export interface UpcomingReward extends LevelReward {
+    level: number;
+    xpRequired: number;
+}
+
+export const getUpcomingMilestoneRewards = (currentLevel: number, count = 3): UpcomingReward[] => {
+    const nextLevels = Object.keys(LEVEL_REWARDS)
+        .map(Number)
+        .filter(level => level > currentLevel)
+        .sort((a, b) => a - b)
+        .slice(0, count);
+
+    return nextLevels.flatMap(level =>
+        (LEVEL_REWARDS[level] || []).map(r => ({
+            ...r,
+            level,
+            xpRequired: getXpRequiredForLevel(level)
+        }))
+    );
+};
+
