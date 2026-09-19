@@ -25,7 +25,7 @@ export const FEATURE_FLAGS = {
    * Enable Gamification Progress Menu (Daily Quests, Achievements, XP History,
    * Personal League, Rewards Shelf). Set to true when the revamp is ready to ship.
    */
-  ENABLE_PROGRESS_MENU: false,
+  ENABLE_PROGRESS_MENU: true,
 } as const;
 
 export type FeatureFlagKey = keyof typeof FEATURE_FLAGS;
