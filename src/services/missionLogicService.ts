@@ -75,16 +75,11 @@ export const missionLogicService = {
         // 1. Check for MISSED tasks from PAST DAYS
         // Only run this if we haven't checked today yet
         if (isResetNeeded(lastMissedCheckDate)) {
-            let startDate: Date;
             const todayDate = getTodayLocalStart();
-
-            if (lastMissedCheckDate) {
-                startDate = new Date(lastMissedCheckDate);
-                startDate = getLocalStartOfDay(startDate);
-            } else {
-                startDate = new Date(todayDate);
-                startDate.setDate(startDate.getDate() - 7);
-            }
+            const maxLookback = new Date(todayDate.getTime() - 7 * 86400000);
+            const startDate = lastMissedCheckDate
+                ? new Date(Math.max(getLocalStartOfDay(new Date(lastMissedCheckDate)).getTime(), maxLookback.getTime()))
+                : maxLookback;
 
             const endDate = new Date(todayDate);
             endDate.setDate(endDate.getDate() - 1);

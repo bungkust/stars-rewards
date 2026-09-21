@@ -48,7 +48,7 @@ const getDB = (): LocalDB => {
             };
         }
 
-        return {
+        const db: LocalDB = {
             ...defaults,
             ...parsed,
             profile,
@@ -60,14 +60,70 @@ const getDB = (): LocalDB => {
             xp_transactions: Array.isArray(parsed.xp_transactions) ? parsed.xp_transactions : defaults.xp_transactions,
             categories: Array.isArray(parsed.categories) ? parsed.categories : defaults.categories
         };
+
+        // Proactively prune if logs or history are bloated to keep storage lean
+        if (pruneDBForStorage(db)) {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+            } catch (ignore) {}
+        }
+
+        return db;
     } catch (e) {
         console.error('Failed to parse local storage', e);
         return defaults;
     }
 };
 
+const pruneDBForStorage = (db: LocalDB, aggressive = false): boolean => {
+    let pruned = false;
+
+    // 1. Remove FAILED logs older than cutoff (normal: 14 days, aggressive: 3 days)
+    const cutoff = new Date(Date.now() - (aggressive ? 3 : 14) * 86400000).toISOString();
+    const initialLogCount = db.logs.length;
+    db.logs = db.logs.filter(l => !(l.status === 'FAILED' && l.completed_at < cutoff));
+    if (db.logs.length < initialLogCount) pruned = true;
+
+    // 2. Limit historical logs (aggressive: 200, normal: 1000), preserving PENDING
+    const maxLogs = aggressive ? 200 : 1000;
+    if (db.logs.length > maxLogs) {
+        const pending = db.logs.filter(l => l.status === 'PENDING' || l.status === 'PENDING_EXCUSE');
+        const nonPending = db.logs.filter(l => l.status !== 'PENDING' && l.status !== 'PENDING_EXCUSE');
+        nonPending.sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime());
+        db.logs = [...pending, ...nonPending.slice(0, Math.max(50, maxLogs - pending.length))];
+        pruned = true;
+    }
+
+    // 3. Limit transactions and xp_transactions (aggressive: 100, normal: 500)
+    const maxTx = aggressive ? 100 : 500;
+    if (db.transactions.length > maxTx) {
+        db.transactions.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        db.transactions = db.transactions.slice(0, maxTx);
+        pruned = true;
+    }
+    if (db.xp_transactions.length > maxTx) {
+        db.xp_transactions.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        db.xp_transactions = db.xp_transactions.slice(0, maxTx);
+        pruned = true;
+    }
+
+    return pruned;
+};
+
 const saveDB = (db: LocalDB) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+    for (const aggressive of [false, true]) {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+            return;
+        } catch (e: any) {
+            const isQuota = e?.name === 'QuotaExceededError' || e?.code === 22 || e?.name === 'NS_ERROR_DOM_QUOTA_REACHED';
+            if (!isQuota) {
+                console.error('Failed to save to local storage', e);
+                return;
+            }
+            pruneDBForStorage(db, aggressive);
+        }
+    }
 };
 
 const generateId = () => crypto.randomUUID();

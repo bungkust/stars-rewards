@@ -1452,6 +1452,7 @@ export const useAppStore = create<AppState>()(
           }
         } catch (error) {
           console.error('Error checking missed missions:', error);
+          set({ lastMissedCheckDate: getLocalDateString() });
         }
       },
 
@@ -1588,17 +1589,17 @@ export const useAppStore = create<AppState>()(
         reviewPromptRated: state.reviewPromptRated,
         reviewPromptShownTodayCount: state.reviewPromptShownTodayCount,
         userProfile: state.userProfile,
-        // Persist important data
+        // Persist recent data to provide instant render without bloating localStorage quota
         children: state.children,
         activeChildId: state.activeChildId,
         tasks: state.tasks,
         rewards: state.rewards,
-        childLogs: state.childLogs,
-        redeemedHistory: state.redeemedHistory,
-        transactions: state.transactions,
-          xpTransactions: state.xpTransactions,
-          celebratedLevelByChild: state.celebratedLevelByChild,
-          categories: state.categories,
+        childLogs: state.childLogs.slice(0, 100),
+        redeemedHistory: state.redeemedHistory.slice(0, 100),
+        transactions: state.transactions.slice(0, 100),
+        xpTransactions: state.xpTransactions.slice(0, 100),
+        celebratedLevelByChild: state.celebratedLevelByChild,
+        categories: state.categories,
       }),
     }
   )
