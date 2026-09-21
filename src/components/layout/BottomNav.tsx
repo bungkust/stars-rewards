@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ChartLineUp, ClipboardText, Gift, House } from '@phosphor-icons/react';
+import { ChartLineUp, ClipboardText, Gift, House, Trophy } from '@phosphor-icons/react';
 import { useAppStore } from '../../store/useAppStore';
 
 const BottomNav = () => {
@@ -10,6 +10,7 @@ const BottomNav = () => {
   const childItems = [
       { id: 'home', icon: House, label: 'Home', path: '/child' },
       { id: 'tasks', icon: ClipboardText, label: 'Missions', path: '/child/tasks' },
+      { id: 'champ', icon: Trophy, label: 'Champ', path: '/child/loyalty' },
       { id: 'rewards', icon: Gift, label: 'Rewards', path: '/child/rewards' },
       { id: 'stats', icon: ChartLineUp, label: 'Stats', path: '/child/stats' },
     ];
@@ -18,6 +19,7 @@ const BottomNav = () => {
     ? [
       { id: 'home', icon: House, label: 'Home', path: '/parent' },
       { id: 'tasks', icon: ClipboardText, label: 'Missions', path: '/parent/tasks' },
+      { id: 'champ', icon: Trophy, label: 'Champ', path: '/parent/loyalty' },
       { id: 'rewards', icon: Gift, label: 'Rewards', path: '/parent/rewards' },
       { id: 'stats', icon: ChartLineUp, label: 'Stats', path: '/parent/stats' },
     ]

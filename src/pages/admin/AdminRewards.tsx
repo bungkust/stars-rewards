@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaPlus, FaGift, FaPencilAlt, FaTrash, FaGamepad, FaIceCream, FaTicketAlt } from 'react-icons/fa';
+import { FaPlus, FaGift, FaGamepad, FaIceCream, FaTicketAlt } from 'react-icons/fa';
 import { WarningCTAButton } from '../../components/design-system/WarningCTAButton';
-import { AppCard } from '../../components/design-system/AppCard';
 import { H1Header } from '../../components/design-system/H1Header';
 import { IconWrapper } from '../../components/design-system/IconWrapper';
 import { useAppStore } from '../../store/useAppStore';
-import { AlertModal } from '../../components/design-system';
+import { AlertModal, AdminEntityCard } from '../../components/design-system';
 import RewardConfirmationModal from '../../components/modals/RewardConfirmationModal';
 import { getRewardIconComponent } from '../../utils/icons';
 
@@ -24,8 +23,6 @@ const getIconComponent = (iconId: string | undefined) => {
 const AdminRewards = () => {
   const navigate = useNavigate();
   const { rewards, deleteReward, activeChildId } = useAppStore();
-  const [selectedReward, setSelectedReward] = useState<string | null>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [rewardToDelete, setRewardToDelete] = useState<string | null>(null);
   const [selectedRewardDetails, setSelectedRewardDetails] = useState<any>(null);
@@ -39,8 +36,7 @@ const AdminRewards = () => {
   });
 
   const handleEditClick = (rewardId: string) => {
-    setSelectedReward(rewardId);
-    setIsEditModalOpen(true);
+    navigate(`/admin/rewards/${rewardId}/edit`);
   };
 
   const handleDeleteClick = (rewardId: string) => {
@@ -52,13 +48,6 @@ const AdminRewards = () => {
     setSelectedRewardDetails(reward);
   };
 
-  const handleEditConfirm = () => {
-    if (selectedReward) {
-      navigate(`/admin/rewards/${selectedReward}/edit`);
-    }
-    setIsEditModalOpen(false);
-  };
-
   const handleDeleteConfirm = async () => {
     if (rewardToDelete) {
       await deleteReward(rewardToDelete);
@@ -67,68 +56,56 @@ const AdminRewards = () => {
   };
 
   return (
-    <div className="relative min-h-full pb-20 flex flex-col gap-6">
+    <div className="relative min-h-full pb-24 flex flex-col gap-6">
       <div className="flex justify-between items-center">
         <H1Header>Manage Rewards</H1Header>
       </div>
 
-      <div className="grid gap-4">
+      <div className="flex flex-col gap-3">
         {filteredRewards.length === 0 ? (
-          <div className="text-center py-10 text-neutral/50">
-            No rewards created yet. Click below to add one!
+          <div className="card bg-base-100 border border-base-200 rounded-3xl p-8 text-center flex flex-col items-center justify-center gap-3 shadow-sm">
+            <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center">
+              <FaGift className="w-7 h-7" />
+            </div>
+            <div>
+              <h3 className="font-bold text-base text-neutral">No Rewards Created</h3>
+              <p className="text-xs text-neutral/50 max-w-xs mt-1">
+                No rewards created yet. Tap the button below to add your first reward!
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/admin/rewards/new')}
+              className="btn btn-sm bg-emerald-600 hover:bg-emerald-700 text-white border-none rounded-xl text-xs font-bold mt-2"
+            >
+              + Add Reward
+            </button>
           </div>
         ) : (
           filteredRewards.map((reward) => {
             const IconComponent = getIconComponent(reward.category);
             return (
-              <AppCard 
-                key={reward.id} 
-                className="flex flex-row items-center gap-4 !p-4 min-w-0"
-              >
-                <div 
-                  className="flex-1 flex flex-row items-center gap-4 min-w-0 cursor-pointer active:scale-95 transition-transform"
-                  onClick={() => handleRewardClick(reward)}
-                >
-                  {reward.image_url ? (
-                    <div className="w-12 h-12 rounded-full flex-shrink-0 overflow-hidden shadow-sm border border-base-200 bg-white">
-                      <img src={reward.image_url} alt={reward.name} className="w-full h-full object-cover" />
-                    </div>
+              <AdminEntityCard
+                key={reward.id}
+                badge={
+                  reward.image_url ? (
+                    <img src={reward.image_url} alt={reward.name} className="w-full h-full object-cover" />
+                  ) : reward.icon ? (
+                    (() => {
+                      const CustomIcon = getRewardIconComponent(reward.icon);
+                      return <CustomIcon className="w-6 h-6 text-emerald-700" />;
+                    })()
                   ) : (
-                    <div className="p-3 bg-primary/10 text-primary rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden">
-                      {reward.icon ? (
-                        (() => { const CustomIcon = getRewardIconComponent(reward.icon); return <CustomIcon className="w-6 h-6" />; })()
-                      ) : (
-                        <IconWrapper icon={IconComponent} className="text-primary" />
-                      )}
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-neutral line-clamp-2 leading-tight break-words">{reward.name}</h3>
-                    <p className="text-sm text-neutral/60">{reward.cost_value} Stars</p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    className="btn btn-ghost btn-sm btn-circle text-neutral/40"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditClick(reward.id);
-                    }}
-                  >
-                    <FaPencilAlt />
-                  </button>
-                  <button
-                    className="btn btn-ghost btn-sm btn-circle text-error"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteClick(reward.id);
-                    }}
-                  >
-                    <FaTrash />
-                  </button>
-                </div>
-              </AppCard>
-            )
+                    <IconWrapper icon={IconComponent} className="text-emerald-700 text-xl" />
+                  )
+                }
+                title={reward.name}
+                stars={reward.cost_value}
+                description={reward.description}
+                onClick={() => handleRewardClick(reward)}
+                onEdit={() => handleEditClick(reward.id)}
+                onDelete={() => handleDeleteClick(reward.id)}
+              />
+            );
           })
         )}
       </div>
@@ -137,15 +114,6 @@ const AdminRewards = () => {
         <FaPlus className="w-6 h-6" />
         <span className="ml-2 hidden sm:inline">Add Reward</span>
       </WarningCTAButton>
-
-      <AlertModal
-        isOpen={isEditModalOpen}
-        title="Edit Reward"
-        message="Do you want to edit this reward?"
-        confirmText="Edit"
-        onClose={() => setIsEditModalOpen(false)}
-        onConfirm={handleEditConfirm}
-      />
 
       <AlertModal
         isOpen={isDeleteModalOpen}

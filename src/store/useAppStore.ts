@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Profile, Child, Task, Reward, VerificationRequest, CoinTransaction, ChildTaskLog, Category, XpTransaction } from '../types';
+import type { Profile, Child, Task, Reward, VerificationRequest, CoinTransaction, ChildTaskLog, Category, XpTransaction, StreakMilestone } from '../types';
+import { DEFAULT_STREAK_MILESTONES } from '../utils/loyaltyTierUtils';
 import { dataService } from '../services/dataService';
 import { localStorageService } from '../services/localStorageService';
 import { getNextDueDate } from '../utils/recurrence';
@@ -81,6 +82,13 @@ export interface AppState {
   clearLevelUpMilestone: () => void;
   requestReviewPrompt: (trigger: ReviewPromptTrigger) => void;
   closeReviewPrompt: (choice: ReviewPromptChoice) => void;
+
+  // Streak Milestones configuration
+  streakMilestones: StreakMilestone[];
+  updateStreakMilestone: (id: string, updates: Partial<StreakMilestone>) => void;
+  addStreakMilestone: (milestone: Omit<StreakMilestone, 'id'>) => void;
+  deleteStreakMilestone: (id: string) => void;
+  resetStreakMilestones: () => void;
 
   // Actions
   setActiveChild: (childId: string | null) => void;
@@ -177,6 +185,7 @@ export const useAppStore = create<AppState>()(
       isLoading: false,
 
       streakMilestone: null,
+      streakMilestones: DEFAULT_STREAK_MILESTONES,
       levelUpMilestone: null,
       reviewPromptVisible: false,
       reviewPromptDismissed: false,
@@ -213,6 +222,34 @@ export const useAppStore = create<AppState>()(
       setStreakMilestone: (milestone) => set({ streakMilestone: milestone }),
       clearStreakMilestone: () => set({ streakMilestone: null }),
       clearLevelUpMilestone: () => set({ levelUpMilestone: null }),
+
+      updateStreakMilestone: (id, updates) => {
+        set((state) => ({
+          streakMilestones: state.streakMilestones.map((m) =>
+            m.id === id ? { ...m, ...updates } : m
+          ).sort((a, b) => a.days - b.days),
+        }));
+      },
+
+      addStreakMilestone: (milestone) => {
+        const newMilestone: StreakMilestone = {
+          ...milestone,
+          id: `milestone-${Date.now()}`,
+        };
+        set((state) => ({
+          streakMilestones: [...state.streakMilestones, newMilestone].sort((a, b) => a.days - b.days),
+        }));
+      },
+
+      deleteStreakMilestone: (id) => {
+        set((state) => ({
+          streakMilestones: state.streakMilestones.filter((m) => m.id !== id),
+        }));
+      },
+
+      resetStreakMilestones: () => {
+        set({ streakMilestones: DEFAULT_STREAK_MILESTONES });
+      },
       requestReviewPrompt: (trigger) => {
         const state = get();
         if (!shouldShowReviewPrompt(state, trigger)) return;
@@ -1572,6 +1609,7 @@ export const useAppStore = create<AppState>()(
     {
       name: 'stars-rewards-storage',
       partialize: (state) => ({
+        isAdminMode: state.isAdminMode,
         parentPin: state.parentPin,
         parentPattern: state.parentPattern,
         preferredAuthMethod: state.preferredAuthMethod,
@@ -1600,6 +1638,7 @@ export const useAppStore = create<AppState>()(
         xpTransactions: state.xpTransactions.slice(0, 100),
         celebratedLevelByChild: state.celebratedLevelByChild,
         categories: state.categories,
+        streakMilestones: state.streakMilestones,
       }),
     }
   )

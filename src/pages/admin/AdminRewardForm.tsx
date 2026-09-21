@@ -123,6 +123,8 @@ const AdminRewardForm = () => {
   };
 
   const isFormValid = name.trim().length > 0 && selectedChildIds.length > 0 && cost >= 0;
+  const selectedRewardIcon = ICONS.find(i => i.id === selectedIcon) || ICONS[0];
+  const RewardIconComp = selectedRewardIcon.icon;
 
   const handleDelete = async () => {
     // Currently not implementing hard delete, maybe just visual removal or soft delete if backend supported it.
@@ -167,22 +169,46 @@ const AdminRewardForm = () => {
           
           {!id && (
             <div className="mt-3">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Quick Suggestions</span>
-              <div className="grid grid-cols-2 gap-2.5">
-                {REWARD_TEMPLATES.map(t => (
-                  <button
-                    key={t.title}
-                    type="button"
-                    onClick={() => { setName(t.title); setCost(t.cost); setSelectedIcon(t.icon); }}
-                    className="group relative flex items-center justify-between w-full px-3 py-2 bg-white border-2 border-gray-100 rounded-xl text-xs font-bold text-gray-700 hover:border-primary hover:bg-primary/5 transition-all shadow-sm active:scale-95 text-left"
-                  >
-                    <span className="line-clamp-2 leading-tight mr-1">{t.title}</span> 
-                    <span className="shrink-0 flex items-center gap-0.5 bg-primary/10 text-primary px-1.5 py-0.5 rounded-md text-[10px] font-black tracking-wide">
-                      {t.cost} <FaStar className="w-2.5 h-2.5" />
+              <label className="label py-1">
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Quick Suggestions</span>
+              </label>
+              <Listbox value="" onChange={(selectedTitle: string) => {
+                const t = REWARD_TEMPLATES.find(tpl => tpl.title === selectedTitle);
+                if (t) {
+                  setName(t.title);
+                  setCost(t.cost);
+                  setSelectedIcon(t.icon);
+                }
+              }}>
+                <div className="relative">
+                  <ListboxButton className="relative w-full cursor-pointer rounded-xl bg-white py-2.5 pl-4 pr-10 text-left border border-gray-300 focus:outline-none focus-visible:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500/20 sm:text-sm min-h-[2.75rem] text-sm shadow-xs">
+                    <span className="text-gray-400 font-medium">Select a suggestion template...</span>
+                    <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                      <FaChevronDown className="h-3 w-3 text-gray-400" aria-hidden="true" />
                     </span>
-                  </button>
-                ))}
-              </div>
+                  </ListboxButton>
+                  <ListboxOptions modal={false} className="absolute mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1 text-sm shadow-xl ring-1 ring-black/5 focus:outline-none z-50 border border-base-200">
+                    {REWARD_TEMPLATES.map((t) => (
+                      <ListboxOption
+                        key={t.title}
+                        value={t.title}
+                        className={({ active }) =>
+                          `relative cursor-pointer select-none py-2.5 px-4 text-xs font-semibold ${
+                            active ? 'bg-emerald-50 text-emerald-900' : 'text-neutral'
+                          }`
+                        }
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-gray-800">{t.title}</span>
+                          <span className="flex items-center gap-1 bg-amber-50 text-amber-600 px-2 py-0.5 rounded-md text-[11px] font-black">
+                            {t.cost} <FaStar className="w-2.5 h-2.5" />
+                          </span>
+                        </div>
+                      </ListboxOption>
+                    ))}
+                  </ListboxOptions>
+                </div>
+              </Listbox>
             </div>
           )}
         </div>
@@ -207,17 +233,53 @@ const AdminRewardForm = () => {
           <label className="label">
             <span className="label-text font-bold text-gray-500 uppercase text-xs tracking-wider">Reward Cost</span>
           </label>
-          <div className="grid grid-cols-4 gap-2 mb-3">
-            {[10, 20, 50, 100].map((val) => (
-              <button
-                key={val}
-                type="button"
-                onClick={() => setCost(val)}
-                className={`btn btn-sm ${cost === val ? 'btn-primary' : 'btn-ghost bg-base-200'}`}
-              >
-                {val}
-              </button>
-            ))}
+          <div className="mb-3">
+            <Listbox value={cost} onChange={(val: number) => setCost(val)}>
+              <div className="relative">
+                <ListboxButton className="relative w-full cursor-pointer rounded-xl bg-white py-2.5 pl-4 pr-10 text-left border border-gray-300 focus:outline-none focus-visible:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500/20 sm:text-sm min-h-[2.75rem] text-sm shadow-xs">
+                  <span className="flex items-center justify-between text-gray-800 font-bold">
+                    <span className="flex items-center gap-1.5">
+                      <FaStar className="text-amber-500 text-sm" />
+                      <span>{cost} Stars</span>
+                    </span>
+                    <span className="text-xs text-gray-400 font-normal">
+                      {[10, 20, 50, 100].includes(cost) ? 'Preset Selected' : 'Custom Amount'}
+                    </span>
+                  </span>
+                  <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                    <FaChevronDown className="h-3 w-3 text-gray-400" aria-hidden="true" />
+                  </span>
+                </ListboxButton>
+                <ListboxOptions modal={false} className="absolute mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1 text-sm shadow-xl ring-1 ring-black/5 focus:outline-none z-50 border border-base-200">
+                  {[10, 20, 50, 100].map((val) => (
+                    <ListboxOption
+                      key={val}
+                      value={val}
+                      className={({ active }) =>
+                        `relative cursor-pointer select-none py-2.5 pl-10 pr-4 text-xs font-semibold ${
+                          active ? 'bg-emerald-50 text-emerald-900' : 'text-neutral'
+                        }`
+                      }
+                    >
+                      {({ selected }) => (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <span className={`font-bold ${selected ? 'text-emerald-700' : 'text-gray-900'}`}>
+                              {val} Stars
+                            </span>
+                          </div>
+                          {selected && (
+                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-emerald-600">
+                              <FaCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </ListboxOption>
+                  ))}
+                </ListboxOptions>
+              </div>
+            </Listbox>
           </div>
           <div className="relative">
             <input
@@ -250,46 +312,60 @@ const AdminRewardForm = () => {
           <label className="label mb-1">
             <span className="label-text font-bold text-gray-500 uppercase text-xs tracking-wider">Reward Type</span>
           </label>
-          <div className="grid grid-cols-3 gap-3">
-            <button
-              type="button"
-              onClick={() => setType('UNLIMITED')}
-              className={`relative flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${type === 'UNLIMITED'
-                ? 'border-primary bg-primary/5 shadow-md'
-                : 'border-transparent bg-gray-50 hover:bg-gray-100'
-                }`}
-            >
-              <FaInfinity className={`text-2xl mb-2 ${type === 'UNLIMITED' ? 'text-primary' : 'text-gray-400'}`} />
-              <span className={`font-bold text-sm ${type === 'UNLIMITED' ? 'text-gray-800' : 'text-gray-500'}`}>Unlimited</span>
-              <span className="text-[10px] text-gray-400 text-center mt-1">Redeem anytime</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setType('ONE_TIME')}
-              className={`relative flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${type === 'ONE_TIME'
-                ? 'border-primary bg-primary/5 shadow-md'
-                : 'border-transparent bg-gray-50 hover:bg-gray-100'
-                }`}
-            >
-              <FaCheckCircle className={`text-2xl mb-2 ${type === 'ONE_TIME' ? 'text-primary' : 'text-gray-400'}`} />
-              <span className={`font-bold text-sm ${type === 'ONE_TIME' ? 'text-gray-800' : 'text-gray-500'}`}>One-time</span>
-              <span className="text-[10px] text-gray-400 text-center mt-1">Single use only</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setType('ACCUMULATIVE')}
-              className={`relative flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${type === 'ACCUMULATIVE'
-                ? 'border-primary bg-primary/5 shadow-md'
-                : 'border-transparent bg-gray-50 hover:bg-gray-100'
-                }`}
-            >
-              <FaTrophy className={`text-2xl mb-2 ${type === 'ACCUMULATIVE' ? 'text-primary' : 'text-gray-400'}`} />
-              <span className={`font-bold text-sm ${type === 'ACCUMULATIVE' ? 'text-gray-800' : 'text-gray-500'}`}>Milestone</span>
-              <span className="text-[10px] text-gray-400 text-center mt-1">Unlock by tasks</span>
-            </button>
-          </div>
+          <Listbox value={type} onChange={setType}>
+            <div className="relative">
+              <ListboxButton className="relative w-full cursor-pointer rounded-xl bg-white py-3 pl-4 pr-10 text-left border border-gray-300 focus:outline-none focus-visible:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500/20 sm:text-sm min-h-[3rem] text-base shadow-xs">
+                <span className="flex items-center gap-2.5 truncate">
+                  {type === 'UNLIMITED' && <FaInfinity className="text-emerald-600 flex-shrink-0" />}
+                  {type === 'ONE_TIME' && <FaCheckCircle className="text-emerald-600 flex-shrink-0" />}
+                  {type === 'ACCUMULATIVE' && <FaTrophy className="text-emerald-600 flex-shrink-0" />}
+                  <span className="font-bold text-gray-900">
+                    {type === 'UNLIMITED' ? 'Unlimited' : type === 'ONE_TIME' ? 'One-time' : 'Milestone'}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    ({type === 'UNLIMITED' ? 'Redeem anytime' : type === 'ONE_TIME' ? 'Single use only' : 'Unlock by tasks'})
+                  </span>
+                </span>
+                <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                  <FaChevronDown className="h-3 w-3 text-gray-400" aria-hidden="true" />
+                </span>
+              </ListboxButton>
+              <ListboxOptions modal={false} className="absolute mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1 text-sm shadow-xl ring-1 ring-black/5 focus:outline-none z-50 border border-base-200">
+                {[
+                  { value: 'UNLIMITED', label: 'Unlimited', desc: 'Redeem anytime without limits', icon: FaInfinity },
+                  { value: 'ONE_TIME', label: 'One-time', desc: 'Single use only, disappears after claimed', icon: FaCheckCircle },
+                  { value: 'ACCUMULATIVE', label: 'Milestone', desc: 'Requires task completion count to unlock', icon: FaTrophy },
+                ].map((opt) => (
+                  <ListboxOption
+                    key={opt.value}
+                    value={opt.value}
+                    className={({ active }) =>
+                      `relative cursor-pointer select-none py-2.5 pl-10 pr-4 text-xs font-semibold ${
+                        active ? 'bg-emerald-50 text-emerald-900' : 'text-neutral'
+                      }`
+                    }
+                  >
+                    {({ selected }) => (
+                      <>
+                        <div className="flex flex-col">
+                          <span className={`flex items-center gap-2 font-bold ${selected ? 'text-emerald-700' : 'text-gray-900'}`}>
+                            <opt.icon className="text-sm" />
+                            {opt.label}
+                          </span>
+                          <span className="text-[11px] text-gray-400 font-normal mt-0.5">{opt.desc}</span>
+                        </div>
+                        {selected && (
+                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-emerald-600">
+                            <FaCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </ListboxOption>
+                ))}
+              </ListboxOptions>
+            </div>
+          </Listbox>
         </div>
 
         {type === 'ACCUMULATIVE' && (
@@ -424,22 +500,55 @@ const AdminRewardForm = () => {
 
             <div className="divider my-1 text-xs font-bold text-gray-400">OR</div>
 
-            {/* Predefined Icons */}
-            <div className={`grid grid-cols-4 gap-3 ${imageUrl ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
-              {ICONS.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => { setSelectedIcon(item.id); setImageUrl(''); }}
-                  className={`flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border-2 transition-all aspect-square ${selectedIcon === item.id && !imageUrl
-                    ? 'border-primary bg-primary/5 text-primary shadow-sm ring-1 ring-primary'
-                    : 'border-transparent bg-white hover:bg-gray-100 text-gray-400 shadow-sm'
-                    }`}
-                >
-                  <item.icon className="w-6 h-6" />
-                  <span className="text-[10px] font-bold uppercase tracking-wide">{item.label}</span>
-                </button>
-              ))}
+            {/* Predefined Icons Dropdown */}
+            <div className={imageUrl ? 'opacity-50 pointer-events-none grayscale' : ''}>
+              <Listbox value={selectedIcon} onChange={(val: string) => { setSelectedIcon(val); setImageUrl(''); }}>
+                <div className="relative">
+                  <ListboxButton className="relative w-full cursor-pointer rounded-xl bg-white py-2.5 pl-4 pr-10 text-left border border-gray-300 focus:outline-none focus-visible:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500/20 sm:text-sm min-h-[3rem] text-sm shadow-xs">
+                    <span className="flex items-center gap-3">
+                      <span className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
+                        <RewardIconComp className="w-5 h-5" />
+                      </span>
+                      <span className="font-bold text-gray-800 uppercase tracking-wide text-xs">{selectedRewardIcon.label}</span>
+                    </span>
+                    <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                      <FaChevronDown className="h-3 w-3 text-gray-400" aria-hidden="true" />
+                    </span>
+                  </ListboxButton>
+                  <ListboxOptions modal={false} className="absolute mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1 text-sm shadow-xl ring-1 ring-black/5 focus:outline-none z-50 border border-base-200">
+                    {ICONS.map((item) => {
+                      const IconComp = item.icon;
+                      return (
+                        <ListboxOption
+                          key={item.id}
+                          value={item.id}
+                          className={({ active }) =>
+                            `relative cursor-pointer select-none py-2.5 pl-10 pr-4 text-xs font-semibold ${
+                              active ? 'bg-emerald-50 text-emerald-900' : 'text-neutral'
+                            }`
+                          }
+                        >
+                          {({ selected }) => (
+                            <>
+                              <div className="flex items-center gap-3">
+                                <IconComp className={`w-5 h-5 ${selected ? 'text-emerald-700' : 'text-gray-500'}`} />
+                                <span className={`font-bold ${selected ? 'text-emerald-700' : 'text-gray-900'} uppercase tracking-wide text-xs`}>
+                                  {item.label}
+                                </span>
+                              </div>
+                              {selected && (
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-emerald-600">
+                                  <FaCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </ListboxOption>
+                      );
+                    })}
+                  </ListboxOptions>
+                </div>
+              </Listbox>
             </div>
           </div>
         </div>

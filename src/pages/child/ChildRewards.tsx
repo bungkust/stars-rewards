@@ -3,7 +3,7 @@ import { FaGift, FaCheckCircle, FaLock, FaGamepad, FaIceCream, FaTicketAlt } fro
 import { useAppStore } from '../../store/useAppStore';
 import RewardConfirmationModal from '../../components/modals/RewardConfirmationModal';
 import RewardRedemptionSuccessModal from '../../components/modals/RewardRedemptionSuccessModal';
-import { ToggleButton } from '../../components/design-system';
+import { ToggleButton, AdminEntityCard } from '../../components/design-system';
 import { getRewardIconComponent } from '../../utils/icons';
 
 // Helper function to get icon component
@@ -191,7 +191,7 @@ const ChildRewards = () => {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-3">
             {visibleRewards.map((reward) => {
               const isOneTime = reward.type === 'ONE_TIME';
               const isMilestone = reward.type === 'ACCUMULATIVE' && reward.cost_value === 0;
@@ -204,87 +204,105 @@ const ChildRewards = () => {
               const IconComponent = getIconComponent(reward.category);
 
               return (
-                <div 
-                  key={reward.id} 
-                  onClick={() => handleBuyClick(reward.id, reward.cost_value, reward.name, reward.description)}
-                  className={`card bg-base-100 shadow-sm rounded-xl p-4 flex flex-col items-center text-center gap-2 cursor-pointer active:scale-95 transition-transform ${isRedeemed ? 'opacity-60' : ''}`}
-                >
-                  {reward.image_url ? (
-                    <div className={`w-16 h-16 rounded-full mb-2 flex-shrink-0 overflow-hidden shadow-sm border border-base-200 bg-white relative ${isRedeemed ? 'opacity-50 grayscale' : ''}`}>
-                      <img src={reward.image_url} alt={reward.name} className="w-full h-full object-cover" />
-                      {isLocked && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                          <FaLock className="text-white w-5 h-5" />
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className={`p-4 rounded-full mb-2 flex flex-shrink-0 items-center justify-center overflow-hidden relative ${isRedeemed ? 'bg-neutral/10 text-neutral/40' : isLocked ? 'bg-neutral/10 text-neutral/40' : 'bg-primary/10 text-primary'}`}>
-                      {reward.icon ? (
-                        (() => { const CustomIcon = getRewardIconComponent(reward.icon); return <CustomIcon className="w-8 h-8" />; })()
-                      ) : (
-                        <IconComponent className="w-8 h-8" />
-                      )}
-                      {isLocked && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/10 rounded-full">
-                          <FaLock className="text-neutral/60" />
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  <h3 className="font-bold text-neutral text-sm line-clamp-2 break-words min-h-[2.5rem] flex items-center justify-center">
-                    {reward.name}
-                  </h3>
-                  {reward.description && (
-                    <p className="text-[10px] text-neutral/50 italic mb-1 line-clamp-1">{reward.description}</p>
-                  )}
-
-                  {isRedeemed ? (
-                    <button className="btn btn-sm btn-disabled w-full rounded-full bg-neutral/10 text-neutral/40 border-none">
-                      <FaCheckCircle className="mr-1" /> Redeemed
-                    </button>
-                  ) : isLocked ? (
-                    <div className="w-full flex flex-col gap-1">
-                      <button className="btn btn-sm btn-disabled w-full rounded-full bg-neutral/20 text-neutral/50 border-none text-xs">
-                        <FaLock className="mr-1 text-[10px]" /> Locked
-                      </button>
-                      <div className="text-[10px] text-neutral/60 leading-tight px-1 font-bold">
-                        Complete "{progress?.taskName}" {Math.max(0, progress?.required! - progress?.current!)} more times
-                        {progress?.pending! > 0 && (
-                          <span className="text-warning font-bold ml-1">
-                            (+{progress?.pending} pending)
-                          </span>
+                <AdminEntityCard
+                  key={reward.id}
+                  variant="child"
+                  className={isRedeemed ? 'opacity-60' : ''}
+                  badge={
+                    reward.image_url ? (
+                      <div className="w-full h-full relative">
+                        <img src={reward.image_url} alt={reward.name} className="w-full h-full object-cover" />
+                        {isLocked && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                            <FaLock className="text-white w-4 h-4" />
+                          </div>
                         )}
                       </div>
-                      <progress
-                        className="progress progress-primary w-full h-1.5 mt-1"
-                        value={progress?.current}
-                        max={progress?.required}
-                      ></progress>
-                    </div>
-                  ) : (
-                    <button
-                      className={`btn btn-sm w-full rounded-full ${reward.cost_value === 0 ? 'btn-success text-white' : 'btn-primary text-white'}`}
-                      onClick={() => handleBuyClick(reward.id, reward.cost_value, reward.name, reward.description)}
-                      disabled={isLoading || !canAfford}
-                    >
-                      {reward.cost_value === 0 ? (
-                        <>Claim Reward</>
-                      ) : (
-                        <>Buy for {reward.cost_value}</>
+                    ) : (
+                      <div className="relative flex items-center justify-center">
+                        {reward.icon ? (
+                          (() => {
+                            const CustomIcon = getRewardIconComponent(reward.icon);
+                            return <CustomIcon className="w-6 h-6 text-sky-600" />;
+                          })()
+                        ) : (
+                          <IconComponent className="w-6 h-6 text-sky-600" />
+                        )}
+                        {isLocked && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/10 rounded-full">
+                            <FaLock className="text-neutral/60 w-3 h-3" />
+                          </div>
+                        )}
+                      </div>
+                    )
+                  }
+                  title={reward.name}
+                  stars={reward.cost_value}
+                  description={reward.description}
+                  tags={
+                    <>
+                      {isOneTime && !isRedeemed && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200/60">
+                          One-time
+                        </span>
                       )}
-                    </button>
-                  )}
-
-                  {isOneTime && !isRedeemed && (
-                    <span className="text-[10px] text-warning font-bold uppercase tracking-wide">One-time only</span>
-                  )}
-
-                  {progress && progress.isUnlocked && (
-                    <span className="text-[10px] text-success font-bold uppercase tracking-wide">Unlocked!</span>
-                  )}
-                </div>
-              )
+                      {progress && progress.isUnlocked && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                          Unlocked!
+                        </span>
+                      )}
+                      {isLocked && (
+                        <div className="w-full mt-1">
+                          <div className="text-[10px] text-neutral/60 leading-tight font-bold">
+                            Complete "{progress?.taskName}" {Math.max(0, progress?.required! - progress?.current!)} more times
+                            {progress?.pending! > 0 && (
+                              <span className="text-warning font-bold ml-1">
+                                (+{progress?.pending} pending)
+                              </span>
+                            )}
+                          </div>
+                          <progress
+                            className="progress progress-primary w-full h-1.5 mt-1"
+                            value={progress?.current}
+                            max={progress?.required}
+                          ></progress>
+                        </div>
+                      )}
+                    </>
+                  }
+                  onClick={() => {
+                    if (!isRedeemed && !isLocked) {
+                      handleBuyClick(reward.id, reward.cost_value, reward.name, reward.description);
+                    }
+                  }}
+                  customActions={
+                    isRedeemed ? (
+                      <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-base-200 text-neutral/40">
+                        <FaCheckCircle className="text-xs" /> Claimed
+                      </span>
+                    ) : isLocked ? (
+                      <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-base-200 text-neutral/40">
+                        <FaLock className="text-[10px]" /> Locked
+                      </span>
+                    ) : (
+                      <button
+                        className={`btn btn-sm rounded-xl px-4 font-bold border-none shadow-xs ${
+                          reward.cost_value === 0
+                            ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                            : 'bg-sky-500 hover:bg-sky-600 text-white'
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBuyClick(reward.id, reward.cost_value, reward.name, reward.description);
+                        }}
+                        disabled={isLoading || !canAfford}
+                      >
+                        {reward.cost_value === 0 ? 'Claim' : 'Redeem'}
+                      </button>
+                    )
+                  }
+                />
+              );
             })}
           </div>
 

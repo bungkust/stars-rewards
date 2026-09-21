@@ -1,6 +1,6 @@
 import { useAppStore } from '../../store/useAppStore';
-import { FaTasks, FaStar, FaBolt, FaRedo, FaCalendarWeek, FaCalendarAlt, FaClock } from 'react-icons/fa';
-import { ToggleButton } from '../../components/design-system';
+import { FaTasks, FaBolt, FaRedo, FaCalendarWeek, FaCalendarAlt, FaClock } from 'react-icons/fa';
+import { ToggleButton, AdminEntityCard } from '../../components/design-system';
 import TaskDetailsModal from '../../components/modals/TaskDetailsModal';
 import { useState, useMemo } from 'react';
 import { ICON_MAP, getTaskIconComponent } from '../../utils/icons';
@@ -74,17 +74,6 @@ const ChildTasks = () => {
     });
   }, [groupedTasks, categories]);
 
-  const getBadgeStyle = (rule: string) => {
-    switch (rule) {
-      case 'Once': return 'badge badge-accent badge-outline';
-      case 'Daily': return 'badge badge-primary badge-outline';
-      case 'Weekly': return 'badge badge-secondary badge-outline';
-      case 'Monthly': return 'badge badge-info badge-outline';
-      case 'Custom': return 'badge badge-neutral badge-outline';
-      default: return 'badge badge-ghost badge-outline';
-    }
-  };
-
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-between items-center">
@@ -136,53 +125,39 @@ const ChildTasks = () => {
                     {tasks.length}
                   </span>
                 </div>
-                <div className="grid gap-3">
+                <div className="flex flex-col gap-3">
                   {tasks.map((task) => (
-                    <div 
-                      key={task.id} 
-                      onClick={() => handleTaskClick(task)}
-                      className="card bg-base-100 shadow-sm rounded-xl p-4 flex flex-row items-center gap-4 border border-base-200 cursor-pointer active:scale-95 transition-transform"
-                    >
-                      {task.image_url ? (
-                        <div className="w-11 h-11 rounded-full flex-shrink-0 overflow-hidden shadow-sm border border-base-200 bg-white">
+                    <AdminEntityCard
+                      key={task.id}
+                      variant="child"
+                      badge={
+                        task.image_url ? (
                           <img src={task.image_url} alt={task.name} className="w-full h-full object-cover" />
-                        </div>
-                      ) : (
-                        <div className="bg-base-200 p-3 rounded-full flex-shrink-0 text-neutral/60">
-                          {/* Task specific Icon fallback to Recurrence type */}
-                          {task.icon ? (
-                            (() => { const CustomIcon = getTaskIconComponent(task.icon); return <CustomIcon className="w-5 h-5" />; })()
-                          ) : (
-                            task.recurrence_rule === 'Once' ? <FaBolt className="w-5 h-5" /> :
-                            task.recurrence_rule === 'Daily' ? <FaRedo className="w-5 h-5" /> :
-                              task.recurrence_rule === 'Weekly' ? <FaCalendarWeek className="w-5 h-5" /> :
-                                task.recurrence_rule === 'Monthly' ? <FaCalendarAlt className="w-5 h-5" /> :
-                                  <FaClock className="w-5 h-5" />
-                          )}
-                        </div>
-                      )}
-                      <div className="flex-1">
-                        <h3 className="font-bold text-neutral line-clamp-2 leading-tight break-words">{task.name}</h3>
-                        <div className="flex flex-wrap gap-2 text-sm text-neutral/60 mt-1 items-center">
-                          {task.reward_value > 0 && (
-                            <span className="flex items-center gap-1 text-warning font-bold">
-                              <FaStar /> {task.reward_value}
-                            </span>
-                          )}
-                          {task.recurrence_rule && (
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${getBadgeStyle(task.recurrence_rule)}`}>
-                              {['Once', 'Daily', 'Weekly', 'Monthly'].includes(task.recurrence_rule) ? task.recurrence_rule : 'Custom'}
-                            </span>
-                          )}
-                          {/* Streak badges hidden for now */}
-                          {false && (task.current_streak || 0) >= 2 && (
-                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-200">
-                              🔥 {task.current_streak} hari
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                        ) : task.icon ? (
+                          (() => {
+                            const CustomIcon = getTaskIconComponent(task.icon);
+                            return <CustomIcon className="w-6 h-6 text-sky-600" />;
+                          })()
+                        ) : (
+                          task.recurrence_rule === 'Once' ? <FaBolt className="w-5 h-5 text-sky-600" /> :
+                          task.recurrence_rule === 'Daily' ? <FaRedo className="w-5 h-5 text-sky-600" /> :
+                          task.recurrence_rule === 'Weekly' ? <FaCalendarWeek className="w-5 h-5 text-sky-600" /> :
+                          task.recurrence_rule === 'Monthly' ? <FaCalendarAlt className="w-5 h-5 text-sky-600" /> :
+                          <FaClock className="w-5 h-5 text-sky-600" />
+                        )
+                      }
+                      title={task.name}
+                      stars={task.reward_value > 0 ? task.reward_value : undefined}
+                      tags={
+                        task.recurrence_rule ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-sky-50 text-sky-700 border border-sky-200/60">
+                            {['Once', 'Daily', 'Weekly', 'Monthly'].includes(task.recurrence_rule) ? task.recurrence_rule : 'Custom'}
+                          </span>
+                        ) : undefined
+                      }
+                      description={task.description}
+                      onClick={() => handleTaskClick(task)}
+                    />
                   ))}
                 </div>
               </div>

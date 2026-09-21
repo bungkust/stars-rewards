@@ -7,6 +7,9 @@ export const childSchema = z.object({
     birth_date: z.string().nullish(),
     current_balance: z.number().nullish(),
     avatar_url: z.string().nullish(),
+    current_streak: z.number().nullish(),
+    best_streak: z.number().nullish(),
+    claimed_milestones: z.array(z.number()).nullish(),
 });
 
 export const taskSchema = z.object({

@@ -964,7 +964,10 @@ export const localStorageService = {
                 ...c,
                 current_balance: c.current_balance ?? 0,
                 avatar_url: c.avatar_url || '',
-                birth_date: c.birth_date ?? undefined
+                birth_date: c.birth_date ?? undefined,
+                current_streak: c.current_streak ?? undefined,
+                best_streak: c.best_streak ?? undefined,
+                claimed_milestones: c.claimed_milestones ?? undefined
             }));
 
             const validTasks = (validData.tasks || []).map(t => ({

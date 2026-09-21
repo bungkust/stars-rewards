@@ -14,6 +14,7 @@ import Rewards from './pages/Rewards';
 import Stats from './pages/Stats';
 import ClaimedRewardsHistory from './pages/child/ClaimedRewardsHistory';
 import ChildHistory from './pages/child/ChildHistory';
+import ChildLoyalty from './pages/child/ChildLoyalty';
 
 import Settings from './pages/settings/Settings';
 import AddChild from './pages/onboarding/AddChild';
@@ -27,6 +28,8 @@ import AdminTaskForm from './pages/admin/AdminTaskForm';
 import AdminRewardForm from './pages/admin/AdminRewardForm';
 import CategoryManagement from './pages/admin/CategoryManagement';
 import AdminHistory from './pages/admin/AdminHistory';
+import AdminLoyalty from './pages/admin/AdminLoyalty';
+import AdminStreakForm from './pages/admin/AdminStreakForm';
 
 import Privacy from './pages/legal/Privacy';
 import Terms from './pages/legal/Terms';
@@ -40,6 +43,8 @@ import StreakCelebrationModal from './components/modals/StreakCelebrationModal';
 import ReviewPromptModal from './components/modals/ReviewPromptModal';
 import LevelUpModal from './components/modals/LevelUpModal';
 import ForceUpdateModal from './components/modals/ForceUpdateModal';
+import AdminPinModal from './components/modals/AdminPinModal';
+import { LockKey } from '@phosphor-icons/react';
 import { browserService } from './services/browserService';
 import { getReviewUrl } from './utils/reviewPromptUtils';
 
@@ -193,11 +198,44 @@ const RootRedirect = () => {
 
 // Protected Route for Parent
 const ParentRoute = ({ children }: { children: ReactNode }) => {
-  const isAdminMode = useAppStore(state => state.isAdminMode);
+  const { isAdminMode, parentPin, userProfile, parentPattern, toggleAdminMode } = useAppStore();
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+
+  // If no security PIN or pattern is configured, automatically allow parent mode
+  useEffect(() => {
+    if (!isAdminMode && !parentPin && !userProfile?.pin_admin && !parentPattern) {
+      toggleAdminMode(true);
+    }
+  }, [isAdminMode, parentPin, userProfile, parentPattern, toggleAdminMode]);
+
   if (!isAdminMode) {
-    return <Navigate to="/child" replace />;
+    return (
+      <div className="min-h-[65vh] flex flex-col items-center justify-center p-6 text-center gap-4 animate-fade-in">
+        <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-700 flex items-center justify-center shadow-sm">
+          <LockKey size={34} weight="duotone" />
+        </div>
+        <div className="max-w-xs">
+          <h2 className="text-xl font-bold text-neutral">Parent Access Required</h2>
+          <p className="text-xs text-neutral/60 mt-1">
+            Please authenticate with your PIN to access parent controls, streaks, and milestone rewards.
+          </p>
+        </div>
+        <button
+          onClick={() => setIsPinModalOpen(true)}
+          className="btn bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl px-6 shadow-md border-none active:scale-95 transition-transform"
+        >
+          Unlock Parent Mode
+        </button>
+        <AdminPinModal
+          isOpen={isPinModalOpen}
+          onClose={() => setIsPinModalOpen(false)}
+          onSuccess={() => setIsPinModalOpen(false)}
+        />
+      </div>
+    );
   }
-  return children;
+
+  return <>{children}</>;
 };
 
 const AnimatedRoutes = () => {
@@ -245,6 +283,13 @@ const AnimatedRoutes = () => {
             <ParentRoute>
               <PageTransition>
                 <Tasks />
+              </PageTransition>
+            </ParentRoute>
+          } />
+          <Route path="/parent/loyalty" element={
+            <ParentRoute>
+              <PageTransition>
+                <AdminLoyalty />
               </PageTransition>
             </ParentRoute>
           } />
@@ -301,8 +346,15 @@ const AnimatedRoutes = () => {
               <ChildHistory />
             </PageTransition>
           } />
+          <Route path="/child/loyalty" element={
+            <PageTransition>
+              <ChildLoyalty />
+            </PageTransition>
+          } />
 
-          {/* Legacy Redirects */}
+          {/* Legacy & Friendly Route Aliases */}
+          <Route path="/parent/mission" element={<Navigate to="/parent/tasks" replace />} />
+          <Route path="/mission" element={<Navigate to={isAdminMode ? "/parent/tasks" : "/child/tasks"} replace />} />
           <Route path="/tasks" element={<Navigate to={isAdminMode ? "/parent/tasks" : "/child/tasks"} replace />} />
           <Route path="/rewards" element={<Navigate to={isAdminMode ? "/parent/rewards" : "/child/rewards"} replace />} />
           <Route path="/stats" element={<Navigate to={isAdminMode ? "/parent/stats" : "/child/stats"} replace />} />
@@ -328,6 +380,21 @@ const AnimatedRoutes = () => {
             <PageTransition>
               <AdminRewardForm />
             </PageTransition>
+          } />
+
+          <Route path="/admin/streaks/new" element={
+            <ParentRoute>
+              <PageTransition>
+                <AdminStreakForm />
+              </PageTransition>
+            </ParentRoute>
+          } />
+          <Route path="/admin/streaks/:id/edit" element={
+            <ParentRoute>
+              <PageTransition>
+                <AdminStreakForm />
+              </PageTransition>
+            </ParentRoute>
           } />
 
           <Route path="/admin/categories" element={

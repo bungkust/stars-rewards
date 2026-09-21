@@ -21,6 +21,17 @@ export interface Child {
   birth_date?: string;
   current_balance: number;
   avatar_url: string;
+  current_streak?: number;
+  best_streak?: number;
+  claimed_milestones?: number[];
+}
+
+export interface StreakMilestone {
+  id: string;
+  days: number;
+  title: string;
+  description: string;
+  bonusStars: number;
 }
 
 export interface Category {

@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
-import { FaArrowLeft, FaUserCheck, FaCommentDots, FaTshirt, FaSmile, FaShapes, FaStar, FaImage, FaSoap, FaClock, FaBook, FaUsers, FaTrash } from 'react-icons/fa';
+import { FaArrowLeft, FaUserCheck, FaCommentDots, FaTshirt, FaSmile, FaShapes, FaStar, FaImage, FaSoap, FaClock, FaBook, FaUsers, FaTrash, FaChevronDown, FaCheck } from 'react-icons/fa';
 import { AlertModal, AppCard, ToggleButton } from '../../components/design-system';
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
 import { generateRRule, parseRRule, WEEKDAYS } from '../../utils/recurrence';
 import type { RecurrenceOptions } from '../../utils/recurrence';
 import { convertToWebP } from '../../utils/imageUtils';
@@ -201,6 +202,12 @@ const AdminTaskForm = () => {
 
   const isFormValid = title.trim().length > 0 && selectedChildIds.length > 0 && reward >= 0 && xpReward >= 0 && categoryId && (!isProgressTask || (targetValue > 0 && targetUnit.trim().length > 0));
 
+  const selectedCategory = categories.find(c => c.id === categoryId);
+  const SelectedCategoryIcon = selectedCategory ? (ICON_MAP[selectedCategory.icon] || ICON_MAP['default']) : null;
+  const selectedTaskIcon = TASK_ICONS.find(i => i.id === selectedIcon) || TASK_ICONS[0];
+  const TaskIconComp = selectedTaskIcon.icon;
+  const currentPreset = DIFFICULTY_PRESETS.find(p => p.value === reward);
+
   return (
     <div className="flex flex-col gap-6 pb-24">
       <div className="flex items-center justify-between">
@@ -242,22 +249,46 @@ const AdminTaskForm = () => {
           
           {!id && (
             <div className="mt-3">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Quick Templates</span>
-              <div className="grid grid-cols-2 gap-2.5">
-                {TASK_TEMPLATES.map(t => (
-                  <button
-                    key={t.title}
-                    type="button"
-                    onClick={() => { setTitle(t.title); setReward(t.reward); setXpReward(t.xp); }}
-                    className="group relative flex items-center justify-between w-full px-3 py-2 bg-white border-2 border-gray-100 rounded-xl text-xs font-bold text-gray-700 hover:border-primary hover:bg-primary/5 transition-all shadow-sm active:scale-95 text-left"
-                  >
-                    <span className="line-clamp-2 leading-tight mr-1">{t.title}</span> 
-                    <span className="shrink-0 flex items-center gap-0.5 bg-primary/10 text-primary px-1.5 py-0.5 rounded-md text-[10px] font-black tracking-wide">
-                      {t.reward} <FaStar className="w-2.5 h-2.5" />
+              <label className="label py-1">
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Quick Templates</span>
+              </label>
+              <Listbox value="" onChange={(selectedTitle: string) => {
+                const t = TASK_TEMPLATES.find(tpl => tpl.title === selectedTitle);
+                if (t) {
+                  setTitle(t.title);
+                  setReward(t.reward);
+                  setXpReward(t.xp);
+                }
+              }}>
+                <div className="relative">
+                  <ListboxButton className="relative w-full cursor-pointer rounded-xl bg-white py-2.5 pl-4 pr-10 text-left border border-gray-300 focus:outline-none focus-visible:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500/20 sm:text-sm min-h-[2.75rem] text-sm shadow-xs">
+                    <span className="text-gray-400 font-medium">Select a quick template...</span>
+                    <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                      <FaChevronDown className="h-3 w-3 text-gray-400" aria-hidden="true" />
                     </span>
-                  </button>
-                ))}
-              </div>
+                  </ListboxButton>
+                  <ListboxOptions modal={false} className="absolute mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1 text-sm shadow-xl ring-1 ring-black/5 focus:outline-none z-50 border border-base-200">
+                    {TASK_TEMPLATES.map((t) => (
+                      <ListboxOption
+                        key={t.title}
+                        value={t.title}
+                        className={({ active }) =>
+                          `relative cursor-pointer select-none py-2.5 px-4 text-xs font-semibold ${
+                            active ? 'bg-emerald-50 text-emerald-900' : 'text-neutral'
+                          }`
+                        }
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-gray-800">{t.title}</span>
+                          <span className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-0.5 rounded-md text-[11px] font-black">
+                            {t.reward} <FaStar className="w-2.5 h-2.5" />
+                          </span>
+                        </div>
+                      </ListboxOption>
+                    ))}
+                  </ListboxOptions>
+                </div>
+              </Listbox>
             </div>
           )}
         </div>
@@ -279,31 +310,56 @@ const AdminTaskForm = () => {
         </div>
 
         <div className="form-control w-full">
-          <label className="label">
-            <span className="label-text font-bold">Category</span>
+          <label className="label mb-1">
+            <span className="label-text font-bold text-gray-500 uppercase text-xs tracking-wider">Category</span>
           </label>
-          <div className="grid grid-cols-4 gap-2">
-            {categories.map((cat) => {
-              const Icon = ICON_MAP[cat.icon] || ICON_MAP['default'];
-              const isSelected = categoryId === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => setCategoryId(cat.id)}
-                  className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all duration-200 h-20 ${isSelected
-                    ? 'border-primary bg-primary/10 text-primary ring-1 ring-primary'
-                    : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-600'
-                    }`}
-                >
-                  <Icon className="text-xl mb-1" />
-                  <span className="text-[10px] font-bold text-center leading-tight line-clamp-2">
-                    {cat.name}
+          <Listbox value={categoryId} onChange={setCategoryId}>
+            <div className="relative">
+              <ListboxButton className="relative w-full cursor-pointer rounded-xl bg-white py-3 pl-4 pr-10 text-left border border-gray-300 focus:outline-none focus-visible:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500/20 sm:text-sm min-h-[3rem] text-base shadow-xs">
+                <span className="flex items-center gap-2.5 truncate">
+                  {SelectedCategoryIcon && <SelectedCategoryIcon className="text-emerald-700 text-lg flex-shrink-0" />}
+                  <span className={`font-bold ${selectedCategory ? 'text-gray-900' : 'text-gray-400 font-normal'}`}>
+                    {selectedCategory ? selectedCategory.name : 'Select a category...'}
                   </span>
-                </button>
-              );
-            })}
-          </div>
+                </span>
+                <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                  <FaChevronDown className="h-3 w-3 text-gray-400" aria-hidden="true" />
+                </span>
+              </ListboxButton>
+              <ListboxOptions modal={false} className="absolute mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1 text-sm shadow-xl ring-1 ring-black/5 focus:outline-none z-50 border border-base-200">
+                {categories.map((cat) => {
+                  const Icon = ICON_MAP[cat.icon] || ICON_MAP['default'];
+                  return (
+                    <ListboxOption
+                      key={cat.id}
+                      value={cat.id}
+                      className={({ active }) =>
+                        `relative cursor-pointer select-none py-2.5 pl-10 pr-4 text-xs font-semibold ${
+                          active ? 'bg-emerald-50 text-emerald-900' : 'text-neutral'
+                        }`
+                      }
+                    >
+                      {({ selected }) => (
+                        <>
+                          <div className="flex items-center gap-2.5">
+                            <Icon className={`text-base ${selected ? 'text-emerald-700' : 'text-gray-500'}`} />
+                            <span className={`font-bold truncate ${selected ? 'text-emerald-700' : 'text-gray-900'}`}>
+                              {cat.name}
+                            </span>
+                          </div>
+                          {selected && (
+                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-emerald-600">
+                              <FaCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </ListboxOption>
+                  );
+                })}
+              </ListboxOptions>
+            </div>
+          </Listbox>
         </div>
 
         {/* Mission Icon/Image Selector */}
@@ -351,54 +407,120 @@ const AdminTaskForm = () => {
 
             <div className="divider my-1 text-xs font-bold text-gray-400">OR</div>
 
-            {/* Predefined Icons */}
-            <div className={`grid grid-cols-6 gap-2 ${imageUrl ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
-              {TASK_ICONS.map((item) => {
-                const Icon = item.icon;
-                const isSelected = selectedIcon === item.id && !imageUrl;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => { setSelectedIcon(item.id); setImageUrl(''); }}
-                    className={`flex flex-col items-center justify-center p-2 rounded-xl border-2 transition-all aspect-square ${isSelected
-                      ? 'border-primary bg-primary/10 text-primary shadow-sm ring-1 ring-primary'
-                      : 'border-transparent bg-white hover:bg-gray-100 text-gray-400 shadow-sm'
-                      }`}
-                  >
-                    <Icon className="text-xl" />
-                  </button>
-                );
-              })}
+            {/* Predefined Icons Dropdown */}
+            <div className={imageUrl ? 'opacity-50 pointer-events-none grayscale' : ''}>
+              <Listbox value={selectedIcon} onChange={(val: string) => { setSelectedIcon(val); setImageUrl(''); }}>
+                <div className="relative">
+                  <ListboxButton className="relative w-full cursor-pointer rounded-xl bg-white py-2.5 pl-4 pr-10 text-left border border-gray-300 focus:outline-none focus-visible:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500/20 sm:text-sm min-h-[3rem] text-sm shadow-xs">
+                    <span className="flex items-center gap-3">
+                      <span className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
+                        <TaskIconComp className="w-5 h-5" />
+                      </span>
+                      <span className="font-bold text-gray-800 uppercase tracking-wide text-xs">{selectedTaskIcon.label}</span>
+                    </span>
+                    <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                      <FaChevronDown className="h-3 w-3 text-gray-400" aria-hidden="true" />
+                    </span>
+                  </ListboxButton>
+                  <ListboxOptions modal={false} className="absolute mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1 text-sm shadow-xl ring-1 ring-black/5 focus:outline-none z-50 border border-base-200">
+                    {TASK_ICONS.map((item) => {
+                      const IconComp = item.icon;
+                      return (
+                        <ListboxOption
+                          key={item.id}
+                          value={item.id}
+                          className={({ active }) =>
+                            `relative cursor-pointer select-none py-2.5 pl-10 pr-4 text-xs font-semibold ${
+                              active ? 'bg-emerald-50 text-emerald-900' : 'text-neutral'
+                            }`
+                          }
+                        >
+                          {({ selected }) => (
+                            <>
+                              <div className="flex items-center gap-3">
+                                <IconComp className={`w-5 h-5 ${selected ? 'text-emerald-700' : 'text-gray-500'}`} />
+                                <span className={`font-bold ${selected ? 'text-emerald-700' : 'text-gray-900'} uppercase tracking-wide text-xs`}>
+                                  {item.label}
+                                </span>
+                              </div>
+                              {selected && (
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-emerald-600">
+                                  <FaCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </ListboxOption>
+                      );
+                    })}
+                  </ListboxOptions>
+                </div>
+              </Listbox>
             </div>
           </div>
         </div>
 
         {/* Mission Style Selector */}
         <div className="form-control w-full">
-          <label className="label">
-            <span className="label-text font-bold">Mission Style</span>
+          <label className="label mb-1">
+            <span className="label-text font-bold text-gray-500 uppercase text-xs tracking-wider">Mission Style</span>
           </label>
-          <div className="flex gap-2">
-            <ToggleButton
-              label="Simple (Checklist)"
-              isActive={!isProgressTask}
-              onClick={() => {
-                setIsProgressTask(false);
-                setXpReward(getDefaultMissionXpValue(false));
-              }}
-              className="flex-1"
-            />
-            <ToggleButton
-              label="Progress (Target)"
-              isActive={isProgressTask}
-              onClick={() => {
-                setIsProgressTask(true);
-                setXpReward(getDefaultMissionXpValue(true));
-              }}
-              className="flex-1"
-            />
-          </div>
+          <Listbox
+            value={isProgressTask ? 'progress' : 'simple'}
+            onChange={(val: string) => {
+              const isProgress = val === 'progress';
+              setIsProgressTask(isProgress);
+              setXpReward(getDefaultMissionXpValue(isProgress));
+            }}
+          >
+            <div className="relative">
+              <ListboxButton className="relative w-full cursor-pointer rounded-xl bg-white py-3 pl-4 pr-10 text-left border border-gray-300 focus:outline-none focus-visible:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500/20 sm:text-sm min-h-[3rem] text-base shadow-xs">
+                <span className="flex items-center gap-2.5 truncate">
+                  <span className="font-bold text-gray-900">
+                    {isProgressTask ? 'Progress (Target)' : 'Simple (Checklist)'}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    ({isProgressTask ? 'Count towards a goal number' : 'Standard completion check'})
+                  </span>
+                </span>
+                <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                  <FaChevronDown className="h-3 w-3 text-gray-400" aria-hidden="true" />
+                </span>
+              </ListboxButton>
+              <ListboxOptions modal={false} className="absolute mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1 text-sm shadow-xl ring-1 ring-black/5 focus:outline-none z-50 border border-base-200">
+                {[
+                  { value: 'simple', label: 'Simple (Checklist)', desc: 'Standard single tap completion check' },
+                  { value: 'progress', label: 'Progress (Target)', desc: 'Numeric counter goal (e.g. 5 cups of water)' },
+                ].map((opt) => (
+                  <ListboxOption
+                    key={opt.value}
+                    value={opt.value}
+                    className={({ active }) =>
+                      `relative cursor-pointer select-none py-2.5 pl-10 pr-4 text-xs font-semibold ${
+                        active ? 'bg-emerald-50 text-emerald-900' : 'text-neutral'
+                      }`
+                    }
+                  >
+                    {({ selected }) => (
+                      <>
+                        <div className="flex flex-col">
+                          <span className={`font-bold ${selected ? 'text-emerald-700' : 'text-gray-900'}`}>
+                            {opt.label}
+                          </span>
+                          <span className="text-[11px] text-gray-400 font-normal mt-0.5">{opt.desc}</span>
+                        </div>
+                        {selected && (
+                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-emerald-600">
+                            <FaCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </ListboxOption>
+                ))}
+              </ListboxOptions>
+            </div>
+          </Listbox>
         </div>
 
         {isProgressTask && (
@@ -437,41 +559,71 @@ const AdminTaskForm = () => {
         )}
 
         <div className="form-control w-full">
-          <label className="label">
+          <label className="label mb-1">
             <span className="label-text font-bold text-gray-500 uppercase text-xs tracking-wider">Suggested Rewards</span>
           </label>
-
-          <div className="grid grid-cols-3 gap-2">
-            {DIFFICULTY_PRESETS.map((preset) => (
-              <button
-                key={preset.label}
-                type="button"
-                onClick={() => {
-                  setReward(preset.value);
-                  setXpReward(preset.xp);
-                }}
-                className={`flex flex-col items-center justify-center p-2 rounded-xl border-2 transition-all duration-200 ${reward === preset.value
-                  ? `border-current ${preset.color.split(' ')[1]} bg-white shadow-md ring-1 ring-current scale-105`
-                  : 'border-gray-200 bg-white shadow-sm hover:border-gray-300 hover:bg-gray-50 text-gray-400 hover:shadow-md'
-                  }`}
-              >
-                <span className={`text-[10px] font-bold uppercase tracking-wider mb-0.5 ${reward === preset.value ? 'text-gray-800' : 'text-gray-500'}`}>
-                  {preset.label}
+          <Listbox
+            value={reward}
+            onChange={(val: number) => {
+              const preset = DIFFICULTY_PRESETS.find(p => p.value === val);
+              if (preset) {
+                setReward(preset.value);
+                setXpReward(preset.xp);
+              }
+            }}
+          >
+            <div className="relative">
+              <ListboxButton className="relative w-full cursor-pointer rounded-xl bg-white py-3 pl-4 pr-10 text-left border border-gray-300 focus:outline-none focus-visible:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500/20 sm:text-sm min-h-[3rem] text-base shadow-xs">
+                <span className="flex items-center justify-between pr-4 truncate">
+                  <span className="flex items-center gap-2">
+                    <span className="font-black text-primary">{reward} Stars</span>
+                    <span className="text-xs font-bold text-gray-500">
+                      {currentPreset ? `(${currentPreset.label} • ${currentPreset.xp} XP)` : '(Custom Amount)'}
+                    </span>
+                  </span>
+                  {currentPreset && (
+                    <span className="text-xs text-gray-400 truncate max-w-[140px] hidden sm:inline">
+                      {currentPreset.desc}
+                    </span>
+                  )}
                 </span>
-                <span className={`text-lg font-black ${reward === preset.value ? 'text-primary' : 'text-gray-300'}`}>
-                  {preset.value}
+                <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                  <FaChevronDown className="h-3 w-3 text-gray-400" aria-hidden="true" />
                 </span>
-                <span className="text-[10px] font-bold text-gray-400">{preset.xp} XP</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Selected Description Helper */}
-          <div className="min-h-[20px] mt-2 text-center border-t border-gray-100 pt-1">
-            <p className="text-xs text-gray-600 font-bold transition-all">
-              {DIFFICULTY_PRESETS.find(p => p.value === reward)?.desc || 'Custom reward amount'}
-            </p>
-          </div>
+              </ListboxButton>
+              <ListboxOptions modal={false} className="absolute mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1 text-sm shadow-xl ring-1 ring-black/5 focus:outline-none z-50 border border-base-200">
+                {DIFFICULTY_PRESETS.map((preset) => (
+                  <ListboxOption
+                    key={preset.label}
+                    value={preset.value}
+                    className={({ active }) =>
+                      `relative cursor-pointer select-none py-2.5 pl-10 pr-4 text-xs font-semibold ${
+                        active ? 'bg-emerald-50 text-emerald-900' : 'text-neutral'
+                      }`
+                    }
+                  >
+                    {({ selected }) => (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className={`font-bold ${selected ? 'text-emerald-700' : 'text-gray-900'}`}>
+                              {preset.label} ({preset.value} Stars, {preset.xp} XP)
+                            </span>
+                            <p className="text-[11px] text-gray-400 font-normal">{preset.desc}</p>
+                          </div>
+                        </div>
+                        {selected && (
+                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-emerald-600">
+                            <FaCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </ListboxOption>
+                ))}
+              </ListboxOptions>
+            </div>
+          </Listbox>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -561,21 +713,74 @@ const AdminTaskForm = () => {
         )}
 
         <div className="form-control w-full">
-          <label className="label">
-            <span className="label-text font-bold">Repetition</span>
+          <label className="label mb-1">
+            <span className="label-text font-bold text-gray-500 uppercase text-xs tracking-wider">Repetition</span>
           </label>
 
-          {/* Main Type Selector */}
-          <div className="flex flex-wrap gap-2 mb-4">
-            {['Once', 'Daily', 'Weekly', 'Monthly', 'Custom'].map((opt) => (
-              <ToggleButton
-                key={opt}
-                label={opt}
-                isActive={(opt === 'Custom' && isCustomRecurrence) || (!isCustomRecurrence && repetition === opt)}
-                onClick={() => handleRepetitionTypeChange(opt)}
-              />
-            ))}
-          </div>
+          {/* Main Repetition Listbox */}
+          <Listbox
+            value={isCustomRecurrence ? 'Custom' : repetition}
+            onChange={(val) => handleRepetitionTypeChange(val)}
+          >
+            <div className="relative mb-4">
+              <ListboxButton className="relative w-full cursor-pointer rounded-xl bg-white py-3 pl-4 pr-10 text-left border border-gray-300 focus:outline-none focus-visible:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500/20 sm:text-sm min-h-[3rem] text-base shadow-xs">
+                <span className="flex items-center gap-2.5 truncate">
+                  <span className="font-bold text-gray-900">
+                    {isCustomRecurrence ? 'Custom Schedule' : repetition}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    ({isCustomRecurrence
+                      ? 'Custom interval & days'
+                      : repetition === 'Once'
+                        ? 'One-time mission'
+                        : repetition === 'Daily'
+                          ? 'Repeats every day'
+                          : repetition === 'Weekly'
+                            ? 'Repeats once a week'
+                            : 'Repeats once a month'})
+                  </span>
+                </span>
+                <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                  <FaChevronDown className="h-3 w-3 text-gray-400" aria-hidden="true" />
+                </span>
+              </ListboxButton>
+              <ListboxOptions modal={false} className="absolute mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1 text-sm shadow-xl ring-1 ring-black/5 focus:outline-none z-50 border border-base-200">
+                {[
+                  { value: 'Once', label: 'Once', desc: 'Single-time mission, disappears after completion' },
+                  { value: 'Daily', label: 'Daily', desc: 'Resets and repeats every day' },
+                  { value: 'Weekly', label: 'Weekly', desc: 'Resets and repeats once every week' },
+                  { value: 'Monthly', label: 'Monthly', desc: 'Resets and repeats once every month' },
+                  { value: 'Custom', label: 'Custom', desc: 'Set custom interval, weekdays, or month patterns' },
+                ].map((opt) => (
+                  <ListboxOption
+                    key={opt.value}
+                    value={opt.value}
+                    className={({ active }) =>
+                      `relative cursor-pointer select-none py-2.5 pl-10 pr-4 text-xs font-semibold ${
+                        active ? 'bg-emerald-50 text-emerald-900' : 'text-neutral'
+                      }`
+                    }
+                  >
+                    {({ selected }) => (
+                      <>
+                        <div className="flex flex-col">
+                          <span className={`font-bold ${selected ? 'text-emerald-700' : 'text-gray-900'}`}>
+                            {opt.label}
+                          </span>
+                          <span className="text-[11px] text-gray-400 font-normal mt-0.5">{opt.desc}</span>
+                        </div>
+                        {selected && (
+                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-emerald-600">
+                            <FaCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </ListboxOption>
+                ))}
+              </ListboxOptions>
+            </div>
+          </Listbox>
 
           {/* Custom Builder UI */}
           {isCustomRecurrence && (

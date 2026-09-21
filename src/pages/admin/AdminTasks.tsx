@@ -1,20 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaPlus, FaPencilAlt, FaTrash, FaBolt, FaRedo, FaCalendarWeek, FaCalendarAlt, FaClock } from 'react-icons/fa';
+import { FaPlus, FaBolt, FaRedo, FaCalendarWeek, FaCalendarAlt, FaClock, FaTasks } from 'react-icons/fa';
 import { WarningCTAButton } from '../../components/design-system/WarningCTAButton';
-import { AppCard } from '../../components/design-system/AppCard';
 import { H1Header } from '../../components/design-system/H1Header';
 import { IconWrapper } from '../../components/design-system/IconWrapper';
 import { useAppStore } from '../../store/useAppStore';
-import { AlertModal, ToggleButton } from '../../components/design-system';
+import { AlertModal, ToggleButton, AdminEntityCard } from '../../components/design-system';
 import TaskDetailsModal from '../../components/modals/TaskDetailsModal';
 import { getTaskIconComponent } from '../../utils/icons';
 
 const AdminTasks = () => {
   const navigate = useNavigate();
   const { tasks, updateTask, categories, activeChildId } = useAppStore();
-  const [selectedTask, setSelectedTask] = useState<string | null>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
   const [filter, setFilter] = useState<'daily' | 'once' | 'all'>('all');
@@ -45,8 +42,7 @@ const AdminTasks = () => {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const handleEditClick = (taskId: string) => {
-    setSelectedTask(taskId);
-    setIsEditModalOpen(true);
+    navigate(`/admin/tasks/${taskId}/edit`);
   };
 
   const handleTaskClick = (task: any) => {
@@ -59,13 +55,6 @@ const AdminTasks = () => {
     setIsDeleteModalOpen(true);
   };
 
-  const handleEditConfirm = () => {
-    if (selectedTask) {
-      navigate(`/admin/tasks/${selectedTask}/edit`);
-    }
-    setIsEditModalOpen(false);
-  };
-
   const handleDeleteConfirm = async () => {
     if (taskToDelete) {
       await updateTask(taskToDelete, { is_active: false });
@@ -73,16 +62,6 @@ const AdminTasks = () => {
     setIsDeleteModalOpen(false);
   };
 
-  const getBadgeStyle = (rule: string) => {
-    switch (rule) {
-      case 'Once': return 'badge badge-accent badge-outline';
-      case 'Daily': return 'badge badge-primary badge-outline';
-      case 'Weekly': return 'badge badge-secondary badge-outline';
-      case 'Monthly': return 'badge badge-info badge-outline';
-      case 'Custom': return 'badge badge-neutral badge-outline';
-      default: return 'badge badge-ghost badge-outline';
-    }
-  };
 
   const getTaskIcon = (rule: string) => {
     switch (rule) {
@@ -133,87 +112,60 @@ const AdminTasks = () => {
         </select>
       </div>
 
-      <div className="grid gap-4">
+      <div className="flex flex-col gap-3">
         {filteredTasks.length === 0 ? (
-          <div className="text-center py-10 text-neutral/50">
-            No missions created yet. Click below to add one!
+          <div className="card bg-base-100 border border-base-200 rounded-3xl p-8 text-center flex flex-col items-center justify-center gap-3 shadow-sm">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+              <FaTasks className="w-7 h-7" />
+            </div>
+            <div>
+              <h3 className="font-bold text-base text-neutral">No Missions Created</h3>
+              <p className="text-xs text-neutral/50 max-w-xs mt-1">
+                No missions created yet. Tap the button below to add your first mission!
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/admin/tasks/new')}
+              className="btn btn-sm bg-emerald-600 hover:bg-emerald-700 text-white border-none rounded-xl text-xs font-bold mt-2"
+            >
+              + Add Mission
+            </button>
           </div>
         ) : (
           filteredTasks.map((task) => (
-            <AppCard 
-              key={task.id} 
-              className="flex flex-row items-center gap-4 !p-4 min-w-0"
-            >
-              <div 
-                className="flex-1 flex flex-row items-center gap-4 min-w-0 cursor-pointer active:scale-95 transition-transform"
-                onClick={() => handleTaskClick(task)}
-              >
-                {task.image_url ? (
-                  <div className="w-12 h-12 rounded-full flex-shrink-0 overflow-hidden shadow-sm border border-base-200 bg-white">
-                    <img src={task.image_url} alt={task.name} className="w-full h-full object-cover" />
-                  </div>
+            <AdminEntityCard
+              key={task.id}
+              badge={
+                task.image_url ? (
+                  <img src={task.image_url} alt={task.name} className="w-full h-full object-cover" />
+                ) : task.icon ? (
+                  (() => {
+                    const CustomIcon = getTaskIconComponent(task.icon);
+                    return <CustomIcon className="w-6 h-6 text-emerald-700" />;
+                  })()
                 ) : (
-                  <div className={`p-3 rounded-full flex-shrink-0 ${task.recurrence_rule === 'Once' ? 'bg-accent/10 text-accent' :
-                    task.recurrence_rule === 'Daily' ? 'bg-primary/10 text-primary' :
-                      task.recurrence_rule === 'Weekly' ? 'bg-secondary/10 text-secondary' :
-                        task.recurrence_rule === 'Monthly' ? 'bg-info/10 text-info' :
-                          'bg-base-200 text-neutral/50'
-                    }`}>
-                    {task.icon ? (
-                      (() => { const CustomIcon = getTaskIconComponent(task.icon); return <CustomIcon className="w-6 h-6" />; })()
-                    ) : (
-                      <IconWrapper icon={getTaskIcon(task.recurrence_rule || 'Once')} className="" />
-                    )}
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-bold text-neutral line-clamp-2 leading-tight break-words">{task.name}</h3>
-                    {/* Streak badges hidden for now */}
-                    {false && (task.current_streak || 0) >= 2 && (
-                      <span className="flex-shrink-0 flex items-center gap-0.5 text-[10px] font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-200">
-                        🔥 {task.current_streak} hari
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-1 mt-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getBadgeStyle(task.recurrence_rule || 'Once')}`}>
-                        {['Once', 'Daily', 'Weekly', 'Monthly'].includes(task.recurrence_rule || 'Once') ? (task.recurrence_rule || 'Once') : 'Custom'}
-                      </span>
-                      {task.category_id && (
-                        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                          {categories.find(c => c.id === task.category_id)?.name || 'Unknown'}
-                        </span>
-                      )}
-                    </div>
-                    {task.reward_value > 0 && (
-                      <span className="text-xs text-neutral/60 font-medium">{task.reward_value} Stars</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  className="btn btn-ghost btn-sm btn-circle text-neutral/40"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEditClick(task.id);
-                  }}
-                >
-                  <FaPencilAlt />
-                </button>
-                <button
-                  className="btn btn-ghost btn-sm btn-circle text-error"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteClick(task.id);
-                  }}
-                >
-                  <FaTrash />
-                </button>
-              </div>
-            </AppCard>
+                  <IconWrapper icon={getTaskIcon(task.recurrence_rule || 'Once')} className="text-emerald-700 text-xl" />
+                )
+              }
+              title={task.name}
+              stars={task.reward_value > 0 ? task.reward_value : undefined}
+              tags={
+                <>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                    {['Once', 'Daily', 'Weekly', 'Monthly'].includes(task.recurrence_rule || 'Once') ? (task.recurrence_rule || 'Once') : 'Custom'}
+                  </span>
+                  {task.category_id && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200/60">
+                      {categories.find(c => c.id === task.category_id)?.name || 'Unknown'}
+                    </span>
+                  )}
+                </>
+              }
+              description={task.description}
+              onClick={() => handleTaskClick(task)}
+              onEdit={() => handleEditClick(task.id)}
+              onDelete={() => handleDeleteClick(task.id)}
+            />
           ))
         )}
       </div>
@@ -222,15 +174,6 @@ const AdminTasks = () => {
         <FaPlus className="w-6 h-6" />
         <span className="ml-2 hidden sm:inline">Add Mission</span>
       </WarningCTAButton>
-
-      <AlertModal
-        isOpen={isEditModalOpen}
-        title="Edit Mission"
-        message="Do you want to edit this mission?"
-        confirmText="Edit"
-        onClose={() => setIsEditModalOpen(false)}
-        onConfirm={handleEditConfirm}
-      />
 
       <AlertModal
         isOpen={isDeleteModalOpen}
