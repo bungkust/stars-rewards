@@ -2,20 +2,20 @@ import { useState, useRef } from 'react';
 import { FaStar } from 'react-icons/fa';
 import { Question, Trophy, Check, Sparkle, Rocket, Star } from '@phosphor-icons/react';
 import { useAppStore } from '../../store/useAppStore';
-import { COSMIC_TIERS, getTierIndex } from '../../utils/loyaltyTierUtils';
+import { COSMIC_TIERS, getTierIndex, calcTotalEarnedStars, getChildStreak, isMilestoneClaimed } from '../../utils/loyaltyTierUtils';
 
 const ChildLoyalty = () => {
-  const { activeChildId, children, streakMilestones } = useAppStore();
+  const { activeChildId, children, streakMilestones, transactions, tasks } = useAppStore();
   const child = children.find(c => c.id === activeChildId);
 
   const childName = child?.name || 'Kiano';
   const childBalance = child?.current_balance ?? 102;
-  const childStreak = child?.current_streak ?? 3;
+  const lifetimeStars = calcTotalEarnedStars(transactions, child?.id || '');
+  const childStreak = getChildStreak(child, tasks);
   const bestRecordStreak = child?.best_streak ?? Math.max(childStreak, 9);
-  const claimedMilestones = child?.claimed_milestones ?? [3];
 
-  // Determine child's actual current tier index based on balance
-  const currentTierIndex = getTierIndex(childBalance);
+  // Determine child's actual current tier index based on lifetime stars
+  const currentTierIndex = getTierIndex(lifetimeStars > 0 ? lifetimeStars : childBalance);
 
   const [activeCardIndex, setActiveCardIndex] = useState(currentTierIndex);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -225,11 +225,11 @@ const ChildLoyalty = () => {
         {/* List of Milestone Cards (Matching ChildDashboard style) */}
         <div className="flex flex-col gap-3">
           {streakMilestones.map((milestone) => {
-            const current = childStreak;
+            const current = getChildStreak(child, tasks, milestone.linked_task_id);
             const target = milestone.days;
             const isReached = current >= target;
             const remaining = Math.max(0, target - current);
-            const isApproved = claimedMilestones.includes(milestone.days);
+            const isApproved = isMilestoneClaimed(child, transactions, milestone);
 
             return (
               <div

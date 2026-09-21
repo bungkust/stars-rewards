@@ -113,7 +113,7 @@ export const COSMIC_TIERS: CosmicTier[] = [
   }
 ];
 
-import type { StreakMilestone } from '../types';
+import type { StreakMilestone, Child, Task, CoinTransaction } from '../types';
 export type { StreakMilestone };
 
 export const DEFAULT_STREAK_MILESTONES: StreakMilestone[] = [
@@ -192,4 +192,62 @@ export function getTierProgress(stars: number, tierIndex: number) {
   }
 
   return { progressPercent, starsNeeded };
+}
+
+/**
+ * Calculate total lifetime stars earned by a child.
+ * Only positive earnings (TASK_VERIFIED, MANUAL_ADJ > 0) are counted.
+ * REWARD_REDEEMED does NOT deduct from this, ensuring Cosmic Tier never degrades!
+ */
+export function calcTotalEarnedStars(transactions: CoinTransaction[], childId: string): number {
+  if (!transactions || !childId) return 0;
+  return transactions
+    .filter(t => t.child_id === childId && (t.type === 'TASK_VERIFIED' || (t.type === 'MANUAL_ADJ' && t.amount > 0)))
+    .reduce((sum, t) => sum + t.amount, 0);
+}
+
+/**
+ * Get the effective streak count for a child or linked task.
+ * 1. If linkedTaskId is provided: uses that task's current_streak.
+ * 2. If parent has explicitly set child.current_streak (> 0): uses that.
+ * 3. Fallback: calculates the maximum current_streak across all assigned active tasks.
+ */
+export function getChildStreak(child?: Child | null, tasks: Task[] = [], linkedTaskId?: string | null): number {
+  if (linkedTaskId) {
+    const linkedTask = tasks.find(t => t.id === linkedTaskId);
+    return linkedTask?.current_streak ?? 0;
+  }
+
+  if (child?.current_streak != null && child.current_streak > 0) {
+    return child.current_streak;
+  }
+
+  if (!child) return 0;
+
+  const childTasks = tasks.filter(t => t.is_active !== false && (!t.assigned_to?.length || t.assigned_to.includes(child.id)));
+  if (childTasks.length === 0) return 0;
+
+  return Math.max(0, ...childTasks.map(t => t.current_streak || 0));
+}
+
+/**
+ * Check if a streak milestone has already been claimed by the child.
+ */
+export function isMilestoneClaimed(
+  child?: Child | null,
+  transactions: CoinTransaction[] = [],
+  milestone?: StreakMilestone | null
+): boolean {
+  if (!child || !milestone) return false;
+
+  // 1. Check child's claimed_milestones array (by milestone days or id)
+  if (child.claimed_milestones?.includes(milestone.days)) {
+    return true;
+  }
+
+  // 2. Check transactions history for claim record
+  const searchPattern = `Streak ${milestone.days} Hari`;
+  return transactions.some(
+    t => t.child_id === child.id && t.type === 'MANUAL_ADJ' && (t.description?.includes(searchPattern) || t.reference_id === milestone.id)
+  );
 }

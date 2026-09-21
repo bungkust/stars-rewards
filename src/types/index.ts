@@ -32,6 +32,8 @@ export interface StreakMilestone {
   title: string;
   description: string;
   bonusStars: number;
+  linked_task_id?: string;
+  linked_reward_id?: string;
 }
 
 export interface Category {

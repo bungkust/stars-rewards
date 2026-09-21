@@ -299,3 +299,125 @@ graph TD
      - Jalankan `npm run build` untuk memverifikasi TypeScript dan bundler Vite.
      - Uji flow klaim: saldo bertambah, status menjadi diklaim, streak sinkron.
 * **Kriteria Selesai Batch 4:** Semua komponen menyatu, E2E flow tervalidasi 100%, zero lint/build error.
+
+---
+
+## 8. Spesifikasi Baru: Relational Streak Linking (Streak A ➔ Misi B ➔ Hadiah C)
+
+Fitur ini memungkinkan orang tua membuat **tantangan berantai (Chained Challenge)** di mana **Streak Milestone (A)** dapat dihubungkan secara spesifik ke **Misi/Task tertentu (B)** dan menghasilkan **Hadiah/Reward tertentu (C)**.
+
+### A. Skenario & Use Cases Fleksibel
+
+| Tipe Relasi | Sumber Streak | Hadiah Saat Tercapai | Contoh Nyata |
+|---|---|---|---|
+| **1. Global Standard** | Gabungan semua misi harian | Bonus Bintang (+⭐) | Streak 7 hari umum ➔ +15 ⭐ |
+| **2. Task-Specific Streak** | Khusus Misi B tertentu | Bonus Bintang (+⭐) | 14 hari konsisten "Sikat Gigi Malam" ➔ +30 ⭐ |
+| **3. Global to Reward** | Gabungan semua misi harian | Hadiah Fisik/Aktivitas C | Streak 30 hari tanpa bolong ➔ Hadiah "Main Game Seharian" |
+| **4. End-to-End Chain (A ➔ B ➔ C)** | Khusus Misi B tertentu | Hadiah Fisik/Aktivitas C | 7 hari berturut-turut "Baca Buku 20 Menit" ➔ Hadiah "Beli Buku Baru" 📚 |
+
+---
+
+### B. Pembaruan Model Data & Skema
+
+1. **`src/types/index.ts` (`StreakMilestone`)**:
+   ```ts
+   export interface StreakMilestone {
+     id: string;
+     days: number;
+     title: string;
+     description: string;
+     bonusStars: number;
+     // NEW: Relational Linking Fields
+     linked_task_id?: string;   // ID Task/Misi spesifik (Misi B). Jika null/undefined = Global streak
+     linked_reward_id?: string; // ID Reward spesifik (Hadiah C). Jika null/undefined = Hanya bintang
+   }
+   ```
+
+2. **`src/schemas/backupSchema.ts` (`streakMilestoneSchema`)**:
+   ```ts
+   export const streakMilestoneSchema = z.object({
+     id: z.string(),
+     days: z.number(),
+     title: z.string(),
+     description: z.string(),
+     bonusStars: z.number(),
+     linked_task_id: z.string().optional(),
+     linked_reward_id: z.string().optional(),
+   });
+   ```
+
+---
+
+### C. Alur Logika Teknis (Engine & Claim Logic)
+
+```mermaid
+graph TD
+    subgraph Streak_Source ["1. Sumber Perhitungan Streak"]
+        M1["Milestone: linked_task_id ada?"]
+        M1 -- Ya --> S1["Ambil task.current_streak dari Task B spesifik"]
+        M1 -- Tidak --> S2["Ambil getChildStreak(child, tasks) - Global"]
+    end
+
+    subgraph Evaluation ["2. Evaluasi Milestone"]
+        S1 --> E1{"Streak >= milestone.days?"}
+        S2 --> E1
+        E1 -- Belum --> P1["Tampilkan sisa hari & progress bar"]
+        E1 -- Sudah --> P2["Buka tombol [🎁 Klaim]"]
+    end
+
+    subgraph Reward_Grant ["3. Eksekusi Klaim & Hadiah"]
+        P2 --> C1["Klik Klaim Milestone"]
+        C1 --> R1["manualAdjustment(childId, bonusStars, ...) -> Tambah ⭐"]
+        C1 --> C2{"linked_reward_id ada?"}
+        C2 -- Ya --> R2["Unlock Reward C / redeemReward(childId, linked_reward_id, cost=0)"]
+        C2 -- Tidak --> R3["Klaim selesai (Bintang saja)"]
+        R1 --> D1["Confetti + Milestone tercatat sudah diklaim"]
+        R2 --> D1
+        R3 --> D1
+    end
+```
+
+1. **Perhitungan Progres Streak:**
+   * Jika `linked_task_id` diisi: Nilai `current` diambil dari `tasks.find(t => t.id === milestone.linked_task_id)?.current_streak || 0`.
+   * Jika tidak diisi: Menggunakan `getChildStreak(child, tasks)` (streak gabungan anak).
+2. **Eksekusi Hadiah Ganda (Stars + Reward):**
+   * Memberikan `bonusStars` ke saldo anak via `manualAdjustment`.
+   * Jika `linked_reward_id` terisi:
+     - Reward C dapat otomatis masuk ke riwayat penukaran anak dengan biaya 0 bintang (`cost: 0`), ATAU
+     - Ditandai sebagai voucher gratis (*Unlocked Reward*) yang siap dipakai anak kapan saja tanpa memotong saldo bintang.
+
+---
+
+### D. Form Admin: Pengaturan Relasi di `AdminStreakForm.tsx`
+
+Tambahkan 2 dropdown in-app single-choice (`<Listbox>`) di dalam form milestone:
+
+1. **Dropdown "Target Misi (Mission Source)":**
+   * *Opsi 1 (Default):* `⭐ Semua Misi (Global Streak)` — Akumulasi streak umum anak dari misi apapun.
+   * *Opsi 2..N:* Menampilkan daftar misi aktif lengkap dengan ikon kategori (misal: `📖 Baca Buku 15 Menit`).
+2. **Dropdown "Hadiah Spesial (Linked Reward)":**
+   * *Opsi 1 (Default):* `⭐ Bintang Saja` — Hanya bonus bintang yang ditentukan.
+   * *Opsi 2..N:* Menampilkan daftar katalog reward lengkap dengan ikon (misal: `🍦 Ice Cream Cone`, `🎮 Main Switch 30 Menit`).
+
+---
+
+### E. Tampilan Kartu di Halaman Anak (`LoyaltyStreakMilestones.tsx`)
+
+Kartu milestone di `/child/loyalty` akan otomatis menampilkan penanda relasi yang menarik bagi anak:
+* **Badge Misi Terkait (Kiri Atas / Bawah Judul):**
+  * `<span className="badge badge-outline border-sky-300 text-sky-700 gap-1 text-[11px] font-bold"><FaTasks /> Khusus Misi: Baca Buku</span>`
+* **Badge Hadiah Terkait (Kanan Atas / Di Samping Bintang):**
+  * `<span className="badge bg-amber-100 text-amber-900 border-amber-300 gap-1 text-[11px] font-extrabold"><FaGift /> Hadiah: Beli Buku Baru</span>`
+* **Tombol Klaim Dinamis:**
+  * Menampilkan: `🎁 Klaim +15 ⭐ & Hadiah Hadir!` jika memiliki linked reward.
+
+---
+
+### 📦 Batch 5: Implementasi Relational Streak Linking
+* **File yang Dikerjakan:**
+  1. `src/types/index.ts` & `src/schemas/backupSchema.ts`: Tambah `linked_task_id` & `linked_reward_id` di `StreakMilestone`.
+  2. `src/utils/loyaltyTierUtils.ts`: Update helper kalkulasi progress streak agar mengecek `linked_task_id`.
+  3. `src/pages/admin/AdminStreakForm.tsx`: Tambah in-app dropdown Listbox untuk memilih Linked Task & Linked Reward.
+  4. `src/components/child/LoyaltyStreakMilestones.tsx`: Render badge info misi dan hadiah terkait di kartu milestone serta update handler klaim.
+  5. `src/store/useAppStore.ts`: Update fungsi klaim milestone agar meng-handle auto-grant atau unlock linked reward.
+

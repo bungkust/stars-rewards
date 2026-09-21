@@ -94,6 +94,16 @@ export const categorySchema = z.object({
     is_default: z.boolean().nullish(),
 });
 
+export const streakMilestoneSchema = z.object({
+    id: z.string(),
+    days: z.number(),
+    title: z.string(),
+    description: z.string().nullish(),
+    bonusStars: z.number(),
+    linked_task_id: z.string().nullish(),
+    linked_reward_id: z.string().nullish(),
+});
+
 export const profileSchema = z.object({
     id: z.string(),
     created_at: z.string().nullish(),
@@ -122,6 +132,8 @@ export const backupSchema = z.object({
     xpTransactions: z.array(xpTransactionSchema).nullish(),
     xp_transactions: z.array(xpTransactionSchema).nullish(),
     categories: z.array(categorySchema).nullish(),
+    streakMilestones: z.array(streakMilestoneSchema).nullish(),
+    streak_milestones: z.array(streakMilestoneSchema).nullish(),
 
     // Legacy flat fields support and State settings
     adminName: z.string().nullish(),
