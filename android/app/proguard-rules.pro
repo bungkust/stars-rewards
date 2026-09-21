@@ -23,4 +23,9 @@
 # Capacitor
 -keep public class com.getcapacitor.** { *; }
 -keep public class com.getcapacitor.community.** { *; }
+-keep public class * extends com.getcapacitor.Plugin { *; }
+-keepclassmembers class * extends com.getcapacitor.Plugin {
+    public <methods>;
+}
+-keep public class * extends org.apache.cordova.CordovaPlugin { *; }
 

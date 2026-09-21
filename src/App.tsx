@@ -90,7 +90,6 @@ function App() {
     // Configure StatusBar
     if (Capacitor.isNativePlatform()) {
       StatusBar.setOverlaysWebView({ overlay: true }).catch(() => { });
-      StatusBar.setBackgroundColor({ color: '#ffffff' }).catch(() => { });
       StatusBar.setStyle({ style: Style.Dark }).catch(() => { });
     }
 
