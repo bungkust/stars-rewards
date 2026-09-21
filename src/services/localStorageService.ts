@@ -804,37 +804,7 @@ export const localStorageService = {
         return newTx;
     },
 
-    awardAchievementStars: async (childId: string, achievementId: string, amount: number, title: string): Promise<CoinTransaction | null> => {
-        if (amount <= 0) return null;
-        const db = getDB();
-        const childIndex = db.children.findIndex(c => c.id === childId);
-        if (childIndex === -1) return null;
 
-        const referenceId = `achievement:${achievementId}`;
-        const existing = db.transactions.some(transaction =>
-            transaction.child_id === childId &&
-            transaction.type === 'MANUAL_ADJ' &&
-            transaction.reference_id === referenceId
-        );
-        if (existing) return null;
-
-        db.children[childIndex].current_balance = (db.children[childIndex].current_balance || 0) + amount;
-
-        const newTx: CoinTransaction = {
-            id: generateId(),
-            parent_id: 'local-user',
-            child_id: childId,
-            amount,
-            type: 'MANUAL_ADJ',
-            reference_id: referenceId,
-            description: `Achievement reward: ${title}`,
-            created_at: new Date().toISOString()
-        };
-        db.transactions.push(newTx);
-
-        saveDB(db);
-        return newTx;
-    },
 
     fetchTransactions: async (): Promise<CoinTransaction[]> => {
         const db = getDB();

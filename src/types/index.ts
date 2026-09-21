@@ -105,12 +105,6 @@ export interface XpTransaction {
   created_at: string;
 }
 
-export interface ChildProgress {
-  child_id: string;
-  total_xp: number;
-  level: number;
-  updated_at: string;
-}
 
 export interface VerificationRequest extends ChildTaskLog {
   task_title: string;

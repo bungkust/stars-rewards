@@ -223,9 +223,7 @@ export const dataService = {
     return localStorageService.manualAdjustment(childId, amount, reason);
   },
 
-  awardAchievementStars: async (childId: string, achievementId: string, amount: number, title: string): Promise<CoinTransaction | null> => {
-    return localStorageService.awardAchievementStars(childId, achievementId, amount, title);
-  },
+
 
   /**
    * Verifies the entered PIN.
