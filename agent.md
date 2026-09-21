@@ -84,10 +84,17 @@ This repository is a React/Vite/TypeScript offline-first mobile app wrapped with
 
 ## UI And Design Rules
 
-- Respect the mode split:
-  - child mode uses `childTheme`
-  - parent mode uses `parentTheme`
+- Strictly respect the mode color split:
+  - Child mode (`/child/*`): uses `childTheme` (Sky Blue `#38BDF8`, Deep Navy `#013576`, Warm Gold `#FFD580`, White `#FFFFFF`).
+  - Parent mode (`/parent/*`, `/settings/*`, parent modals): uses `parentTheme` (Sage Green `#ABC270`, Dark Brown `#463C33`, Off-white `#F9FAFB`). Never use child's bright sky blue in parent mode.
 - Keep child UI playful and clear; keep parent UI operational and scannable.
+- Bottom Navigation has 5 tabs for child mode: `Home`, `Missions`, `Champ` (`/child/loyalty`), `Rewards`, `Stats`.
+- Child Champ page (`/child/loyalty`):
+  - Uses child theme tokens (Deep Navy text, Sky Blue progress/buttons, Gold star badges).
+  - Swipable 5-tier cosmic membership card (Bulan → Galaksi).
+  - Vertical list of streak challenge cards matching the reference layout (coin badge, title, description, dashed divider, progress numbers, bar, claim CTA).
+- Parent Mode Streak Settings:
+  - Parents can manually adjust child streak (`current_streak` and `best_streak`) inside `EditChildModal` using parent theme styling (sage green accents, dark brown labels).
 - Use existing shared components from `src/components/design-system` where possible.
 - Use the existing page structure:
   - shared wrappers: `Dashboard.tsx`, `Tasks.tsx`, `Rewards.tsx`, `Stats.tsx`
@@ -97,6 +104,7 @@ This repository is a React/Vite/TypeScript offline-first mobile app wrapped with
 - Preserve safe-area handling for mobile layouts.
 - Avoid adding text-heavy instructional UI unless the flow truly needs it.
 - Use existing icon utilities in `src/utils/icons.ts` for task and reward icon mapping.
+
 
 ## Capacitor Rules
 

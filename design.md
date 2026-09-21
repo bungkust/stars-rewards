@@ -17,33 +17,45 @@ Use DaisyUI themes from `tailwind.config.js`. Do not hardcode a new global palet
 
 ### Child Theme
 
-`childTheme` is used in child mode.
+`childTheme` is used in child mode (`/child/*`).
 
-- `primary`: `#38BDF8` sky blue
-- `secondary`: `#99E6C9` mint
+- `primary`: `#38BDF8` sky blue (CTA buttons, active navigation, active progress bars)
+- `secondary`: `#99E6C9` mint (glows, secondary badges)
 - `accent`: `#FFCC99` soft peach
-- `neutral`: `#013576` deep blue
-- `base-100`: `#FFFFFF`
-- `success`: `#5FE28A`
-- `warning`: `#FFD580`
+- `neutral`: `#013576` deep blue (all primary headings, card titles, text)
+- `base-100`: `#FFFFFF` (page background and card backgrounds)
+- `success`: `#5FE28A` (completed badges, claimed milestones)
+- `warning`: `#FFD580` (stars, coins, streak fire, star badges)
 - `error`: `#FF6B6B`
 
-Child UI should lean on `primary`, `warning`, white surfaces, soft shadows, rounded shapes, and clear status badges.
+Child UI should lean on `primary` (`#38BDF8`), `warning` (`#FFD580`), white surfaces, soft shadows, rounded shapes, and clear status badges.
 
 ### Parent Theme
 
-`parentTheme` is used in parent mode.
+`parentTheme` is used in parent mode (`/parent/*`, `/settings/*`, parent modals).
 
-- `primary`: `#ABC270` sage green
+- `primary`: `#ABC270` sage green (parent primary actions, parent active nav tab)
 - `secondary`: `#FEC868` warm yellow
 - `accent`: `#FDA769` orange
-- `neutral`: `#463C33` warm dark brown
-- `base-100`: `#F9FAFB`
+- `neutral`: `#463C33` warm dark brown (parent headings and text)
+- `base-100`: `#F9FAFB` (subtle off-white background)
 - `success`: `#7ADF93`
 - `warning`: `#FFCC99`
 - `error`: `#C83F49`
 
-Parent UI should feel steadier and more structured. Use the same component language as child mode, but with denser information and less celebration.
+Parent UI should feel steadier, calmer, and more operational. Never use child's playful bright blue in parent mode; always use sage green `#ABC270` and dark brown `#463C33`.
+
+### Champ & Loyalty Feature Design Guidelines
+
+The **Champ** tab (`/child/loyalty`) is the child's loyalty & streak hub:
+- **Child Mode (`/child/loyalty`):**
+  - Uses `childTheme` colors: deep navy text `#013576`, sky blue `#38BDF8` progress & claim buttons, warm gold `#FFD580` star badges.
+  - Cosmic Tier Card: Navy-to-sky gradient, 5 swipable tiers (Bulan → Galaksi) with dot indicator.
+  - Streak Challenge Cards: Clean white card, top-left gold star badge, bold navy title, dashed divider, left/right progress numbers, horizontal progress bar, and pill-shaped claim button.
+- **Parent Mode (`EditChildModal`):**
+  - Uses `parentTheme` colors: sage green accents, dark brown labels `#463C33`, muted borders.
+  - Provides manual numeric inputs for adjusting a child's current streak and best streak.
+
 
 ## Layout Rules
 
