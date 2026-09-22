@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 import { FaArrowLeft, FaStar, FaTrash, FaTrophy, FaChevronDown, FaCheck } from 'react-icons/fa';
-import { Minus, Plus, Check } from '@phosphor-icons/react';
+import { Minus, Plus, Check, ClipboardText, Gift } from '@phosphor-icons/react';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
 import { AlertModal } from '../../components/design-system';
 
@@ -75,12 +75,21 @@ const STAR_OPTIONS = [
 const AdminStreakForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { streakMilestones, addStreakMilestone, updateStreakMilestone, deleteStreakMilestone } = useAppStore();
+  const {
+    streakMilestones,
+    addStreakMilestone,
+    updateStreakMilestone,
+    deleteStreakMilestone,
+    tasks,
+    rewards,
+  } = useAppStore();
 
   const [title, setTitle] = useState('');
   const [days, setDays] = useState(7);
   const [bonusStars, setBonusStars] = useState(15);
   const [description, setDescription] = useState('');
+  const [linkedTaskId, setLinkedTaskId] = useState<string>('');
+  const [linkedRewardId, setLinkedRewardId] = useState<string>('');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
@@ -93,6 +102,8 @@ const AdminStreakForm = () => {
         setDays(milestone.days);
         setBonusStars(milestone.bonusStars);
         setDescription(milestone.description || '');
+        setLinkedTaskId(milestone.linked_task_id || '');
+        setLinkedRewardId(milestone.linked_reward_id || '');
       }
     }
   }, [id, streakMilestones]);
@@ -105,6 +116,8 @@ const AdminStreakForm = () => {
       setDays(tmpl.days);
       setBonusStars(tmpl.bonusStars);
       setDescription(tmpl.description);
+      setLinkedTaskId('');
+      setLinkedRewardId('');
     }
   };
 
@@ -125,9 +138,11 @@ const AdminStreakForm = () => {
 
     const milestoneData = {
       title: title.trim(),
-      days: Number(days),
-      bonusStars: Number(bonusStars),
+      days,
+      bonusStars,
       description: description.trim() || `Reach ${days} consecutive days of good habits!`,
+      linked_task_id: linkedTaskId || undefined,
+      linked_reward_id: linkedRewardId || undefined,
     };
 
     if (id) {
@@ -148,6 +163,8 @@ const AdminStreakForm = () => {
   };
 
   const isFormValid = title.trim().length > 0 && days > 0 && bonusStars > 0;
+  const linkedTask = tasks.find((t) => t.id === linkedTaskId);
+  const linkedReward = rewards.find((r) => r.id === linkedRewardId);
 
   return (
     <div className="flex flex-col gap-6 pb-24 max-w-2xl mx-auto">
@@ -461,7 +478,209 @@ const AdminStreakForm = () => {
           </div>
         </div>
 
-        {/* 5. Description */}
+        {/* 5. Target Misi (Mission Source) */}
+        <div className="card bg-base-100 border border-base-200 rounded-2xl p-4 shadow-sm flex flex-col gap-2">
+          <div>
+            <span className="label-text font-bold text-neutral/80 block">
+              Target Misi (Mission Source)
+            </span>
+            <span className="text-xs text-neutral/50">
+              Pilih apakah streak dihitung dari semua misi atau misi tertentu saja
+            </span>
+          </div>
+
+          <div className="relative">
+            <Listbox value={linkedTaskId} onChange={setLinkedTaskId}>
+              <div className="relative">
+                <ListboxButton className="relative w-full cursor-pointer rounded-xl bg-base-100 py-3 pl-4 pr-10 text-left border border-base-300 focus:outline-none focus-visible:border-emerald-600 sm:text-sm text-sm font-semibold text-neutral shadow-xs">
+                  <span className="flex items-center gap-2">
+                    <ClipboardText className="w-4 h-4 text-sky-600 flex-shrink-0" weight="bold" />
+                    <span className="block truncate">
+                      {linkedTask ? `${linkedTask.icon || '📋'} ${linkedTask.name}` : '⭐ Semua Misi (Global Streak)'}
+                    </span>
+                  </span>
+                  <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                    <FaChevronDown className="h-3 w-3 text-neutral/40" />
+                  </span>
+                </ListboxButton>
+                <ListboxOptions
+                  modal={false}
+                  className="absolute mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1.5 text-sm shadow-xl ring-1 ring-black/5 focus:outline-none z-50 border border-base-200"
+                >
+                  {/* Global Option */}
+                  <ListboxOption
+                    value=""
+                    className={({ active }) =>
+                      `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${
+                        active ? 'bg-sky-50 text-sky-900' : 'text-neutral'
+                      }`
+                    }
+                  >
+                    {({ selected }) => (
+                      <>
+                        <div className="flex flex-col">
+                          <span
+                            className={`text-xs font-bold ${
+                              selected ? 'text-sky-700' : 'text-neutral'
+                            }`}
+                          >
+                            ⭐ Semua Misi (Global Streak)
+                          </span>
+                          <span className="text-[11px] text-neutral/50 font-medium">
+                            Akumulasi streak umum anak dari semua misi aktif
+                          </span>
+                        </div>
+                        {selected && (
+                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sky-600">
+                            <FaCheck className="h-3.5 w-3.5" />
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </ListboxOption>
+
+                  {/* Specific Tasks */}
+                  {tasks.map((task) => (
+                    <ListboxOption
+                      key={task.id}
+                      value={task.id}
+                      className={({ active }) =>
+                        `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${
+                          active ? 'bg-sky-50 text-sky-900' : 'text-neutral'
+                        }`
+                      }
+                    >
+                      {({ selected }) => (
+                        <>
+                          <div className="flex flex-col">
+                            <span
+                              className={`text-xs font-bold ${
+                                selected ? 'text-sky-700' : 'text-neutral'
+                              }`}
+                            >
+                              {task.icon || '📋'} {task.name}
+                            </span>
+                            <span className="text-[11px] text-neutral/50 font-medium">
+                              +{task.reward_value} Stars • {task.type === 'RECURRING' ? 'Misi Rutin' : 'Misi Sekali'}
+                            </span>
+                          </div>
+                          {selected && (
+                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sky-600">
+                              <FaCheck className="h-3.5 w-3.5" />
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </ListboxOption>
+                  ))}
+                </ListboxOptions>
+              </div>
+            </Listbox>
+          </div>
+        </div>
+
+        {/* 6. Hadiah Spesial (Linked Reward) */}
+        <div className="card bg-base-100 border border-base-200 rounded-2xl p-4 shadow-sm flex flex-col gap-2">
+          <div>
+            <span className="label-text font-bold text-neutral/80 block">
+              Hadiah Spesial (Linked Reward)
+            </span>
+            <span className="text-xs text-neutral/50">
+              Berikan item hadiah langsung gratis saat anak mencapai milestone ini (Opsional)
+            </span>
+          </div>
+
+          <div className="relative">
+            <Listbox value={linkedRewardId} onChange={setLinkedRewardId}>
+              <div className="relative">
+                <ListboxButton className="relative w-full cursor-pointer rounded-xl bg-base-100 py-3 pl-4 pr-10 text-left border border-base-300 focus:outline-none focus-visible:border-amber-500 sm:text-sm text-sm font-semibold text-neutral shadow-xs">
+                  <span className="flex items-center gap-2">
+                    <Gift className="w-4 h-4 text-amber-500 flex-shrink-0" weight="bold" />
+                    <span className="block truncate">
+                      {linkedReward ? `${linkedReward.icon || '🎁'} ${linkedReward.name}` : '⭐ Bintang Saja (Tanpa Hadiah Fisik)'}
+                    </span>
+                  </span>
+                  <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                    <FaChevronDown className="h-3 w-3 text-neutral/40" />
+                  </span>
+                </ListboxButton>
+                <ListboxOptions
+                  modal={false}
+                  className="absolute mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1.5 text-sm shadow-xl ring-1 ring-black/5 focus:outline-none z-50 border border-base-200"
+                >
+                  {/* Stars Only Option */}
+                  <ListboxOption
+                    value=""
+                    className={({ active }) =>
+                      `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${
+                        active ? 'bg-amber-50 text-amber-900' : 'text-neutral'
+                      }`
+                    }
+                  >
+                    {({ selected }) => (
+                      <>
+                        <div className="flex flex-col">
+                          <span
+                            className={`text-xs font-bold ${
+                              selected ? 'text-amber-700' : 'text-neutral'
+                            }`}
+                          >
+                            ⭐ Bintang Saja
+                          </span>
+                          <span className="text-[11px] text-neutral/50 font-medium">
+                            Hanya memberikan bonus bintang yang ditentukan di atas
+                          </span>
+                        </div>
+                        {selected && (
+                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-600">
+                            <FaCheck className="h-3.5 w-3.5" />
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </ListboxOption>
+
+                  {/* Specific Rewards */}
+                  {rewards.map((reward) => (
+                    <ListboxOption
+                      key={reward.id}
+                      value={reward.id}
+                      className={({ active }) =>
+                        `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${
+                          active ? 'bg-amber-50 text-amber-900' : 'text-neutral'
+                        }`
+                      }
+                    >
+                      {({ selected }) => (
+                        <>
+                          <div className="flex flex-col">
+                            <span
+                              className={`text-xs font-bold ${
+                                selected ? 'text-amber-700' : 'text-neutral'
+                              }`}
+                            >
+                              {reward.icon || '🎁'} {reward.name}
+                            </span>
+                            <span className="text-[11px] text-neutral/50 font-medium">
+                              Biaya katalog: {reward.cost_value} Stars • Dibuka gratis saat streak
+                            </span>
+                          </div>
+                          {selected && (
+                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-600">
+                              <FaCheck className="h-3.5 w-3.5" />
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </ListboxOption>
+                  ))}
+                </ListboxOptions>
+              </div>
+            </Listbox>
+          </div>
+        </div>
+
+        {/* 7. Description */}
         <div className="form-control w-full">
           <label className="label">
             <span className="label-text font-bold text-neutral/80">

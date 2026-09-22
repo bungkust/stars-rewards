@@ -31,6 +31,8 @@ const EditChildModal = ({ isOpen, onClose, child, onSave, onDelete }: EditChildM
     const [isEditingAvatar, setIsEditingAvatar] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [currentStreak, setCurrentStreak] = useState<number | string>(child.current_streak ?? 0);
+    const [bestStreak, setBestStreak] = useState<number | string>(child.best_streak ?? 0);
 
     // Sync state when child prop changes
     useEffect(() => {
@@ -40,6 +42,8 @@ const EditChildModal = ({ isOpen, onClose, child, onSave, onDelete }: EditChildM
             setSelectedAvatar(child.avatar_url);
             setIsEditingAvatar(false);
             setIsDeleting(false);
+            setCurrentStreak(child.current_streak ?? 0);
+            setBestStreak(child.best_streak ?? 0);
         }
     }, [child, isOpen]);
 
@@ -58,7 +62,9 @@ const EditChildModal = ({ isOpen, onClose, child, onSave, onDelete }: EditChildM
             await onSave(child.id, {
                 name: name.trim(),
                 birth_date: dob,
-                avatar_url: avatarToSave
+                avatar_url: avatarToSave,
+                current_streak: Math.max(0, +currentStreak || 0),
+                best_streak: Math.max(0, +bestStreak || 0),
             });
             onClose();
         } catch (error) {
@@ -163,6 +169,49 @@ const EditChildModal = ({ isOpen, onClose, child, onSave, onDelete }: EditChildM
                             <label className="label">
                                 <span className="label-text-alt text-gray-400">Format: yyyy-MM-dd (e.g. 2019-08-27)</span>
                             </label>
+                        </div>
+
+                        {/* Streak Manual Override (Parent Control) */}
+                        <div className="bg-base-200/60 p-3 rounded-2xl flex flex-col gap-2 border border-base-200">
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="form-control w-full">
+                                    <label className="label py-1">
+                                        <span className="label-text font-bold text-neutral/70 flex items-center gap-1 text-xs">
+                                            <span>🔥</span> Current Streak
+                                        </span>
+                                    </label>
+                                    <input
+                                        id="editChildCurrentStreak"
+                                        name="editChildCurrentStreak"
+                                        type="number"
+                                        min="0"
+                                        value={currentStreak}
+                                        onChange={(e) => setCurrentStreak(e.target.value)}
+                                        className="input input-bordered input-sm w-full rounded-xl text-center font-black text-amber-600 bg-base-100"
+                                        placeholder="0"
+                                    />
+                                </div>
+                                <div className="form-control w-full">
+                                    <label className="label py-1">
+                                        <span className="label-text font-bold text-neutral/70 flex items-center gap-1 text-xs">
+                                            <span>🏆</span> Best Streak
+                                        </span>
+                                    </label>
+                                    <input
+                                        id="editChildBestStreak"
+                                        name="editChildBestStreak"
+                                        type="number"
+                                        min="0"
+                                        value={bestStreak}
+                                        onChange={(e) => setBestStreak(e.target.value)}
+                                        className="input input-bordered input-sm w-full rounded-xl text-center font-black text-emerald-600 bg-base-100"
+                                        placeholder="0"
+                                    />
+                                </div>
+                            </div>
+                            <span className="text-[11px] text-neutral/50 italic px-1">
+                                Kontrol manual orang tua untuk mengoreksi hari konsistensi berturut-turut anak.
+                            </span>
                         </div>
                     </div>
 
