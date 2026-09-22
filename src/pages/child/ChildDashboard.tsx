@@ -1,10 +1,12 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 import { FaStar, FaClock, FaRedo, FaCamera, FaBolt, FaCalendarWeek, FaCalendarAlt, FaChevronDown, FaChevronUp, FaPlus, FaHistory } from 'react-icons/fa';
 import { motion, AnimatePresence, type PanInfo } from 'framer-motion';
 import { ToggleButton } from '../../components/design-system';
 import { parseRRule, isDateValid } from '../../utils/recurrence';
 import { getTodayLocalStart, getLocalStartOfDay, getLocalDateString } from '../../utils/timeUtils';
+import { calcTotalEarnedStars, getTierIndex, COSMIC_TIERS, getChildStreak } from '../../utils/loyaltyTierUtils';
 import EditChildModal from '../../components/modals/EditChildModal';
 import TaskCompletionModal from '../../components/modals/TaskCompletionModal';
 import TaskRejectionDetailsModal from '../../components/modals/TaskRejectionDetailsModal';
@@ -22,9 +24,15 @@ const getGreeting = () => {
 };
 
 const ChildDashboard = () => {
-  const { activeChildId, children, getTasksByChildId, updateChild, deleteChild, completeTask, completeTaskOnDate, updateTaskProgress, updateTaskProgressOnDate, isLoading, childLogs, setStreakMilestone } = useAppStore();
+  const navigate = useNavigate();
+  const { activeChildId, children, getTasksByChildId, updateChild, deleteChild, completeTask, completeTaskOnDate, updateTaskProgress, updateTaskProgressOnDate, isLoading, childLogs, setStreakMilestone, transactions, tasks } = useAppStore();
   const child = children.find(c => c.id === activeChildId);
   const allTasks = activeChildId ? getTasksByChildId(activeChildId) : [];
+
+  const lifetimeStars = calcTotalEarnedStars(transactions, child?.id || '');
+  const currentTierIndex = getTierIndex(lifetimeStars > 0 ? lifetimeStars : (child?.current_balance ?? 0));
+  const currentTier = COSMIC_TIERS[currentTierIndex];
+  const childStreak = getChildStreak(child, tasks);
 
 
   const [filter, setFilter] = useState<'today' | 'daily' | 'once' | 'all'>('today');
@@ -456,6 +464,48 @@ const ChildDashboard = () => {
           <div className="flex items-center gap-2 text-warning mt-1">
             <FaStar className="w-6 h-6" />
             <span className="text-3xl font-bold text-neutral">{child.current_balance}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Cosmic Card Banner (Champ Hub Quick Access) */}
+      <div
+        onClick={() => navigate('/child/loyalty')}
+        className={`card p-4 rounded-2xl shadow-md bg-gradient-to-r ${currentTier.gradient} text-white cursor-pointer relative overflow-hidden transition-all hover:scale-[1.01] active:scale-[0.99] border border-white/20`}
+      >
+        {/* Ambient Glow */}
+        <div className={`absolute top-0 right-0 w-32 h-32 ${currentTier.glowColor} rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none`} />
+
+        <div className="flex items-center justify-between relative z-10">
+          <div className="flex items-center gap-3">
+            <div className={`w-11 h-11 rounded-xl backdrop-blur-md ${currentTier.iconBg} ${currentTier.iconColor} border border-white/20 shadow-sm flex items-center justify-center flex-shrink-0`}>
+              <currentTier.icon size={24} weight="fill" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-black tracking-wider uppercase text-white/90">
+                  Kartu Kosmos
+                </span>
+                <span className="badge badge-warning text-neutral font-extrabold text-[10px] px-1.5 py-0.5 rounded-full shadow-2xs">
+                  Level {currentTierIndex + 1}
+                </span>
+              </div>
+              <h3 className="text-base font-black text-white leading-tight">
+                {currentTier.name}
+              </h3>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="flex flex-col items-end">
+              <span className="text-[11px] font-bold text-white/80">Streak</span>
+              <span className="text-sm font-black text-white flex items-center gap-0.5">
+                <span>🔥</span> {childStreak} Hari
+              </span>
+            </div>
+            <div className="w-7 h-7 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-xs font-bold">
+              →
+            </div>
           </div>
         </div>
       </div>
