@@ -13,9 +13,7 @@ const LoyaltyStreakMilestones = () => {
     transactions,
     tasks,
     rewards,
-    manualAdjustment,
-    redeemReward,
-    updateChild,
+    claimStreakMilestone,
   } = useAppStore();
 
   const child = children.find((c) => c.id === activeChildId);
@@ -29,20 +27,10 @@ const LoyaltyStreakMilestones = () => {
     if (!child) return;
     setClaimingId(milestone.id);
     try {
-      // 1. Grant bonus stars to child
-      await manualAdjustment(child.id, milestone.bonusStars, `Bonus Streak ${milestone.days} Hari 🔥`);
-
-      // 2. Grant linked reward if attached (at 0 star cost)
-      if (milestone.linked_reward_id) {
-        await redeemReward(child.id, 0, milestone.linked_reward_id);
+      const { error } = await claimStreakMilestone(child.id, milestone);
+      if (!error) {
+        setClaimedSuccessMilestone(milestone);
       }
-
-      // 3. Mark milestone as claimed in child profile
-      const updatedClaimed = [...(child.claimed_milestones || []), milestone.days];
-      await updateChild(child.id, { claimed_milestones: updatedClaimed });
-
-      // 4. Open celebration popup
-      setClaimedSuccessMilestone(milestone);
     } catch (err) {
       console.error('Failed to claim streak milestone', err);
     } finally {

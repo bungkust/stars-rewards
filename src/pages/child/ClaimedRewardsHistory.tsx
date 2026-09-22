@@ -35,7 +35,7 @@ const ClaimedRewardsHistory = () => {
     const getTransactionDetails = (t: any) => {
         const reward = rewards.find(r => r.id === t.reference_id);
         const name = reward?.name || 'Reward Redeemed';
-        const description = 'Spent Stars';
+        const description = t.amount === 0 ? 'Hadiah Gratis (Streak Milestone 🔥)' : 'Spent Stars';
         return { name, description };
     };
 
@@ -212,8 +212,8 @@ const ClaimedRewardsHistory = () => {
                             subtitle: new Date(tx.created_at).toLocaleDateString(),
                             description: details.description,
                             amount: tx.amount,
-                            amountLabel: 'Redeemed',
-                            status: 'warning',
+                            amountLabel: tx.amount === 0 ? 'Gratis (Streak)' : 'Redeemed',
+                            status: tx.amount === 0 ? 'success' : 'warning',
                             categoryName: category?.name,
                             childName: child.name,
                             dateLabel: new Date(tx.created_at).toLocaleDateString(),

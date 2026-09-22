@@ -18,7 +18,7 @@ const getIconComponent = (iconId: string | undefined) => {
 };
 
 const ChildRewards = () => {
-  const { rewards, activeChildId, children, redeemReward, isLoading, transactions, childLogs, tasks, redeemedHistory } = useAppStore();
+  const { rewards, activeChildId, children, redeemReward, isLoading, transactions, childLogs, tasks, redeemedHistory, streakMilestones } = useAppStore();
   const child = children.find(c => c.id === activeChildId);
 
   const [selectedReward, setSelectedReward] = useState<{ id: string, name: string, description?: string, cost: number } | null>(null);
@@ -202,6 +202,7 @@ const ChildRewards = () => {
               const isLocked = progress && !progress.isUnlocked;
 
               const IconComponent = getIconComponent(reward.category);
+              const linkedMilestone = streakMilestones.find(m => m.linked_reward_id === reward.id);
 
               return (
                 <AdminEntityCard
@@ -241,6 +242,11 @@ const ChildRewards = () => {
                   description={reward.description}
                   tags={
                     <>
+                      {linkedMilestone && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-300">
+                          <span>🔥</span> Hadiah Streak {linkedMilestone.days} Hari
+                        </span>
+                      )}
                       {isOneTime && !isRedeemed && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200/60">
                           One-time

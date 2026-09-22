@@ -139,6 +139,7 @@ export interface AppState {
   rejectTask: (logId: string, reason: string) => Promise<{ error: any }>;
   redeemReward: (childId: string, cost: number, rewardId: string) => Promise<{ error: any }>;
   manualAdjustment: (childId: string, amount: number, reason?: string) => Promise<{ error: any }>;
+  claimStreakMilestone: (childId: string, milestone: StreakMilestone) => Promise<{ error: any }>;
 
   checkMissedMissions: () => Promise<void>;
   deleteTransaction: (transactionId: string) => Promise<{ error: any }>;
@@ -1461,6 +1462,38 @@ export const useAppStore = create<AppState>()(
           return { error: null };
         } catch (error) {
           console.error('Error adjusting balance:', error);
+          return { error };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      claimStreakMilestone: async (childId: string, milestone: StreakMilestone) => {
+        set({ isLoading: true });
+        try {
+          // 1. Credit bonus stars to child
+          const bonusRes = await get().manualAdjustment(
+            childId,
+            milestone.bonusStars,
+            `Bonus Streak ${milestone.days} Hari 🔥`
+          );
+          if (bonusRes.error) throw bonusRes.error;
+
+          // 2. If milestone has linked reward, grant it for 0 stars
+          if (milestone.linked_reward_id) {
+            await get().redeemReward(childId, 0, milestone.linked_reward_id);
+          }
+
+          // 3. Mark milestone as claimed on child profile
+          const targetChild = get().children.find(c => c.id === childId);
+          if (targetChild) {
+            const updatedClaimed = [...(targetChild.claimed_milestones || []), milestone.days];
+            await get().updateChild(childId, { claimed_milestones: updatedClaimed });
+          }
+
+          return { error: null };
+        } catch (error) {
+          console.error('Error claiming streak milestone:', error);
           return { error };
         } finally {
           set({ isLoading: false });
