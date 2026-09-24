@@ -53,7 +53,7 @@ const LoyaltyStreakMilestones = () => {
             Champ Streak Milestones
           </h3>
           <p className="text-xs text-neutral/60 font-medium mt-0.5">
-            Rekor Terbaik: <span className="font-bold text-primary">{bestRecordStreak} Hari</span> berturut-turut 🔥
+            Best Record: <span className="font-bold text-primary">{bestRecordStreak} Days</span> in a row 🔥
           </p>
         </div>
       </div>
@@ -110,14 +110,14 @@ const LoyaltyStreakMilestones = () => {
                       <FaStar className="w-3 h-3 text-warning fill-current" /> +{milestone.bonusStars} ⭐
                     </span>
                     <span className="px-2 py-0.5 rounded-full text-xs font-semibold border border-primary/40 text-primary bg-primary/5">
-                      {milestone.days} Hari
+                      {milestone.days} Days
                     </span>
 
                     {/* Linked Task Badge */}
                     {linkedTask && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold border border-sky-300 text-sky-700 bg-sky-50">
                         <ClipboardText size={12} weight="bold" />
-                        <span>Misi: {linkedTask.name}</span>
+                        <span>Mission: {linkedTask.name}</span>
                       </span>
                     )}
 
@@ -125,7 +125,7 @@ const LoyaltyStreakMilestones = () => {
                     {linkedReward && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-extrabold border border-amber-300 text-amber-900 bg-amber-100 shadow-2xs">
                         <Gift size={12} weight="bold" />
-                        <span>Hadiah: {linkedReward.name}</span>
+                        <span>Reward: {linkedReward.name}</span>
                       </span>
                     )}
                   </div>
@@ -135,7 +135,7 @@ const LoyaltyStreakMilestones = () => {
                 <div className="flex-shrink-0">
                   {isApproved ? (
                     <span className="badge badge-success text-white font-bold px-3 py-3 rounded-full text-xs shadow-2xs">
-                      Selesai
+                      Done
                     </span>
                   ) : isReached ? (
                     <button
@@ -146,10 +146,10 @@ const LoyaltyStreakMilestones = () => {
                       <Sparkle size={14} weight="fill" />
                       <span>
                         {claimingId === milestone.id
-                          ? 'Mengklaim...'
+                          ? 'Claiming...'
                           : linkedReward
-                          ? 'Klaim Hadiah'
-                          : 'Klaim ⭐'}
+                          ? 'Claim Reward'
+                          : 'Claim ⭐'}
                       </span>
                     </button>
                   ) : (
@@ -177,14 +177,14 @@ const LoyaltyStreakMilestones = () => {
                 </div>
                 <div className="flex justify-between items-center text-[11px] text-neutral/50 mt-1 font-semibold">
                   <span>
-                    {current} dari {target} hari
+                    {current} / {target} days
                   </span>
                   <span>
                     {remaining > 0
-                      ? `Sisa ${remaining} hari lagi`
+                      ? `${remaining} days left`
                       : isApproved
-                      ? 'Telah Diklaim'
-                      : 'Misi Siap Diklaim! 🎉'}
+                      ? 'Claimed'
+                      : 'Mission Ready to Claim! 🎉'}
                   </span>
                 </div>
               </div>
@@ -206,10 +206,10 @@ const LoyaltyStreakMilestones = () => {
 
             <div>
               <h3 className="text-xl font-black text-neutral">
-                Hebat! Streak Tercapai! 🎉
+                Awesome! Streak Achieved! 🎉
               </h3>
               <p className="text-xs text-neutral/60 mt-1 font-medium">
-                Kamu telah menyelesaikan milestone konsistensi{' '}
+                You have completed the consistency milestone{' '}
                 <span className="font-bold text-neutral">
                   {claimedSuccessMilestone.title}
                 </span>
@@ -221,7 +221,7 @@ const LoyaltyStreakMilestones = () => {
               <div className="flex items-center justify-between text-xs font-bold text-neutral px-2">
                 <span className="flex items-center gap-1.5 text-amber-600">
                   <FaStar className="w-3.5 h-3.5 fill-current" />
-                  <span>Bonus Bintang</span>
+                  <span>Star Bonus</span>
                 </span>
                 <span className="text-sm font-extrabold text-amber-600">
                   +{claimedSuccessMilestone.bonusStars} ⭐
@@ -232,7 +232,7 @@ const LoyaltyStreakMilestones = () => {
                 <div className="flex items-center justify-between text-xs font-bold text-neutral px-2 pt-2 border-t border-base-200">
                   <span className="flex items-center gap-1.5 text-sky-600">
                     <Gift size={16} weight="bold" />
-                    <span>Hadiah Spesial</span>
+                    <span>Special Reward</span>
                   </span>
                   <span className="text-xs font-extrabold text-sky-700 truncate max-w-[150px]">
                     {claimedLinkedReward.name}
@@ -245,7 +245,7 @@ const LoyaltyStreakMilestones = () => {
               onClick={() => setClaimedSuccessMilestone(null)}
               className="btn btn-primary text-white rounded-2xl w-full font-bold shadow-md text-sm mt-1"
             >
-              Keren, Terima Kasih! 🚀
+              Cool, Thanks! 🚀
             </button>
           </div>
         </div>

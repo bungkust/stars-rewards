@@ -17,10 +17,10 @@ import { getTaskIconComponent } from '../../utils/icons';
 
 const getGreeting = () => {
   const hour = new Date().getHours();
-  if (hour < 11) return 'Selamat Pagi';
-  if (hour < 15) return 'Selamat Siang';
-  if (hour < 19) return 'Selamat Sore';
-  return 'Selamat Malam';
+  if (hour < 11) return 'Good Morning';
+  if (hour < 15) return 'Good Afternoon';
+  if (hour < 19) return 'Good Evening';
+  return 'Good Evening';
 };
 
 const ChildDashboard = () => {
@@ -485,7 +485,7 @@ const ChildDashboard = () => {
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-black tracking-wider uppercase text-white/90">
-                  Kartu Ranger
+                   Ranger Card
                 </span>
                 <span className="badge badge-warning text-neutral font-extrabold text-[10px] px-1.5 py-0.5 rounded-full shadow-2xs">
                   Level {currentTierIndex + 1}
@@ -501,7 +501,7 @@ const ChildDashboard = () => {
             <div className="flex flex-col items-end">
               <span className="text-[11px] font-bold text-white/80">Streak</span>
               <span className="text-sm font-black text-white flex items-center gap-0.5">
-                <span>🔥</span> {childStreak} Hari
+                <span>🔥</span> {childStreak} Days
               </span>
             </div>
             <div className="w-7 h-7 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-xs font-bold">
@@ -532,13 +532,13 @@ const ChildDashboard = () => {
               {currentTier.nextTier ? (
                 starsNeeded > 0 ? (
                   <>
-                    Kumpulkan <span className="font-bold text-white">{starsNeeded} Bintang lagi</span> untuk lanjut ke {currentTier.nextTier}
+                     Collect <span className="font-bold text-white">{starsNeeded} more Stars</span> to advance to {currentTier.nextTier}
                   </>
                 ) : (
-                  <span>Level berikutnya terbuka!</span>
+                  <span>Next level unlocked!</span>
                 )
               ) : (
-                <span>Tingkat Ranger tertinggi! Pahlawan terkuat Star Habit.</span>
+                <span>Highest Ranger level! Strongest Star Habit hero.</span>
               )}
             </p>
             <span className="font-bold text-warning flex-shrink-0">{progressPercent}%</span>

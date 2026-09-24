@@ -2,6 +2,10 @@
 
 This repository is a React/Vite/TypeScript offline-first mobile app wrapped with Capacitor. Follow these rules when making changes.
 
+## Language Policy
+
+- All UI copy, labels, notifications, modal text, and string constants visible to users must be in **English only**. Never use Indonesian (or any other language) in user-facing strings.
+
 ## Stack
 
 - App: React 19, Vite 7, TypeScript strict mode.

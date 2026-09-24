@@ -50,8 +50,8 @@ export const notificationService = {
             await LocalNotifications.schedule({
                 notifications: [
                     {
-                        title: 'Verifikasi Tugas Mendesak!',
-                        body: `Ada ${count} tugas anak yang menunggu persetujuan Anda.`,
+                        title: 'Urgent Task Verification!',
+                        body: `You have ${count} tasks awaiting your approval.`,
                         id: NOTIFICATION_IDS.PENDING_ADMIN,
                         schedule: { at: triggerDate },
                         sound: 'beep.wav',
@@ -94,10 +94,10 @@ export const notificationService = {
             // If it's already past 8 PM, don't schedule for today.
             if (now.getTime() > targetTime.getTime()) return;
 
-            const title = hasAtRiskStreak ? '⚠️ Awas Streak Putus!' : 'Waktu Tugas Hampir Habis! ⏰';
+            const title = hasAtRiskStreak ? '⚠️ Streak at Risk!' : 'Task Deadline Approaching! ⏰';
             const body = hasAtRiskStreak 
-                ? `Ada streak yang terancam putus! Selesaikan ${count} tugas sebelum tidur.` 
-                : `Jangan lupa selesaikan ${count} misi harian sebelum tidur!`;
+                ? `A streak is in danger! Complete ${count} tasks before bedtime.` 
+                : `Don't forget to complete ${count} daily missions before bedtime!`;
 
             await LocalNotifications.schedule({
                 notifications: [
@@ -145,8 +145,8 @@ export const notificationService = {
             await LocalNotifications.schedule({
                 notifications: [
                     {
-                        title: 'Laporan Harian 📊',
-                        body: `Kemarin ada ${missedCount} misi yang terlewat.Cek detailnya di aplikasi.`,
+                        title: 'Daily Report 📊',
+                        body: `Yesterday, ${missedCount} missions were missed. Check details in the app.`,
                         id: NOTIFICATION_IDS.MISSED_DAILY_REPORT,
                         schedule: { at: triggerDate },
                         sound: 'beep.wav',

@@ -24,7 +24,7 @@ export interface CosmicTier {
 export const COSMIC_TIERS: CosmicTier[] = [
   {
     id: 'green',
-    name: 'Ranger Hijau',
+    name: 'Green Ranger',
     minStars: 0,
     maxStars: 999,
     gradient: 'from-[#064E3B] via-[#047857] to-[#10B981]',
@@ -33,11 +33,11 @@ export const COSMIC_TIERS: CosmicTier[] = [
     icon: Lightning,
     iconColor: 'text-emerald-100',
     iconBg: 'bg-emerald-500/25',
-    nextTier: 'Ranger Biru'
+    nextTier: 'Blue Ranger'
   },
   {
     id: 'blue',
-    name: 'Ranger Biru',
+    name: 'Blue Ranger',
     minStars: 1000,
     maxStars: 2499,
     gradient: 'from-[#0F172A] via-[#1E3A8A] to-[#2563EB]',
@@ -46,11 +46,11 @@ export const COSMIC_TIERS: CosmicTier[] = [
     icon: Shield,
     iconColor: 'text-sky-200',
     iconBg: 'bg-blue-500/25',
-    nextTier: 'Ranger Hitam'
+    nextTier: 'Black Ranger'
   },
   {
     id: 'black',
-    name: 'Ranger Hitam',
+    name: 'Black Ranger',
     minStars: 2500,
     maxStars: 4999,
     gradient: 'from-[#09090B] via-[#18181B] to-[#3F3F46]',
@@ -59,11 +59,11 @@ export const COSMIC_TIERS: CosmicTier[] = [
     icon: Sword,
     iconColor: 'text-zinc-100',
     iconBg: 'bg-zinc-700/50',
-    nextTier: 'Ranger Emas'
+    nextTier: 'Gold Ranger'
   },
   {
     id: 'gold',
-    name: 'Ranger Emas',
+    name: 'Gold Ranger',
     minStars: 5000,
     maxStars: 9999,
     gradient: 'from-[#78350F] via-[#B45309] to-[#F59E0B]',
@@ -72,11 +72,11 @@ export const COSMIC_TIERS: CosmicTier[] = [
     icon: ShieldStar,
     iconColor: 'text-amber-100',
     iconBg: 'bg-amber-400/25',
-    nextTier: 'Ranger Merah'
+    nextTier: 'Red Ranger'
   },
   {
     id: 'red',
-    name: 'Ranger Merah',
+    name: 'Red Ranger',
     minStars: 10000,
     maxStars: null,
     gradient: 'from-[#7F1D1D] via-[#B91C1C] to-[#EF4444]',
@@ -220,7 +220,7 @@ export function isMilestoneClaimed(
   }
 
   // 2. Check transactions history for claim record
-  const searchPattern = `Streak ${milestone.days} Hari`;
+  const searchPattern = `Streak ${milestone.days} Days 🔥`;
   return transactions.some(
     t => t.child_id === child.id && t.type === 'MANUAL_ADJ' && (t.description?.includes(searchPattern) || t.reference_id === milestone.id)
   );

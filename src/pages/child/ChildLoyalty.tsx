@@ -21,11 +21,11 @@ const ChildLoyalty = () => {
     <div className="flex flex-col gap-6">
       {/* 1. Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-neutral">Kartu Ranger</h2>
+        <h2 className="text-2xl font-bold text-neutral">Ranger Card</h2>
         <button
           onClick={() => setIsHelpOpen(true)}
           className="btn btn-circle btn-ghost btn-sm text-neutral/60 hover:text-neutral"
-          aria-label="About Kartu Ranger"
+              aria-label="About Ranger Card"
         >
           <Question size={22} weight="bold" />
         </button>
@@ -61,7 +61,7 @@ const ChildLoyalty = () => {
         </div>
       )}
 
-      {/* 2. Kartu Ranger for Active Child */}
+              {/* 2. Ranger Card for Active Child */}
       <LoyaltyTierCarousel
         childName={childName}
         lifetimeStars={lifetimeStars}
@@ -86,14 +86,14 @@ const ChildLoyalty = () => {
             </div>
             <div>
               <div className="text-xs font-bold text-neutral/60">
-                Bintang Saat Ini
+                Current Stars
               </div>
               <div className="flex items-baseline gap-1.5 mt-0.5">
                 <span className="text-2xl font-black text-neutral">
                   {childBalance}
                 </span>
                 <span className="text-xs font-bold text-amber-600">
-                  Bintang
+                  Stars
                 </span>
               </div>
             </div>
@@ -106,7 +106,7 @@ const ChildLoyalty = () => {
               navigate('/child/history');
             }}
             className="w-10 h-10 rounded-2xl bg-base-200/80 hover:bg-primary hover:text-white text-neutral/70 flex items-center justify-center transition-colors flex-shrink-0"
-            aria-label="Buka riwayat bintang"
+            aria-label="Open star history"
           >
             <CaretRight size={20} weight="bold" />
           </button>
@@ -116,7 +116,7 @@ const ChildLoyalty = () => {
       {/* 4. Streak Milestones List with Relational Badges & Claim Flow */}
       <LoyaltyStreakMilestones />
 
-      {/* 5. Help Modal: About Kartu Ranger & Streaks */}
+      {/* 5. Help Modal: About Ranger Card & Streaks */}
       {isHelpOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-base-100 w-full max-w-sm rounded-3xl p-6 shadow-2xl relative flex flex-col gap-4 border border-base-200 max-h-[85vh] overflow-y-auto">
@@ -130,34 +130,34 @@ const ChildLoyalty = () => {
 
             <div className="flex items-center gap-2 text-primary">
               <Trophy size={28} weight="fill" />
-              <h3 className="text-lg font-bold text-neutral">Tentang Kartu Ranger</h3>
+              <h3 className="text-lg font-bold text-neutral">About Ranger Card</h3>
             </div>
 
             <div className="text-xs text-neutral/80 flex flex-col gap-3 leading-relaxed">
               <p>
                 <span className="inline-flex items-center gap-1 font-bold text-neutral">
                   <Rocket size={15} weight="fill" className="text-primary" />
-                  <span>Apa itu Kartu Ranger?</span>
+                  <span>What is Ranger Card?</span>
                 </span>
                 <br />
-                Kartu Ranger menunjukkan tingkat kekuatan dan kebiasaan hebatmu! Level Ranger-mu ditentukan oleh total seluruh bintang yang pernah kamu raih seumur hidup.
+                Ranger Card shows your power level and great habits! Your Ranger level is determined by the total stars you've ever earned in your lifetime.
               </p>
 
               <p>
                 <span className="inline-flex items-center gap-1 font-bold text-neutral">
                   <Star size={15} weight="fill" className="text-warning" />
-                  <span>Apakah level Kartu Ranger bisa turun?</span>
+                  <span>Will the Ranger level ever go down?</span>
                 </span>
                 <br />
-                Tidak akan pernah! Menukarkan bintang di Toko Hadiah tidak akan menurunkan level rangermu. Seluruh bintang yang pernah kamu dapatkan dicatat selamanya.
+                Never! Redeeming stars in the Reward Shop won't lower your Ranger level. All stars you've ever earned are recorded permanently.
               </p>
               <p>
                 <span className="inline-flex items-center gap-1 font-bold text-neutral">
                   <Trophy size={15} weight="fill" className="text-warning" />
-                  <span>Bagaimana cara klaim hadiah streak?</span>
+                  <span>How do I claim streak rewards?</span>
                 </span>
                 <br />
-                Selesaikan misimu setiap hari tanpa bolong. Saat mencapai 3, 7, 14, 30, atau 100 hari, tombol Klaim akan terbuka untuk memberikan bonus bintang dan hadiah spesial!
+                Complete your daily missions without missing a day. When you reach 3, 7, 14, 30, or 100 days, the Claim button will open to give you bonus stars and special rewards!
               </p>
             </div>
 
@@ -165,7 +165,7 @@ const ChildLoyalty = () => {
               onClick={() => setIsHelpOpen(false)}
               className="btn btn-primary text-white rounded-2xl w-full mt-2 font-bold shadow-md"
             >
-              Siap, Mengerti! ⚡
+              Ready, Got it! ⚡
             </button>
           </div>
         </div>

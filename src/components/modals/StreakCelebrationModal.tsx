@@ -14,11 +14,11 @@ const MILESTONE_IMAGE: Record<number, string> = {
 };
 
 const MILESTONE_MESSAGE: Record<number, string> = {
-  3: 'Streak dimulai!',
-  7: 'Seminggu penuh! Luar biasa!',
-  14: 'Dua minggu tanpa bolong! Keren!',
-  30: 'Satu bulan konsisten! WOW!',
-  100: 'LEGENDA! 100 hari streak!',
+  3: 'Streak started!',
+  7: 'Full week! Amazing!',
+  14: 'Two weeks straight! Awesome!',
+  30: 'One consistent month! WOW!',
+  100: 'LEGENDA! 100-day streak!',
 };
 
 export default function StreakCelebrationModal({ milestone, onClose }: Props) {
@@ -32,7 +32,7 @@ export default function StreakCelebrationModal({ milestone, onClose }: Props) {
   if (!milestone) return null;
 
   const imageSrc = MILESTONE_IMAGE[milestone.streak] ?? '/milestones/streak_3.png';
-  const message = MILESTONE_MESSAGE[milestone.streak] ?? `${milestone.streak} hari berturut-turut!`;
+  const message = MILESTONE_MESSAGE[milestone.streak] ?? `${milestone.streak} days in a row!`;
 
   return (
     <div
@@ -54,7 +54,7 @@ export default function StreakCelebrationModal({ milestone, onClose }: Props) {
         {/* Streak count */}
         <div className="flex items-center gap-2">
           <span className="text-5xl font-extrabold text-orange-500">{milestone.streak}</span>
-          <span className="text-2xl font-bold text-orange-400">hari</span>
+          <span className="text-2xl font-bold text-orange-400">days</span>
         </div>
 
         {/* Task name */}

@@ -230,7 +230,7 @@ const EditChildModal = ({ isOpen, onClose, child, onSave, onDelete }: EditChildM
                                 </div>
                             </div>
                             <span className="text-[11px] text-neutral/50 italic px-1">
-                                Kontrol manual orang tua untuk mengoreksi hari konsistensi dan progres level bintang ranger anak.
+                                Parent manual control to adjust streak days and Ranger star progress.
                             </span>
                         </div>
                     </div>

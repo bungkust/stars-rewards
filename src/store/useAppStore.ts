@@ -1483,7 +1483,7 @@ export const useAppStore = create<AppState>()(
           const bonusRes = await get().manualAdjustment(
             childId,
             milestone.bonusStars,
-            `Bonus Streak ${milestone.days} Hari 🔥`
+            `Bonus Streak ${milestone.days} Days 🔥`
           );
           if (bonusRes.error) throw bonusRes.error;
 

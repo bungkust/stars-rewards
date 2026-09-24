@@ -35,7 +35,7 @@ const ClaimedRewardsHistory = () => {
     const getTransactionDetails = (t: any) => {
         const reward = rewards.find(r => r.id === t.reference_id);
         const name = reward?.name || 'Reward Redeemed';
-        const description = t.amount === 0 ? 'Hadiah Gratis (Streak Milestone 🔥)' : 'Spent Stars';
+        const description = t.amount === 0 ? 'Free Gift (Streak Milestone 🔥)' : 'Spent Stars';
         return { name, description };
     };
 
