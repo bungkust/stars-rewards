@@ -24,6 +24,7 @@ export interface Child {
   current_streak?: number;
   best_streak?: number;
   claimed_milestones?: number[];
+  loyalty_stars?: number;
 }
 
 export interface StreakMilestone {

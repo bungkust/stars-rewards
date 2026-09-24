@@ -224,7 +224,8 @@ export const localStorageService = {
             name: child.name,
             birth_date: child.birth_date,
             avatar_url: child.avatar_url,
-            current_balance: 0
+            current_balance: 0,
+            loyalty_stars: 0
         };
         db.children.push(newChild);
         saveDB(db);
@@ -607,6 +608,7 @@ export const localStorageService = {
         const childIndex = db.children.findIndex(c => c.id === childId);
         if (childIndex !== -1) {
             db.children[childIndex].current_balance = (db.children[childIndex].current_balance || 0) + verifiedRewardValue;
+            db.children[childIndex].loyalty_stars = (db.children[childIndex].loyalty_stars || 0) + verifiedRewardValue;
         }
 
         // 3. Add Transaction
@@ -843,6 +845,9 @@ export const localStorageService = {
 
         // 1. Update Balance
         db.children[childIndex].current_balance = (db.children[childIndex].current_balance || 0) + amount;
+        if (amount > 0) {
+            db.children[childIndex].loyalty_stars = (db.children[childIndex].loyalty_stars || 0) + amount;
+        }
 
         // 2. Add Transaction
         const newTx: CoinTransaction = {
@@ -967,7 +972,8 @@ export const localStorageService = {
                 birth_date: c.birth_date ?? undefined,
                 current_streak: c.current_streak ?? undefined,
                 best_streak: c.best_streak ?? undefined,
-                claimed_milestones: c.claimed_milestones ?? undefined
+                claimed_milestones: c.claimed_milestones ?? undefined,
+                loyalty_stars: c.loyalty_stars ?? 0
             }));
 
             const validTasks = (validData.tasks || []).map(t => ({

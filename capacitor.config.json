@@ -18,6 +18,11 @@
       "splashImmersive": true,
       "layoutName": "launch_screen",
       "useDialog": true
+    },
+    "StatusBar": {
+      "overlaysWebView": true,
+      "style": "LIGHT",
+      "backgroundColor": "#ffffffff"
     }
   }
 }

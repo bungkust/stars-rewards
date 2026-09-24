@@ -195,20 +195,12 @@ export function getTierProgress(stars: number, tierIndex: number) {
 }
 
 /**
- * Calculate total lifetime stars earned by a child.
- * Only positive earnings (TASK_VERIFIED, MANUAL_ADJ > 0) are counted.
- * REWARD_REDEEMED does NOT deduct from this, ensuring Cosmic Tier never degrades!
+ * Calculate total stars earned by a child in the Cosmic Card loyalty program.
+ * In v1.4.0, progress starts from 0 for all users so children embark on a fresh cosmic journey.
+ * Uses child.loyalty_stars if present, defaulting to 0.
  */
-export function calcTotalEarnedStars(
-  transactions: CoinTransaction[] = [],
-  childId?: string | null,
-  currentBalance: number = 0
-): number {
-  if (!childId) return Math.max(0, currentBalance);
-  const earned = (transactions || [])
-    .filter(t => t.child_id === childId && (t.type === 'TASK_VERIFIED' || (t.type === 'MANUAL_ADJ' && t.amount > 0)))
-    .reduce((sum, t) => sum + t.amount, 0);
-  return Math.max(earned, currentBalance, 0);
+export function calcTotalEarnedStars(child?: Child | null): number {
+  return Math.max(0, child?.loyalty_stars ?? 0);
 }
 
 /**

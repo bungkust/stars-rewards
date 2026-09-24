@@ -6,7 +6,7 @@ import { motion, AnimatePresence, type PanInfo } from 'framer-motion';
 import { ToggleButton } from '../../components/design-system';
 import { parseRRule, isDateValid } from '../../utils/recurrence';
 import { getTodayLocalStart, getLocalStartOfDay, getLocalDateString } from '../../utils/timeUtils';
-import { calcTotalEarnedStars, getTierIndex, COSMIC_TIERS, getChildStreak } from '../../utils/loyaltyTierUtils';
+import { calcTotalEarnedStars, getTierIndex, COSMIC_TIERS, getChildStreak, getTierProgress } from '../../utils/loyaltyTierUtils';
 import EditChildModal from '../../components/modals/EditChildModal';
 import TaskCompletionModal from '../../components/modals/TaskCompletionModal';
 import TaskRejectionDetailsModal from '../../components/modals/TaskRejectionDetailsModal';
@@ -25,13 +25,14 @@ const getGreeting = () => {
 
 const ChildDashboard = () => {
   const navigate = useNavigate();
-  const { activeChildId, children, getTasksByChildId, updateChild, deleteChild, completeTask, completeTaskOnDate, updateTaskProgress, updateTaskProgressOnDate, isLoading, childLogs, setStreakMilestone, transactions, tasks } = useAppStore();
+  const { activeChildId, children, getTasksByChildId, updateChild, deleteChild, completeTask, completeTaskOnDate, updateTaskProgress, updateTaskProgressOnDate, isLoading, childLogs, setStreakMilestone, tasks } = useAppStore();
   const child = children.find(c => c.id === activeChildId);
   const allTasks = activeChildId ? getTasksByChildId(activeChildId) : [];
 
-  const lifetimeStars = calcTotalEarnedStars(transactions, child?.id || '', child?.current_balance ?? 0);
+  const lifetimeStars = calcTotalEarnedStars(child);
   const currentTierIndex = getTierIndex(lifetimeStars);
   const currentTier = COSMIC_TIERS[currentTierIndex];
+  const { progressPercent, starsNeeded } = getTierProgress(lifetimeStars, currentTierIndex);
   const childStreak = getChildStreak(child, tasks);
 
 
@@ -506,6 +507,41 @@ const ChildDashboard = () => {
             <div className="w-7 h-7 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-xs font-bold">
               →
             </div>
+          </div>
+        </div>
+
+        {/* Full-width Progress Bar & Requirement Text (matching Champ card) */}
+        <div className="mt-3 pt-2.5 border-t border-white/15 relative z-10">
+          <div className="relative flex items-center mb-1.5">
+            <div className="w-full bg-black/40 h-2 rounded-full overflow-hidden border border-white/15">
+              <div
+                className="bg-warning h-full rounded-full transition-all duration-500 shadow-sm"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+            {/* Floating Star badge at the right end */}
+            <div className="absolute right-0 translate-x-1 flex items-center justify-center pointer-events-none">
+              <div className="w-5 h-5 rounded-full bg-warning text-neutral flex items-center justify-center shadow-md ring-2 ring-white/40">
+                <FaStar className="w-3 h-3 fill-current text-neutral" />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between text-xs text-white/90 font-medium">
+            <p className="truncate mr-2">
+              {currentTier.nextTier ? (
+                starsNeeded > 0 ? (
+                  <>
+                    Kumpulkan <span className="font-bold text-white">{starsNeeded} Bintang lagi</span> untuk lanjut ke {currentTier.nextTier}
+                  </>
+                ) : (
+                  <span>Level berikutnya terbuka!</span>
+                )
+              ) : (
+                <span>Tingkat kosmos tertinggi! Kamu legenda Star Habit.</span>
+              )}
+            </p>
+            <span className="font-bold text-warning flex-shrink-0">{progressPercent}%</span>
           </div>
         </div>
       </div>

@@ -1183,8 +1183,12 @@ export const useAppStore = create<AppState>()(
           // 1. Update Log Status
           const updatedLogs = childLogs.map(l => l.id === logId ? { ...l, status: 'VERIFIED' as const, verified_at: new Date().toISOString() } : l);
 
-          // 2. Update Balance
-          const updatedChildren = children.map(c => c.id === childId ? { ...c, current_balance: (c.current_balance || 0) + newTx.amount } : c);
+          // 2. Update Balance & Loyalty Stars
+          const updatedChildren = children.map(c => c.id === childId ? {
+            ...c,
+            current_balance: (c.current_balance || 0) + newTx.amount,
+            loyalty_stars: (c.loyalty_stars || 0) + newTx.amount
+          } : c);
 
 
           set({
@@ -1453,7 +1457,11 @@ export const useAppStore = create<AppState>()(
 
           set((state) => ({
             children: state.children.map(c =>
-              c.id === childId ? { ...c, current_balance: (c.current_balance || 0) + amount } : c
+              c.id === childId ? {
+                ...c,
+                current_balance: (c.current_balance || 0) + amount,
+                loyalty_stars: (c.loyalty_stars || 0) + Math.max(0, amount)
+              } : c
             ),
             // Add to transactions
             transactions: [newTx, ...state.transactions]

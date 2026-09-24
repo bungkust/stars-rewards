@@ -1,18 +1,31 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { FaStar } from 'react-icons/fa';
 import { Sparkle } from '@phosphor-icons/react';
 import { COSMIC_TIERS, getTierIndex, getTierProgress } from '../../utils/loyaltyTierUtils';
 
 interface LoyaltyTierCarouselProps {
   childName: string;
-  childBalance: number;
   lifetimeStars: number;
 }
 
-const LoyaltyTierCarousel = ({ childName, childBalance, lifetimeStars }: LoyaltyTierCarouselProps) => {
-  const currentTierIndex = getTierIndex(lifetimeStars > 0 ? lifetimeStars : childBalance);
+const LoyaltyTierCarousel = ({ childName, lifetimeStars }: LoyaltyTierCarouselProps) => {
+  const currentTierIndex = getTierIndex(lifetimeStars);
   const [activeCardIndex, setActiveCardIndex] = useState(currentTierIndex);
   const carouselRef = useRef<HTMLDivElement>(null);
+
+  // Always position the carousel on the child's current tier card when opening the page
+  useEffect(() => {
+    setActiveCardIndex(currentTierIndex);
+    const timer = setTimeout(() => {
+      if (carouselRef.current) {
+        const card = carouselRef.current.children[currentTierIndex] as HTMLElement;
+        if (card) {
+          card.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
+        }
+      }
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [currentTierIndex]);
 
   const scrollToCard = (index: number) => {
     setActiveCardIndex(index);
@@ -51,7 +64,7 @@ const LoyaltyTierCarousel = ({ childName, childBalance, lifetimeStars }: Loyalty
           const isCurrentTier = idx === currentTierIndex;
           const isCompletedTier = idx < currentTierIndex;
           const { progressPercent, starsNeeded } = getTierProgress(
-            lifetimeStars > 0 ? lifetimeStars : childBalance,
+            lifetimeStars,
             idx
           );
 
@@ -77,7 +90,7 @@ const LoyaltyTierCarousel = ({ childName, childBalance, lifetimeStars }: Loyalty
                   {isCurrentTier && (
                     <span className="badge badge-warning text-neutral font-extrabold text-[10px] px-2 py-0.5 rounded-full shadow-sm mt-1.5 inline-flex items-center gap-1">
                       <Sparkle size={10} weight="fill" />
-                      <span>Current Level</span>
+                      <span>Level Saat Ini</span>
                     </span>
                   )}
                 </div>
@@ -109,7 +122,7 @@ const LoyaltyTierCarousel = ({ childName, childBalance, lifetimeStars }: Loyalty
                 </div>
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 backdrop-blur-md text-white text-xs font-bold mt-1.5 border border-white/10 shadow-sm">
                   <FaStar className="w-3.5 h-3.5 text-warning fill-current" />
-                  <span>{childBalance} Stars</span>
+                  <span>{lifetimeStars} Bintang Kosmos</span>
                 </div>
               </div>
 
@@ -132,21 +145,24 @@ const LoyaltyTierCarousel = ({ childName, childBalance, lifetimeStars }: Loyalty
                 </div>
 
                 {/* Subtitle text below progress bar */}
-                <p className="text-xs text-white/90 font-medium drop-shadow-sm">
-                  {tier.nextTier ? (
-                    isCompletedTier ? (
-                      <span>Tier completed! Ready for the next cosmic level.</span>
-                    ) : starsNeeded > 0 ? (
-                      <>
-                        Collect <span className="font-bold text-white">{starsNeeded} more Stars</span> to reach next tier
-                      </>
+                <div className="flex items-center justify-between text-xs text-white/90 font-medium drop-shadow-sm">
+                  <p className="truncate mr-2">
+                    {tier.nextTier ? (
+                      isCompletedTier ? (
+                        <span>Level selesai! Siap untuk tingkat berikutnya.</span>
+                      ) : starsNeeded > 0 ? (
+                        <>
+                          Kumpulkan <span className="font-bold text-white">{starsNeeded} Bintang lagi</span> untuk lanjut ke {tier.nextTier}
+                        </>
+                      ) : (
+                        <span>Level berikutnya terbuka!</span>
+                      )
                     ) : (
-                      <span>Next tier unlocked!</span>
-                    )
-                  ) : (
-                    <span>Supreme cosmic level! You are an eternal Star Habit legend.</span>
-                  )}
-                </p>
+                      <span>Tingkat kosmos tertinggi! Kamu legenda Star Habit.</span>
+                    )}
+                  </p>
+                  <span className="font-bold text-warning flex-shrink-0">{progressPercent}%</span>
+                </div>
               </div>
             </div>
           );

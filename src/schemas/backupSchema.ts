@@ -10,6 +10,7 @@ export const childSchema = z.object({
     current_streak: z.number().nullish(),
     best_streak: z.number().nullish(),
     claimed_milestones: z.array(z.number()).nullish(),
+    loyalty_stars: z.number().nullish(),
 });
 
 export const taskSchema = z.object({

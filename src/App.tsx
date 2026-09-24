@@ -95,7 +95,7 @@ function App() {
     // Configure StatusBar
     if (Capacitor.isNativePlatform()) {
       StatusBar.setOverlaysWebView({ overlay: true }).catch(() => { });
-      StatusBar.setStyle({ style: Style.Dark }).catch(() => { });
+      StatusBar.setStyle({ style: Style.Light }).catch(() => { });
     }
 
     // Listen for App Resume (Foreground)

@@ -33,6 +33,7 @@ const EditChildModal = ({ isOpen, onClose, child, onSave, onDelete }: EditChildM
     const [isDeleting, setIsDeleting] = useState(false);
     const [currentStreak, setCurrentStreak] = useState<number | string>(child.current_streak ?? 0);
     const [bestStreak, setBestStreak] = useState<number | string>(child.best_streak ?? 0);
+    const [loyaltyStars, setLoyaltyStars] = useState<number | string>(child.loyalty_stars ?? 0);
 
     // Sync state when child prop changes
     useEffect(() => {
@@ -44,6 +45,7 @@ const EditChildModal = ({ isOpen, onClose, child, onSave, onDelete }: EditChildM
             setIsDeleting(false);
             setCurrentStreak(child.current_streak ?? 0);
             setBestStreak(child.best_streak ?? 0);
+            setLoyaltyStars(child.loyalty_stars ?? 0);
         }
     }, [child, isOpen]);
 
@@ -65,6 +67,7 @@ const EditChildModal = ({ isOpen, onClose, child, onSave, onDelete }: EditChildM
                 avatar_url: avatarToSave,
                 current_streak: Math.max(0, +currentStreak || 0),
                 best_streak: Math.max(0, +bestStreak || 0),
+                loyalty_stars: Math.max(0, +loyaltyStars || 0),
             });
             onClose();
         } catch (error) {
@@ -208,9 +211,26 @@ const EditChildModal = ({ isOpen, onClose, child, onSave, onDelete }: EditChildM
                                         placeholder="0"
                                     />
                                 </div>
+                                <div className="form-control w-full col-span-2">
+                                    <label className="label py-1">
+                                        <span className="label-text font-bold text-neutral/70 flex items-center gap-1 text-xs">
+                                            <span>⭐</span> Cosmic Stars (Progres Level Kosmos)
+                                        </span>
+                                    </label>
+                                    <input
+                                        id="editChildLoyaltyStars"
+                                        name="editChildLoyaltyStars"
+                                        type="number"
+                                        min="0"
+                                        value={loyaltyStars}
+                                        onChange={(e) => setLoyaltyStars(e.target.value)}
+                                        className="input input-bordered input-sm w-full rounded-xl text-center font-black text-amber-500 bg-base-100"
+                                        placeholder="0"
+                                    />
+                                </div>
                             </div>
                             <span className="text-[11px] text-neutral/50 italic px-1">
-                                Kontrol manual orang tua untuk mengoreksi hari konsistensi berturut-turut anak.
+                                Kontrol manual orang tua untuk mengoreksi hari konsistensi dan progres level bintang kosmos anak.
                             </span>
                         </div>
                     </div>

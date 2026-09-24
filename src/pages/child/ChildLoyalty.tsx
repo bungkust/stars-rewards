@@ -6,12 +6,12 @@ import LoyaltyTierCarousel from '../../components/child/LoyaltyTierCarousel';
 import LoyaltyStreakMilestones from '../../components/child/LoyaltyStreakMilestones';
 
 const ChildLoyalty = () => {
-  const { activeChildId, children, transactions } = useAppStore();
+  const { activeChildId, children } = useAppStore();
   const child = children.find((c) => c.id === activeChildId);
 
   const childName = child?.name || 'Kiano';
   const childBalance = child?.current_balance ?? 0;
-  const lifetimeStars = calcTotalEarnedStars(transactions, child?.id || '', childBalance);
+  const lifetimeStars = calcTotalEarnedStars(child);
 
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
@@ -20,19 +20,24 @@ const ChildLoyalty = () => {
       {/* 1. Header (Consistent with My Missions / Rewards Shop) */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-neutral">Cosmic Card</h2>
-        <button
-          onClick={() => setIsHelpOpen(true)}
-          className="btn btn-circle btn-ghost btn-sm text-neutral/60 hover:text-neutral"
-          aria-label="About Cosmic Card"
-        >
-          <Question size={22} weight="bold" />
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 bg-warning/20 border border-warning/30 px-3 py-1 rounded-full text-xs font-bold text-neutral">
+            <Star size={16} weight="fill" className="text-warning" />
+            <span>{childBalance}</span>
+          </div>
+          <button
+            onClick={() => setIsHelpOpen(true)}
+            className="btn btn-circle btn-ghost btn-sm text-neutral/60 hover:text-neutral"
+            aria-label="About Cosmic Card"
+          >
+            <Question size={22} weight="bold" />
+          </button>
+        </div>
       </div>
 
       {/* 2. Swipable Cosmic Card Carousel */}
       <LoyaltyTierCarousel
         childName={childName}
-        childBalance={childBalance}
         lifetimeStars={lifetimeStars}
       />
 
