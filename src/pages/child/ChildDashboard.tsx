@@ -29,8 +29,8 @@ const ChildDashboard = () => {
   const child = children.find(c => c.id === activeChildId);
   const allTasks = activeChildId ? getTasksByChildId(activeChildId) : [];
 
-  const lifetimeStars = calcTotalEarnedStars(transactions, child?.id || '');
-  const currentTierIndex = getTierIndex(lifetimeStars > 0 ? lifetimeStars : (child?.current_balance ?? 0));
+  const lifetimeStars = calcTotalEarnedStars(transactions, child?.id || '', child?.current_balance ?? 0);
+  const currentTierIndex = getTierIndex(lifetimeStars);
   const currentTier = COSMIC_TIERS[currentTierIndex];
   const childStreak = getChildStreak(child, tasks);
 

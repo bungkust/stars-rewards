@@ -199,11 +199,16 @@ export function getTierProgress(stars: number, tierIndex: number) {
  * Only positive earnings (TASK_VERIFIED, MANUAL_ADJ > 0) are counted.
  * REWARD_REDEEMED does NOT deduct from this, ensuring Cosmic Tier never degrades!
  */
-export function calcTotalEarnedStars(transactions: CoinTransaction[], childId: string): number {
-  if (!transactions || !childId) return 0;
-  return transactions
+export function calcTotalEarnedStars(
+  transactions: CoinTransaction[] = [],
+  childId?: string | null,
+  currentBalance: number = 0
+): number {
+  if (!childId) return Math.max(0, currentBalance);
+  const earned = (transactions || [])
     .filter(t => t.child_id === childId && (t.type === 'TASK_VERIFIED' || (t.type === 'MANUAL_ADJ' && t.amount > 0)))
     .reduce((sum, t) => sum + t.amount, 0);
+  return Math.max(earned, currentBalance, 0);
 }
 
 /**

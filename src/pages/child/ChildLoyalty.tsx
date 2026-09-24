@@ -11,7 +11,7 @@ const ChildLoyalty = () => {
 
   const childName = child?.name || 'Kiano';
   const childBalance = child?.current_balance ?? 0;
-  const lifetimeStars = calcTotalEarnedStars(transactions, child?.id || '');
+  const lifetimeStars = calcTotalEarnedStars(transactions, child?.id || '', childBalance);
 
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 

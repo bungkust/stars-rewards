@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { FaStar } from 'react-icons/fa';
 import { Trophy, Check, Sparkle, ClipboardText, Gift } from '@phosphor-icons/react';
 import { useAppStore } from '../../store/useAppStore';
-import { getChildStreak, isMilestoneClaimed } from '../../utils/loyaltyTierUtils';
+import { getChildStreak, isMilestoneClaimed, DEFAULT_STREAK_MILESTONES } from '../../utils/loyaltyTierUtils';
 import type { StreakMilestone } from '../../types';
 
 const LoyaltyStreakMilestones = () => {
@@ -15,6 +15,8 @@ const LoyaltyStreakMilestones = () => {
     rewards,
     claimStreakMilestone,
   } = useAppStore();
+
+  const effectiveMilestones = streakMilestones?.length ? streakMilestones : DEFAULT_STREAK_MILESTONES;
 
   const child = children.find((c) => c.id === activeChildId);
   const childStreak = getChildStreak(child, tasks);
@@ -58,7 +60,7 @@ const LoyaltyStreakMilestones = () => {
 
       {/* List of Milestone Cards */}
       <div className="flex flex-col gap-3">
-        {streakMilestones.map((milestone) => {
+        {effectiveMilestones.map((milestone) => {
           const current = getChildStreak(child, tasks, milestone.linked_task_id);
           const target = milestone.days;
           const isReached = current >= target;

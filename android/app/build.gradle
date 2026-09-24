@@ -27,8 +27,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
     }
     signingConfigs {
         release {
@@ -50,17 +50,23 @@ android {
     }
 
     applicationVariants.all { variant ->
-        variant.outputs.all {
-            def appName = "StarHabit"
-            def platform = "Android"
-            def buildType = variant.buildType.name
-            def version = variant.versionName
-            def dateTime = new Date().format("yyyyMMdd-HHmm")
+        if (variant.buildType.name == 'release') {
+            variant.outputs.all {
+                def appName = "StarHabit"
+                def platform = "Android"
+                def buildType = variant.buildType.name
+                def version = variant.versionName
+                def dateTime = new Date().format("yyyyMMdd-HHmm")
 
-            def fileName = "${appName}_${buildType}_${version}_${variant.versionCode}_${dateTime}"
-            outputFileName = "${fileName}.apk"
-            // Ensure AAB matches this pattern too (requires resetting archivesBaseName per variant)
-            project.archivesBaseName = fileName
+                def fileName = "${appName}_${buildType}_${version}_${variant.versionCode}_${dateTime}"
+                outputFileName = "${fileName}.apk"
+                // Ensure AAB matches this pattern too (requires resetting archivesBaseName per variant)
+                project.archivesBaseName = fileName
+            }
+        } else {
+            variant.outputs.all {
+                outputFileName = "app-debug.apk"
+            }
         }
     }
 }
