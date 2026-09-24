@@ -177,7 +177,7 @@ function App() {
         {isChildSelectorOpen && (
           <ChildSelector
             onSelect={handleChildSelect}
-            onClose={() => !activeChildId && setIsChildSelectorOpen(false)}
+            onClose={() => setIsChildSelectorOpen(false)}
           />
         )}
       </Layout>

@@ -214,7 +214,7 @@ const EditChildModal = ({ isOpen, onClose, child, onSave, onDelete }: EditChildM
                                 <div className="form-control w-full col-span-2">
                                     <label className="label py-1">
                                         <span className="label-text font-bold text-neutral/70 flex items-center gap-1 text-xs">
-                                            <span>⭐</span> Cosmic Stars (Progres Level Kosmos)
+                                            <span>⭐</span> Ranger Stars (Progres Level Ranger)
                                         </span>
                                     </label>
                                     <input
@@ -230,7 +230,7 @@ const EditChildModal = ({ isOpen, onClose, child, onSave, onDelete }: EditChildM
                                 </div>
                             </div>
                             <span className="text-[11px] text-neutral/50 italic px-1">
-                                Kontrol manual orang tua untuk mengoreksi hari konsistensi dan progres level bintang kosmos anak.
+                                Kontrol manual orang tua untuk mengoreksi hari konsistensi dan progres level bintang ranger anak.
                             </span>
                         </div>
                     </div>

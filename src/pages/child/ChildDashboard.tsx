@@ -485,7 +485,7 @@ const ChildDashboard = () => {
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-black tracking-wider uppercase text-white/90">
-                  Kartu Kosmos
+                  Kartu Ranger
                 </span>
                 <span className="badge badge-warning text-neutral font-extrabold text-[10px] px-1.5 py-0.5 rounded-full shadow-2xs">
                   Level {currentTierIndex + 1}
@@ -538,7 +538,7 @@ const ChildDashboard = () => {
                   <span>Level berikutnya terbuka!</span>
                 )
               ) : (
-                <span>Tingkat kosmos tertinggi! Kamu legenda Star Habit.</span>
+                <span>Tingkat Ranger tertinggi! Pahlawan terkuat Star Habit.</span>
               )}
             </p>
             <span className="font-bold text-warning flex-shrink-0">{progressPercent}%</span>

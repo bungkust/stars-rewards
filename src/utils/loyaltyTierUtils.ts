@@ -1,9 +1,9 @@
 import {
-  Moon,
-  Star,
-  Sparkle,
-  Planet,
-  Rocket
+  Lightning,
+  Shield,
+  Sword,
+  ShieldStar,
+  Crown
 } from '@phosphor-icons/react';
 import type { ElementType } from 'react';
 
@@ -19,97 +19,73 @@ export interface CosmicTier {
   iconColor: string;
   iconBg: string;
   nextTier: string | null;
-  nextStars: number | null;
-  nextTierIcon: ElementType | null;
-  nextIconColor: string;
-  quote: string;
 }
 
 export const COSMIC_TIERS: CosmicTier[] = [
   {
-    id: 'moon',
-    name: 'Moon Explorer',
+    id: 'green',
+    name: 'Ranger Hijau',
     minStars: 0,
-    maxStars: 99,
-    gradient: 'from-[#1E293B] via-[#334155] to-[#475569]',
-    cardBorder: 'border border-slate-300/40 shadow-[0_8px_30px_rgba(148,163,184,0.35)]',
-    glowColor: 'bg-slate-300/25',
-    icon: Moon,
-    iconColor: 'text-slate-100',
-    iconBg: 'bg-slate-400/25',
-    nextTier: 'Polaris Star',
-    nextStars: 100,
-    nextTierIcon: Star,
-    nextIconColor: 'text-emerald-300',
-    quote: 'Your cosmic journey begins here! Keep completing missions.'
-  },
-  {
-    id: 'polaris',
-    name: 'Polaris Star',
-    minStars: 100,
-    maxStars: 299,
-    gradient: 'from-[#064E3B] via-[#047857] to-[#0F766E]',
-    cardBorder: 'border border-emerald-400/40 shadow-[0_8px_30px_rgb(4,120,87,0.35)]',
-    glowColor: 'bg-emerald-400/25',
-    icon: Star,
-    iconColor: 'text-emerald-200',
-    iconBg: 'bg-emerald-500/25',
-    nextTier: 'Sirius Star',
-    nextStars: 300,
-    nextTierIcon: Sparkle,
-    nextIconColor: 'text-amber-300',
-    quote: 'The guiding star for young explorers with great habits!'
-  },
-  {
-    id: 'sirius',
-    name: 'Sirius Star',
-    minStars: 300,
-    maxStars: 599,
-    gradient: 'from-[#013576] via-[#1D4ED8] to-[#38BDF8]',
-    cardBorder: 'border border-sky-400/40 shadow-[0_8px_30px_rgb(29,78,216,0.35)]',
-    glowColor: 'bg-sky-400/25',
-    icon: Sparkle,
-    iconColor: 'text-amber-300',
-    iconBg: 'bg-amber-400/20',
-    nextTier: 'Orion Nebula',
-    nextStars: 600,
-    nextTierIcon: Planet,
-    nextIconColor: 'text-pink-300',
-    quote: 'The brightest star in the sky — shining just like you!'
-  },
-  {
-    id: 'orion',
-    name: 'Orion Nebula',
-    minStars: 600,
     maxStars: 999,
-    gradient: 'from-[#3B0764] via-[#701A75] to-[#BE185D]',
-    cardBorder: 'border border-fuchsia-400/40 shadow-[0_8px_30px_rgb(190,24,93,0.35)]',
-    glowColor: 'bg-pink-500/25',
-    icon: Planet,
-    iconColor: 'text-pink-200',
-    iconBg: 'bg-pink-500/20',
-    nextTier: 'Andromeda Galaxy',
-    nextStars: 1000,
-    nextTierIcon: Rocket,
-    nextIconColor: 'text-amber-300',
-    quote: 'A magnificent stellar nursery where champions are born!'
+    gradient: 'from-[#064E3B] via-[#047857] to-[#10B981]',
+    cardBorder: 'border border-emerald-400/40 shadow-[0_8px_30px_rgba(16,185,129,0.35)]',
+    glowColor: 'bg-emerald-400/25',
+    icon: Lightning,
+    iconColor: 'text-emerald-100',
+    iconBg: 'bg-emerald-500/25',
+    nextTier: 'Ranger Biru'
   },
   {
-    id: 'andromeda',
-    name: 'Andromeda Galaxy',
+    id: 'blue',
+    name: 'Ranger Biru',
     minStars: 1000,
-    maxStars: null,
-    gradient: 'from-[#451A03] via-[#78350F] to-[#D97706]',
-    cardBorder: 'border-2 border-amber-300 shadow-[0_0_35px_rgba(245,158,11,0.55)]',
+    maxStars: 2499,
+    gradient: 'from-[#0F172A] via-[#1E3A8A] to-[#2563EB]',
+    cardBorder: 'border border-blue-400/40 shadow-[0_8px_30px_rgba(37,99,235,0.35)]',
+    glowColor: 'bg-blue-500/25',
+    icon: Shield,
+    iconColor: 'text-sky-200',
+    iconBg: 'bg-blue-500/25',
+    nextTier: 'Ranger Hitam'
+  },
+  {
+    id: 'black',
+    name: 'Ranger Hitam',
+    minStars: 2500,
+    maxStars: 4999,
+    gradient: 'from-[#09090B] via-[#18181B] to-[#3F3F46]',
+    cardBorder: 'border border-zinc-400/40 shadow-[0_8px_30px_rgba(113,113,122,0.35)]',
+    glowColor: 'bg-slate-300/20',
+    icon: Sword,
+    iconColor: 'text-zinc-100',
+    iconBg: 'bg-zinc-700/50',
+    nextTier: 'Ranger Emas'
+  },
+  {
+    id: 'gold',
+    name: 'Ranger Emas',
+    minStars: 5000,
+    maxStars: 9999,
+    gradient: 'from-[#78350F] via-[#B45309] to-[#F59E0B]',
+    cardBorder: 'border border-amber-300/50 shadow-[0_8px_30px_rgba(245,158,11,0.45)]',
     glowColor: 'bg-amber-400/35',
-    icon: Rocket,
+    icon: ShieldStar,
     iconColor: 'text-amber-100',
-    iconBg: 'bg-amber-400/30',
-    nextTier: null,
-    nextStars: null,
-    nextTierIcon: null,
-    nextIconColor: '',
-    quote: 'The highest cosmic tier! You are a true Star Habit legend!'
+    iconBg: 'bg-amber-400/25',
+    nextTier: 'Ranger Merah'
+  },
+  {
+    id: 'red',
+    name: 'Ranger Merah',
+    minStars: 10000,
+    maxStars: null,
+    gradient: 'from-[#7F1D1D] via-[#B91C1C] to-[#EF4444]',
+    cardBorder: 'border-2 border-red-400 shadow-[0_0_35px_rgba(239,68,68,0.55)]',
+    glowColor: 'bg-red-500/40',
+    icon: Crown,
+    iconColor: 'text-red-100',
+    iconBg: 'bg-red-500/30',
+    nextTier: null
   }
 ];
 
@@ -158,10 +134,10 @@ export const DEFAULT_STREAK_MILESTONES: StreakMilestone[] = [
  * Determine cosmic tier index (0 to 4) based on total stars earned
  */
 export function getTierIndex(stars: number): number {
-  if (stars >= 1000) return 4;
-  if (stars >= 600) return 3;
-  if (stars >= 300) return 2;
-  if (stars >= 100) return 1;
+  if (stars >= 10000) return 4;
+  if (stars >= 5000) return 3;
+  if (stars >= 2500) return 2;
+  if (stars >= 1000) return 1;
   return 0;
 }
 
@@ -169,25 +145,26 @@ export function getTierIndex(stars: number): number {
  * Calculate progress percentage and remaining stars needed for a tier
  */
 export function getTierProgress(stars: number, tierIndex: number) {
-  const tier = COSMIC_TIERS[tierIndex];
+  const tier = COSMIC_TIERS[tierIndex] || COSMIC_TIERS[0];
+  const nextTier = COSMIC_TIERS[tierIndex + 1];
   let progressPercent = 0;
   let starsNeeded = 0;
 
-  if (tier.nextStars) {
-    if (stars >= tier.nextStars) {
+  if (nextTier) {
+    if (stars >= nextTier.minStars) {
       progressPercent = 100;
       starsNeeded = 0;
     } else if (stars >= tier.minStars) {
       const earnedInTier = stars - tier.minStars;
-      const totalInTier = tier.nextStars - tier.minStars;
+      const totalInTier = nextTier.minStars - tier.minStars;
       progressPercent = Math.min(Math.round((earnedInTier / totalInTier) * 100), 100);
-      starsNeeded = tier.nextStars - stars;
+      starsNeeded = nextTier.minStars - stars;
     } else {
       progressPercent = 0;
       starsNeeded = tier.minStars - stars;
     }
   } else {
-    progressPercent = stars >= 1000 ? 100 : Math.min(Math.round((stars / 1000) * 100), 99);
+    progressPercent = 100;
     starsNeeded = 0;
   }
 

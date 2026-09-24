@@ -44,8 +44,12 @@ const Header = ({ onParentLoginClick, onSettingsClick, onChildSelectClick }: Hea
     >
       <div className="flex-1">
         {activeChild && !isAdminMode && (
-          <div
-            className="btn btn-ghost gap-2 normal-case hover:bg-transparent cursor-default"
+          <button
+            type="button"
+            onClick={() => children.length > 1 && onChildSelectClick?.()}
+            className={`btn btn-ghost gap-2 normal-case hover:bg-transparent px-2 ${
+              children.length > 1 ? 'cursor-pointer hover:bg-base-200/50 active:scale-95' : 'cursor-default'
+            }`}
           >
             <div className="avatar placeholder">
               <div className="bg-neutral-focus text-neutral-content rounded-full w-8">
@@ -56,7 +60,10 @@ const Header = ({ onParentLoginClick, onSettingsClick, onChildSelectClick }: Hea
               </div>
             </div>
             <span className={`text-lg font-bold ${titleColor}`}>{activeChild.name}</span>
-          </div>
+            {children.length > 1 && (
+              <span className="text-[10px] text-neutral/50 font-normal ml-0.5">▼</span>
+            )}
+          </button>
         )}
         {isAdminMode && (
           <div className="flex items-center gap-2">
