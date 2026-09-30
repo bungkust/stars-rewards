@@ -472,39 +472,44 @@ const ChildDashboard = () => {
       {/* Cosmic Card Banner (Champ Hub Quick Access) */}
       <div
         onClick={() => navigate('/child/loyalty')}
-        className={`card p-4 rounded-2xl shadow-md bg-gradient-to-r ${currentTier.gradient} text-white cursor-pointer relative overflow-hidden transition-all hover:scale-[1.01] active:scale-[0.99] border border-white/20`}
+        className={`card p-3.5 sm:p-4 rounded-2xl shadow-md bg-gradient-to-r ${currentTier.gradient} text-white cursor-pointer relative overflow-hidden transition-all hover:scale-[1.01] active:scale-[0.99] border border-white/20`}
       >
         {/* Ambient Glow */}
         <div className={`absolute top-0 right-0 w-32 h-32 ${currentTier.glowColor} rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none`} />
 
-        <div className="flex items-center justify-between relative z-10">
-          <div className="flex items-center gap-3">
-            <div className={`w-11 h-11 rounded-xl backdrop-blur-md ${currentTier.iconBg} ${currentTier.iconColor} border border-white/20 shadow-sm flex items-center justify-center flex-shrink-0`}>
-              <currentTier.icon size={24} weight="fill" />
+        <div className="flex items-center justify-between gap-2 relative z-10">
+          {/* Left: Icon & Tier Info */}
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl backdrop-blur-md ${currentTier.iconBg} ${currentTier.iconColor} border border-white/20 shadow-sm flex items-center justify-center flex-shrink-0`}>
+              <currentTier.icon size={22} weight="fill" />
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-black tracking-wider uppercase text-white/90">
-                   Ranger Card
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] font-black tracking-wider uppercase text-white/80 whitespace-nowrap">
+                  Ranger Card
                 </span>
-                <span className="badge badge-warning text-neutral font-extrabold text-[10px] px-1.5 py-0.5 rounded-full shadow-2xs">
+                <span className="badge badge-warning text-neutral font-extrabold text-[9px] px-1.5 h-4 min-h-0 rounded-full shadow-2xs whitespace-nowrap flex-shrink-0">
                   Level {currentTierIndex + 1}
                 </span>
               </div>
-              <h3 className="text-base font-black text-white leading-tight">
+              <h3 className="text-sm sm:text-base font-black text-white leading-tight truncate">
                 {currentTier.name}
               </h3>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="flex flex-col items-end">
-              <span className="text-[11px] font-bold text-white/80">Streak</span>
-              <span className="text-sm font-black text-white flex items-center gap-0.5">
-                <span>🔥</span> {childStreak} Days
-              </span>
+          {/* Right: Streak & Arrow Action */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="bg-black/25 backdrop-blur-md border border-white/15 rounded-xl px-2.5 py-1 flex items-center gap-1.5 shadow-xs">
+              <span className="text-xs">🔥</span>
+              <div className="flex flex-col leading-none">
+                <span className="text-[9px] font-bold text-white/70 uppercase tracking-wide">Streak</span>
+                <span className="text-xs font-black text-white whitespace-nowrap mt-0.5">
+                  {childStreak} {childStreak === 1 ? 'Day' : 'Days'}
+                </span>
+              </div>
             </div>
-            <div className="w-7 h-7 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-xs font-bold">
+            <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
               →
             </div>
           </div>
@@ -527,12 +532,12 @@ const ChildDashboard = () => {
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-xs text-white/90 font-medium">
-            <p className="truncate mr-2">
+          <div className="flex items-center justify-between gap-2 text-[11px] sm:text-xs text-white/90 font-medium">
+            <p className="line-clamp-1 min-w-0">
               {currentTier.nextTier ? (
                 starsNeeded > 0 ? (
                   <>
-                     Collect <span className="font-bold text-white">{starsNeeded} more Stars</span> to advance to {currentTier.nextTier}
+                    Collect <span className="font-bold text-white">{starsNeeded} more Stars</span> to advance to {currentTier.nextTier}
                   </>
                 ) : (
                   <span>Next level unlocked!</span>
@@ -541,7 +546,7 @@ const ChildDashboard = () => {
                 <span>Highest Ranger level! Strongest Star Habit hero.</span>
               )}
             </p>
-            <span className="font-bold text-warning flex-shrink-0">{progressPercent}%</span>
+            <span className="font-black text-warning flex-shrink-0 ml-1">{progressPercent}%</span>
           </div>
         </div>
       </div>

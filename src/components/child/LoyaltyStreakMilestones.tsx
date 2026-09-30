@@ -77,55 +77,56 @@ const LoyaltyStreakMilestones = () => {
           return (
             <div
               key={milestone.id || milestone.days}
-              className={`card bg-base-100 shadow-sm rounded-2xl p-4 border border-base-200 border-l-4 transition-all ${
+              className={`card bg-base-100 shadow-sm rounded-2xl p-3.5 sm:p-4 border border-base-200 border-l-4 transition-all ${
                 isApproved ? 'border-l-success' : 'border-l-primary'
               }`}
             >
               {/* Top Row: Icon, Info, and Action */}
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start justify-between gap-2.5 sm:gap-3">
                 {/* Left: Circular Icon */}
                 <div
-                  className={`w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center mt-0.5 ${
+                  className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex-shrink-0 flex items-center justify-center mt-0.5 ${
                     isApproved
                       ? 'bg-success/10 text-success'
                       : 'bg-primary/10 text-primary'
                   }`}
                 >
                   {isApproved ? (
-                    <Check size={24} weight="bold" />
+                    <Check size={20} weight="bold" />
                   ) : (
-                    <Trophy size={24} weight="fill" />
+                    <Trophy size={20} weight="fill" />
                   )}
                 </div>
 
                 {/* Middle: Title & Badges */}
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-neutral text-base leading-snug break-words">
+                  <h4 className="font-bold text-neutral text-sm sm:text-base leading-snug break-words">
                     {milestone.title}
                   </h4>
 
                   {/* Relational & Value Badges */}
                   <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                    <span className="flex items-center gap-1 text-warning font-extrabold text-xs bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full shadow-2xs">
-                      <FaStar className="w-3 h-3 text-warning fill-current" /> +{milestone.bonusStars} ⭐
+                    <span className="inline-flex items-center gap-1 text-warning font-extrabold text-[11px] sm:text-xs bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full shadow-2xs whitespace-nowrap flex-shrink-0">
+                      <FaStar className="w-3 h-3 text-warning fill-current" />
+                      <span>+{milestone.bonusStars} Stars</span>
                     </span>
-                    <span className="px-2 py-0.5 rounded-full text-xs font-semibold border border-primary/40 text-primary bg-primary/5">
+                    <span className="px-2 py-0.5 rounded-full text-[11px] sm:text-xs font-semibold border border-primary/40 text-primary bg-primary/5 whitespace-nowrap flex-shrink-0">
                       {milestone.days} Days
                     </span>
 
                     {/* Linked Task Badge */}
                     {linkedTask && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold border border-sky-300 text-sky-700 bg-sky-50">
-                        <ClipboardText size={12} weight="bold" />
-                        <span>Mission: {linkedTask.name}</span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold border border-sky-300 text-sky-700 bg-sky-50 max-w-[140px] sm:max-w-[200px]">
+                        <ClipboardText size={12} weight="bold" className="flex-shrink-0" />
+                        <span className="truncate">Mission: {linkedTask.name}</span>
                       </span>
                     )}
 
                     {/* Linked Reward Badge */}
                     {linkedReward && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-extrabold border border-amber-300 text-amber-900 bg-amber-100 shadow-2xs">
-                        <Gift size={12} weight="bold" />
-                        <span>Reward: {linkedReward.name}</span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-extrabold border border-amber-300 text-amber-900 bg-amber-100 shadow-2xs max-w-[140px] sm:max-w-[200px]">
+                        <Gift size={12} weight="bold" className="flex-shrink-0" />
+                        <span className="truncate">Reward: {linkedReward.name}</span>
                       </span>
                     )}
                   </div>
@@ -134,16 +135,16 @@ const LoyaltyStreakMilestones = () => {
                 {/* Right: Action Button or Approved Badge */}
                 <div className="flex-shrink-0">
                   {isApproved ? (
-                    <span className="badge badge-success text-white font-bold px-3 py-3 rounded-full text-xs shadow-2xs">
+                    <span className="badge badge-success text-white font-bold px-2.5 py-1 h-6 min-h-0 rounded-full text-xs shadow-2xs whitespace-nowrap">
                       Done
                     </span>
                   ) : isReached ? (
                     <button
                       onClick={() => handleClaim(milestone)}
                       disabled={claimingId === milestone.id}
-                      className="btn btn-sm bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-black rounded-full px-3.5 shadow-md active:scale-95 transition-transform inline-flex items-center gap-1 text-xs"
+                      className="btn btn-xs sm:btn-sm bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-black rounded-full px-3 shadow-md active:scale-95 transition-transform inline-flex items-center gap-1 text-[11px] sm:text-xs whitespace-nowrap"
                     >
-                      <Sparkle size={14} weight="fill" />
+                      <Sparkle size={13} weight="fill" />
                       <span>
                         {claimingId === milestone.id
                           ? 'Claiming...'
@@ -153,7 +154,7 @@ const LoyaltyStreakMilestones = () => {
                       </span>
                     </button>
                   ) : (
-                    <span className="badge badge-outline border-base-300 text-neutral/60 font-bold px-2.5 py-2.5 rounded-full text-xs">
+                    <span className="badge badge-outline border-base-300 text-neutral/70 font-bold px-2 py-1 h-6 min-h-0 rounded-full text-[11px] whitespace-nowrap">
                       {current}/{target}
                     </span>
                   )}
@@ -161,7 +162,7 @@ const LoyaltyStreakMilestones = () => {
               </div>
 
               {/* Bottom Row: Description & Progress Bar */}
-              <div className="mt-3 pt-2 border-t border-base-200/60">
+              <div className="mt-2.5 pt-2 border-t border-base-200/60">
                 <p className="text-xs text-neutral/60 leading-relaxed">
                   {milestone.description}
                 </p>
@@ -181,7 +182,7 @@ const LoyaltyStreakMilestones = () => {
                   </span>
                   <span>
                     {remaining > 0
-                      ? `${remaining} days left`
+                      ? `${remaining} ${remaining === 1 ? 'day' : 'days'} left`
                       : isApproved
                       ? 'Claimed'
                       : 'Mission Ready to Claim! 🎉'}

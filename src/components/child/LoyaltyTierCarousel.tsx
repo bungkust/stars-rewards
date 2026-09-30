@@ -68,7 +68,7 @@ const LoyaltyTierCarousel = ({ childName, lifetimeStars }: LoyaltyTierCarouselPr
           return (
             <div
               key={tier.id}
-              className={`min-w-full snap-center rounded-2xl p-6 text-white shadow-lg bg-gradient-to-br ${tier.gradient} relative overflow-hidden flex flex-col justify-between ${tier.cardBorder} min-h-[230px] select-none transition-transform`}
+              className={`min-w-full snap-center rounded-2xl p-4 sm:p-5 text-white shadow-lg bg-gradient-to-br ${tier.gradient} relative overflow-hidden flex flex-col justify-between ${tier.cardBorder} min-h-[220px] select-none transition-transform`}
             >
               {/* Background Cosmic Glows */}
               <div
@@ -79,30 +79,30 @@ const LoyaltyTierCarousel = ({ childName, lifetimeStars }: LoyaltyTierCarouselPr
               />
 
               {/* Top Row: Tier Name & Emblem with Stars */}
-              <div className="flex items-start justify-between relative z-10">
-                <div>
-                  <h2 className="text-2xl sm:text-3xl font-black tracking-wider uppercase drop-shadow-md text-white font-sans">
+              <div className="flex items-start justify-between gap-2 relative z-10">
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-xl sm:text-2xl font-black tracking-wider uppercase drop-shadow-md text-white font-sans truncate">
                     {tier.name}
                   </h2>
                   {isCurrentTier ? (
-                    <span className="badge badge-warning text-neutral font-extrabold text-[10px] px-2 py-0.5 rounded-full shadow-sm mt-1.5 inline-flex items-center gap-1">
+                    <span className="badge badge-warning text-neutral font-extrabold text-[10px] px-2 py-0.5 rounded-full shadow-sm mt-1.5 inline-flex items-center gap-1 whitespace-nowrap flex-shrink-0">
                       <Sparkle size={10} weight="fill" />
                       <span>Current Level</span>
                     </span>
                   ) : isCompletedTier ? (
-                    <span className="badge badge-success text-white font-extrabold text-[10px] px-2 py-0.5 rounded-full shadow-sm mt-1.5 inline-flex items-center gap-1">
+                    <span className="badge badge-success text-white font-extrabold text-[10px] px-2 py-0.5 rounded-full shadow-sm mt-1.5 inline-flex items-center gap-1 whitespace-nowrap flex-shrink-0">
                       <Check size={11} weight="bold" />
                       <span>Level Complete</span>
                     </span>
                   ) : (
-                    <span className="badge bg-black/40 text-white/80 border border-white/20 font-extrabold text-[10px] px-2 py-0.5 rounded-full shadow-sm mt-1.5 inline-flex items-center gap-1">
+                    <span className="badge bg-black/40 text-white/80 border border-white/20 font-extrabold text-[10px] px-2 py-0.5 rounded-full shadow-sm mt-1.5 inline-flex items-center gap-1 whitespace-nowrap flex-shrink-0">
                       <span>Level {idx + 1}</span>
                     </span>
                   )}
                 </div>
 
                 {/* Top Right: 5 Stars & Tier Crest Emblem */}
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center flex-shrink-0">
                   <div className="flex items-center gap-0.5 mb-1.5">
                     {[1, 2, 3, 4, 5].map((starIdx) => (
                       <FaStar
@@ -114,21 +114,21 @@ const LoyaltyTierCarousel = ({ childName, lifetimeStars }: LoyaltyTierCarouselPr
                     ))}
                   </div>
                   <div
-                    className={`w-12 h-12 rounded-2xl backdrop-blur-md ${tier.iconBg} ${tier.iconColor} border border-white/20 shadow-md flex items-center justify-center`}
+                    className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl backdrop-blur-md ${tier.iconBg} ${tier.iconColor} border border-white/20 shadow-md flex items-center justify-center`}
                   >
-                    <TierIcon size={26} weight="fill" />
+                    <TierIcon size={24} weight="fill" />
                   </div>
                 </div>
               </div>
 
               {/* Middle Left: Child Name & Stars XP Pill */}
               <div className="my-auto py-2 relative z-10">
-                <div className="text-lg font-bold text-white tracking-wide drop-shadow-sm">
+                <div className="text-base sm:text-lg font-bold text-white tracking-wide drop-shadow-sm truncate">
                   {childName}
                 </div>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 backdrop-blur-md text-white text-xs font-bold mt-1.5 border border-white/10 shadow-sm">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 backdrop-blur-md text-white text-xs font-bold mt-1.5 border border-white/10 shadow-sm whitespace-nowrap">
                   <FaStar className="w-3.5 h-3.5 text-warning fill-current" />
-                      <span>{lifetimeStars} Ranger Stars</span>
+                  <span>{lifetimeStars} Ranger Stars</span>
                 </div>
               </div>
 
@@ -151,8 +151,8 @@ const LoyaltyTierCarousel = ({ childName, lifetimeStars }: LoyaltyTierCarouselPr
                 </div>
 
                 {/* Subtitle text below progress bar */}
-                <div className="flex items-center justify-between text-xs text-white/90 font-medium drop-shadow-sm">
-                  <p className="truncate mr-2">
+                <div className="flex items-center justify-between gap-2 text-[11px] sm:text-xs text-white/90 font-medium drop-shadow-sm">
+                  <p className="min-w-0 line-clamp-2 leading-tight">
                     {tier.nextTier ? (
                       isCompletedTier ? (
                         <span>Level complete! Ready for the next level.</span>
@@ -177,7 +177,7 @@ const LoyaltyTierCarousel = ({ childName, lifetimeStars }: LoyaltyTierCarouselPr
                       </>
                     )}
                   </p>
-                  <span className="font-bold text-warning flex-shrink-0">{progressPercent}%</span>
+                  <span className="font-black text-warning flex-shrink-0 text-xs sm:text-sm">{progressPercent}%</span>
                 </div>
               </div>
             </div>
@@ -186,7 +186,7 @@ const LoyaltyTierCarousel = ({ childName, lifetimeStars }: LoyaltyTierCarouselPr
       </div>
 
       {/* Dash Pill Indicators */}
-      <div className="flex items-center justify-center gap-2 pt-0.5">
+      <div className="flex items-center justify-center gap-1.5 pt-0.5">
         {COSMIC_TIERS.map((tier, idx) => (
           <button
             key={tier.id}
@@ -194,8 +194,8 @@ const LoyaltyTierCarousel = ({ childName, lifetimeStars }: LoyaltyTierCarouselPr
             aria-label={tier.name}
             className={`transition-all duration-300 rounded-full h-1.5 ${
               activeCardIndex === idx
-                ? 'w-9 bg-warning shadow-sm'
-                : 'w-9 bg-base-300 hover:bg-neutral/30 opacity-60'
+                ? 'w-6 bg-warning shadow-sm'
+                : 'w-2 bg-base-300 hover:bg-neutral/30 opacity-60'
             }`}
           />
         ))}
