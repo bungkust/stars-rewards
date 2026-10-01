@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Profile, Child, Task, Reward, VerificationRequest, CoinTransaction, ChildTaskLog, Category, XpTransaction, StreakMilestone } from '../types';
 import { DEFAULT_STREAK_MILESTONES } from '../utils/loyaltyTierUtils';
-import { dataService } from '../services/dataService';
 import { localStorageService } from '../services/localStorageService';
 import { getNextDueDate } from '../utils/recurrence';
 import { getLocalDateString } from '../utils/timeUtils';
@@ -362,19 +361,17 @@ export const useAppStore = create<AppState>()(
       refreshData: async () => {
         set({ isLoading: true });
         try {
-          const userId = 'local-user';
-
           // Fetch ALL data including REWARDS and TRANSACTIONS
           const [children, tasks, verifications, rewards, transactions, xpTransactions, logs, redeemedHistory, categories] = await Promise.all([
-            dataService.fetchChildren(userId),
-            dataService.fetchActiveTasks(userId),
-            dataService.fetchPendingVerifications(userId),
-            dataService.fetchRewards(userId),
-            dataService.fetchTransactions(userId),
-            dataService.fetchXpTransactions(userId),
-            dataService.fetchChildLogs(userId),
-            dataService.fetchRedeemedRewards(userId),
-            dataService.fetchCategories(userId)
+            localStorageService.fetchChildren(),
+            localStorageService.fetchActiveTasks(),
+            localStorageService.fetchPendingVerifications(),
+            localStorageService.fetchRewards(),
+            localStorageService.fetchTransactions(),
+            localStorageService.fetchXpTransactions(),
+            localStorageService.fetchChildLogs(),
+            localStorageService.fetchRedeemedRewards(),
+            localStorageService.fetchCategories()
           ]);
 
           // Seed default categories if empty
@@ -391,15 +388,13 @@ export const useAppStore = create<AppState>()(
               { name: 'Emotion', icon: 'smile', is_default: true },
             ];
 
-            // We need to add them one by one or batch if supported. 
-            // dataService.addCategory returns the new category.
-            const seeded = await Promise.all(DEFAULT_CATEGORIES.map(c => dataService.addCategory(userId, c)));
+            const seeded = await Promise.all(DEFAULT_CATEGORIES.map(c => localStorageService.addCategory(c)));
             finalCategories = seeded.filter((c): c is Category => c !== null);
           } else {
             // Migration: Rename "Personal Responsibility" to "Responsibility" if found
             const longNameCat = categories.find(c => c.name === 'Personal Responsibility' && c.is_default);
             if (longNameCat) {
-              await dataService.updateCategory(longNameCat.id, { name: 'Responsibility' });
+              await localStorageService.updateCategory(longNameCat.id, { name: 'Responsibility' });
               finalCategories = categories.map(c => c.id === longNameCat.id ? { ...c, name: 'Responsibility' } : c);
             }
           }
@@ -453,8 +448,7 @@ export const useAppStore = create<AppState>()(
       addChild: async (child) => {
         set({ isLoading: true });
         try {
-          const userId = 'local-user';
-          const newChild = await dataService.addChild(userId, child);
+          const newChild = await localStorageService.addChild(child);
 
           if (!newChild) throw new Error('Failed to add child');
 
@@ -474,7 +468,7 @@ export const useAppStore = create<AppState>()(
       deleteChild: async (childId: string) => {
         set({ isLoading: true });
         try {
-          const success = await dataService.deleteChild(childId);
+          const success = await localStorageService.deleteChild(childId);
           if (!success) throw new Error('Failed to delete child');
 
           set((state) => ({
@@ -495,8 +489,7 @@ export const useAppStore = create<AppState>()(
       addCategory: async (category) => {
         set({ isLoading: true });
         try {
-          const userId = 'local-user';
-          const newCategory = await dataService.addCategory(userId, category);
+          const newCategory = await localStorageService.addCategory(category);
 
           if (!newCategory) throw new Error('Failed to add category');
 
@@ -516,7 +509,7 @@ export const useAppStore = create<AppState>()(
       updateCategory: async (categoryId, updates) => {
         set({ isLoading: true });
         try {
-          const updatedCategory = await dataService.updateCategory(categoryId, updates);
+          const updatedCategory = await localStorageService.updateCategory(categoryId, updates);
 
           if (!updatedCategory) throw new Error('Failed to update category');
 
@@ -543,7 +536,7 @@ export const useAppStore = create<AppState>()(
             throw new Error('Cannot delete category used by active tasks');
           }
 
-          const success = await dataService.deleteCategory(categoryId);
+          const success = await localStorageService.deleteCategory(categoryId);
           if (!success) throw new Error('Failed to delete category');
 
           set((state) => ({
@@ -562,8 +555,6 @@ export const useAppStore = create<AppState>()(
       addTask: async (task) => {
         set({ isLoading: true });
         try {
-          const userId = 'local-user';
-
           // Calculate initial next_due_date based on recurrence rule
           // This ensures the task appears on the correct day immediately
           let nextDueDate = undefined;
@@ -592,7 +583,7 @@ export const useAppStore = create<AppState>()(
             finalExpiry = '23:59';
           }
 
-          const newTask = await dataService.addTask(userId, { ...task, next_due_date: nextDueDate, expiry_time: finalExpiry });
+          const newTask = await localStorageService.addTask({ ...task, next_due_date: nextDueDate, expiry_time: finalExpiry });
 
           if (!newTask) throw new Error('Failed to add task');
 
@@ -625,7 +616,7 @@ export const useAppStore = create<AppState>()(
             }
           }
 
-          const updatedTask = await dataService.updateTask(taskId, finalUpdates);
+          const updatedTask = await localStorageService.updateTask(taskId, finalUpdates);
 
           if (!updatedTask) throw new Error('Failed to update task');
 
@@ -645,8 +636,7 @@ export const useAppStore = create<AppState>()(
       addReward: async (reward) => {
         set({ isLoading: true });
         try {
-          const userId = 'local-user';
-          const newReward = await dataService.addReward(userId, reward);
+          const newReward = await localStorageService.addReward(reward);
 
           if (!newReward) throw new Error('Failed to add reward');
 
@@ -666,7 +656,7 @@ export const useAppStore = create<AppState>()(
       updateReward: async (rewardId, updates) => {
         set({ isLoading: true });
         try {
-          const updatedReward = await dataService.updateReward(rewardId, updates);
+          const updatedReward = await localStorageService.updateReward(rewardId, updates);
 
           if (!updatedReward) throw new Error('Failed to update reward');
 
@@ -686,7 +676,7 @@ export const useAppStore = create<AppState>()(
       deleteReward: async (rewardId) => {
         set({ isLoading: true });
         try {
-          const success = await dataService.deleteReward(rewardId);
+          const success = await localStorageService.deleteReward(rewardId);
 
           if (!success) throw new Error('Failed to delete reward');
 
@@ -805,7 +795,7 @@ export const useAppStore = create<AppState>()(
       updateChild: async (childId, updates) => {
         set({ isLoading: true });
         try {
-          const updatedChild = await dataService.updateChild(childId, updates);
+          const updatedChild = await localStorageService.updateChild(childId, updates);
           if (!updatedChild) throw new Error('Failed to update child');
 
           set((state) => ({
@@ -847,8 +837,7 @@ export const useAppStore = create<AppState>()(
           const { activeChildId } = get();
           if (!activeChildId) throw new Error('Missing child ID');
 
-          const userId = 'local-user';
-          const newLog = await dataService.completeTask(userId, activeChildId, taskId);
+          const newLog = await localStorageService.completeTask(activeChildId, taskId);
 
           if (!newLog) throw new Error('Failed to complete task');
 
@@ -891,8 +880,7 @@ export const useAppStore = create<AppState>()(
           const { activeChildId } = get();
           if (!activeChildId) throw new Error('Missing child ID');
 
-          const userId = 'local-user';
-          const newLog = await dataService.completeTaskOnDate(userId, activeChildId, taskId, dateIso);
+          const newLog = await localStorageService.completeTaskOnDate(activeChildId, taskId, dateIso);
 
           if (!newLog) throw new Error('Failed to complete task');
 
@@ -1065,8 +1053,7 @@ export const useAppStore = create<AppState>()(
           const { activeChildId } = get();
           if (!activeChildId) throw new Error('Missing child ID');
 
-          const userId = 'local-user';
-          const newLog = await dataService.submitExemptionRequest(userId, activeChildId, taskId, reason);
+          const newLog = await localStorageService.submitExemptionRequest(activeChildId, taskId, reason);
 
           if (!newLog) throw new Error('Failed to submit exemption request');
 
@@ -1107,7 +1094,7 @@ export const useAppStore = create<AppState>()(
           // The recurrence logic (getNextDueDate) will see this log and calculate the NEXT due date from this date.
           // So we just need to ensure the log is updated correctly.
 
-          const success = await dataService.approveExemption(logId);
+          const success = await localStorageService.approveExemption(logId);
           if (!success) throw new Error('Failed to approve exemption');
 
           // Update Streak Logic (Excused counts as keeping the streak alive)
@@ -1138,7 +1125,7 @@ export const useAppStore = create<AppState>()(
       rejectExemption: async (logId: string) => {
         set({ isLoading: true });
         try {
-          const success = await dataService.rejectExemption(logId);
+          const success = await localStorageService.rejectExemption(logId);
           if (!success) throw new Error('Failed to reject exemption');
 
           set((state) => ({
@@ -1166,7 +1153,7 @@ export const useAppStore = create<AppState>()(
             return { error: null };
           }
 
-          const newTx = await dataService.verifyTask(logId, childId, rewardValue);
+          const newTx = await localStorageService.verifyTask(logId, childId, rewardValue);
           if (!newTx) throw new Error('Verify task failed');
 
           // Update Streak Logic
@@ -1198,7 +1185,7 @@ export const useAppStore = create<AppState>()(
             transactions: [newTx, ...transactions],
             pendingVerifications: get().pendingVerifications.filter(v => v.id !== logId)
           });
-          const xpTransactions = await dataService.fetchXpTransactions('local-user');
+          const xpTransactions = await localStorageService.fetchXpTransactions();
           set({ xpTransactions });
           const nextLevel = calculateLevelProgress(getTotalXpForChild(xpTransactions, childId));
           const celebratedLevel = get().celebratedLevelByChild[childId] || previousLevel.level;
@@ -1237,7 +1224,7 @@ export const useAppStore = create<AppState>()(
           const tx = transactions.find(t => t.id === transactionId);
           if (!tx) throw new Error('Transaction not found');
 
-          const success = await dataService.deleteTransaction(transactionId);
+          const success = await localStorageService.deleteTransaction(transactionId);
           if (!success) throw new Error('Failed to delete transaction');
 
           // 1. Revert balance
@@ -1309,7 +1296,7 @@ export const useAppStore = create<AppState>()(
       deleteChildLog: async (logId: string) => {
         set({ isLoading: true });
         try {
-          const success = await dataService.deleteChildLog(logId);
+          const success = await localStorageService.deleteChildLog(logId);
           if (!success) throw new Error('Failed to delete log');
 
           set((state) => ({
@@ -1337,7 +1324,7 @@ export const useAppStore = create<AppState>()(
       updateTransaction: async (txId: string, updates: Partial<CoinTransaction>) => {
         set({ isLoading: true });
         try {
-          const result = await dataService.updateTransaction(txId, updates);
+          const result = await localStorageService.updateTransaction(txId, updates);
           if (result) {
             set((state) => ({
               transactions: state.transactions.map(t => t.id === txId ? { ...t, ...updates } : t)
@@ -1355,7 +1342,7 @@ export const useAppStore = create<AppState>()(
       updateChildLog: async (logId: string, updates: Partial<ChildTaskLog>) => {
         set({ isLoading: true });
         try {
-          const result = await dataService.updateChildLog(logId, updates);
+          const result = await localStorageService.updateChildLog(logId, updates);
           if (result) {
             set((state) => ({
               childLogs: state.childLogs.map(l => l.id === logId ? { ...l, ...updates } : l)
@@ -1396,7 +1383,7 @@ export const useAppStore = create<AppState>()(
       rejectTask: async (logId: string, reason: string) => {
         set({ isLoading: true });
         try {
-          const success = await dataService.rejectTask(logId, reason);
+          const success = await localStorageService.rejectTask(logId, reason);
 
           if (!success) throw new Error('Failed to reject task');
 
@@ -1421,7 +1408,7 @@ export const useAppStore = create<AppState>()(
       redeemReward: async (childId: string, cost: number, rewardId: string) => {
         set({ isLoading: true });
         try {
-          const newTx = await dataService.redeemReward(childId, cost, rewardId);
+          const newTx = await localStorageService.redeemReward(childId, cost, rewardId);
 
           if (!newTx) throw new Error('Failed to redeem reward');
 
@@ -1450,8 +1437,7 @@ export const useAppStore = create<AppState>()(
       manualAdjustment: async (childId: string, amount: number, reason?: string) => {
         set({ isLoading: true });
         try {
-          const userId = 'local-user';
-          const newTx = await dataService.manualAdjustment(userId, childId, amount, reason);
+          const newTx = await localStorageService.manualAdjustment(childId, amount, reason);
 
           if (!newTx) throw new Error('Failed to update balance');
 
@@ -1584,7 +1570,7 @@ export const useAppStore = create<AppState>()(
         setTimeout(async () => {
           try {
             // Clear the database
-            await dataService.clearAll();
+            await localStorageService.clearAll();
 
             // Clear the persisted store
             localStorage.removeItem('stars-rewards-storage');
@@ -1601,11 +1587,9 @@ export const useAppStore = create<AppState>()(
       importData: async (data) => {
         set({ isLoading: true });
         try {
-          const userId = 'local-user';
-
           // 1. Restore to Local
-          const { success, error } = await dataService.restoreBackup(userId, data);
-          if (!success) throw error;
+          const success = await localStorageService.restoreBackup(data);
+          if (!success) throw new Error('Failed to restore backup');
 
           // 2. Prevent immediate streak reset by setting last check date to today BEFORE refreshing
           const todayStr = getLocalDateString();

@@ -1,4 +1,4 @@
-import { dataService } from './dataService';
+import { localStorageService } from './localStorageService';
 import type { Child, Task, ChildTaskLog } from '../types';
 import { parseRRule, isDateValid } from '../utils/recurrence';
 import { getLocalDateString, getTodayLocalStart, getLocalStartOfDay, isResetNeeded } from '../utils/timeUtils';
@@ -40,7 +40,7 @@ export const missionLogicService = {
         const bestStreak = Math.max(task.best_streak || 0, currentStreak);
 
         // Persist to DB
-        await dataService.updateTask(taskId, { current_streak: currentStreak, best_streak: bestStreak });
+        await localStorageService.updateTask(taskId, { current_streak: currentStreak, best_streak: bestStreak });
 
         // Return updated tasks array
         const newTasks = [...tasks];
@@ -65,7 +65,6 @@ export const missionLogicService = {
         childLogs: ChildTaskLog[],
         lastMissedCheckDate?: string
     ): Promise<MissionCheckResult> => {
-        const userId = 'local-user';
         const todayStr = getLocalDateString();
         const newLogs: ChildTaskLog[] = [];
         let updatedTasks = [...tasks];
@@ -206,7 +205,7 @@ export const missionLogicService = {
 
         // 3. Process Batch
         if (batchItems.length > 0) {
-            const logs = await dataService.logFailedTasksBatch(userId, batchItems);
+            const logs = await localStorageService.logFailedTasksBatch(batchItems);
             newLogs.push(...logs);
         }
 
@@ -218,7 +217,7 @@ export const missionLogicService = {
 
             updatedTasks = tasks.map(t => {
                 if (failedTaskIds.has(t.id)) {
-                    streakResetPromises.push(dataService.updateTask(t.id, { current_streak: 0 }));
+                    streakResetPromises.push(localStorageService.updateTask(t.id, { current_streak: 0 }));
                     return { ...t, current_streak: 0 };
                 }
                 return t;
