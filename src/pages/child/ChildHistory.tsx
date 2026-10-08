@@ -276,7 +276,7 @@ const ChildHistory = () => {
             </div>
 
             {/* List */}
-            <div className="card bg-base-100 shadow-md rounded-xl overflow-hidden border border-base-200 p-4">
+            <div>
                 <HistoryList
                     items={displayedHistory.map(item => {
                         const childName = child.name;

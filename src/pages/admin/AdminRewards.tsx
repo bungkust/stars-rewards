@@ -86,6 +86,7 @@ const AdminRewards = () => {
             return (
               <AdminEntityCard
                 key={reward.id}
+                titleMaxLines={2}
                 badge={
                   reward.image_url ? (
                     <img src={reward.image_url} alt={reward.name} className="w-full h-full object-cover" />

@@ -1,6 +1,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaCheckCircle, FaGift, FaSlidersH, FaTimesCircle, FaChild, FaExclamationTriangle } from 'react-icons/fa';
+import type { IconType } from 'react-icons';
+import { AdminEntityCard } from '../design-system';
 
 export type HistoryItemType = 'verified' | 'redeemed' | 'manual' | 'failed' | 'excused' | 'rejected';
 
@@ -12,7 +14,7 @@ export interface HistoryItemEntry {
     description?: string;
     amount?: number; // If present, shows +amount or -amount
     amountLabel?: string; // fallback if amount is 0/undefined (e.g. "FAILED")
-    status: 'success' | 'warning' | 'error' | 'neutral'; // determines color
+    status: 'success' | 'warning' | 'error' | 'neutral'; // determines amount color
     onClick?: () => void;
     // Metadata for detailed view
     categoryName?: string;
@@ -32,56 +34,35 @@ interface HistoryListProps {
     items: HistoryItemEntry[];
     emptyMessage?: string;
     footer?: React.ReactNode;
+    variant?: 'parent' | 'child';
 }
 
-const HistoryList = ({ items, emptyMessage = "No history found.", footer }: HistoryListProps) => {
+const TYPE_META: Record<HistoryItemType, { Icon: IconType; color: string }> = {
+    verified: { Icon: FaCheckCircle, color: 'text-success' },
+    redeemed: { Icon: FaGift, color: 'text-warning' },
+    manual: { Icon: FaSlidersH, color: 'text-info' },
+    failed: { Icon: FaTimesCircle, color: 'text-neutral/60' },
+    excused: { Icon: FaChild, color: 'text-warning' },
+    rejected: { Icon: FaExclamationTriangle, color: 'text-error' },
+};
+
+const AMOUNT_COLORS: Record<HistoryItemEntry['status'], string> = {
+    success: 'text-success',
+    error: 'text-error',
+    warning: 'text-warning',
+    neutral: 'text-neutral/60',
+};
+
+const HistoryList = ({ items, emptyMessage = "No history found.", footer, variant = 'child' }: HistoryListProps) => {
     return (
-        <div className="flex flex-col">
+        <div className="flex flex-col gap-3">
             <AnimatePresence mode="popLayout">
                 {items.map((item) => {
-                    let Icon = FaCheckCircle;
-                    let iconBg = 'bg-success/10';
-                    let iconColor = 'text-success';
-
-                    switch (item.type) {
-                        case 'redeemed':
-                            Icon = FaGift;
-                            iconBg = 'bg-warning/10';
-                            iconColor = 'text-warning';
-                            break;
-                        case 'manual':
-                            Icon = FaSlidersH;
-                            iconBg = 'bg-info/10';
-                            iconColor = 'text-info';
-                            break;
-                        case 'failed':
-                        case 'rejected':
-                            Icon = item.type === 'rejected' ? FaExclamationTriangle : FaTimesCircle;
-                            iconBg = 'bg-base-200'; // or error/10
-                            iconColor = 'text-neutral/60';
-                            if (item.type === 'rejected') iconColor = 'text-error';
-                            break;
-                        case 'excused':
-                            Icon = FaChild;
-                            iconBg = 'bg-warning/10';
-                            iconColor = 'text-warning';
-                            break;
-                        default: // verified
-                            Icon = FaCheckCircle;
-                            iconBg = 'bg-success/10';
-                            iconColor = 'text-success';
-                            break;
-                    }
-
-                    // Override colors based on explicit status prop if needed, 
-                    // but usually type drives the icon style, and status drives the amount text color.
-                    // Let's stick to the ChildStats styling logic which is quite nice.
-
-                    const amountColor =
-                        item.status === 'success' ? 'text-success' :
-                            item.status === 'error' ? 'text-error' :
-                                item.status === 'warning' ? 'text-warning' :
-                                    'text-neutral/60';
+                    const { Icon, color: iconColor } = TYPE_META[item.type];
+                    const amountColor = AMOUNT_COLORS[item.status];
+                    const amountText = item.amount
+                        ? `${item.amount > 0 ? '+' : ''}${item.amount}`
+                        : (item.amountLabel || '-');
 
                     return (
                         <motion.div
@@ -91,31 +72,25 @@ const HistoryList = ({ items, emptyMessage = "No history found.", footer }: Hist
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95 }}
                             transition={{ duration: 0.2 }}
-                            className={`flex justify-between items-center border-b border-base-200 p-4 last:border-none ${item.onClick ? 'cursor-pointer hover:bg-base-50 transition-colors' : 'hover:bg-base-50/50 transition-colors'}`}
-                            onClick={item.onClick}
                         >
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
-                                <div className={`p-3 rounded-full ${iconBg} ${iconColor}`}>
-                                    <Icon className="w-5 h-5" />
-                                </div>
-                                <div className="flex flex-col flex-1 min-w-0">
-                                    <span className="font-bold text-neutral text-sm truncate">{item.title}</span>
-                                    <span className="text-xs text-neutral/40">{item.subtitle}</span>
-                                    {item.description && (
-                                        <span className="text-xs text-neutral/50 italic mt-0.5 truncate">
-                                            {item.description}
+                            <AdminEntityCard
+                                variant={variant}
+                                titleMaxLines={2}
+                                badge={<Icon className={`w-5 h-5 ${iconColor}`} />}
+                                title={item.title}
+                                description={item.subtitle}
+                                tags={
+                                    <>
+                                        {item.description && (
+                                            <span className="text-xs text-neutral/50 italic">{item.description}</span>
+                                        )}
+                                        <span className={`font-bold ${amountColor} text-sm whitespace-nowrap`}>
+                                            {amountText}
                                         </span>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className={`font-bold ${amountColor} text-right ml-2 text-sm whitespace-nowrap`}>
-                                {item.amount !== undefined && item.amount !== 0 ? (
-                                    <span>{item.amount > 0 ? '+' : ''}{item.amount}</span>
-                                ) : (
-                                    <span className="text-xs uppercase">{item.amountLabel || '-'}</span>
-                                )}
-                            </div>
+                                    </>
+                                }
+                                onClick={item.onClick}
+                            />
                         </motion.div>
                     );
                 })}

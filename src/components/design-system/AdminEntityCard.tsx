@@ -7,6 +7,8 @@ export interface AdminEntityCardProps {
   badge: ReactNode;
   /** Main title */
   title: string;
+  /** Max lines for the title (1 = truncate, 2 = wrap up to 2 lines) */
+  titleMaxLines?: 1 | 2;
   /** Optional star count or label (e.g. 10 or "+15 Stars") */
   stars?: number | string;
   /** Optional prefix for star pill (e.g. "+" for loyalty bonuses) */
@@ -32,6 +34,7 @@ export interface AdminEntityCardProps {
 export const AdminEntityCard = ({
   badge,
   title,
+  titleMaxLines = 1,
   stars,
   starPrefix = '',
   tags,
@@ -51,6 +54,7 @@ export const AdminEntityCard = ({
   const editBtnColor = isChild
     ? 'text-sky-700 hover:bg-sky-100/50'
     : 'text-emerald-700 hover:bg-emerald-100/50';
+  const titleClass = titleMaxLines === 2 ? 'line-clamp-2 break-words' : 'truncate';
 
   return (
     <div
@@ -68,7 +72,7 @@ export const AdminEntityCard = ({
         {/* Middle: Title, Stars Pill, Tags & Description */}
         <div className="flex-1 min-w-0">
           {/* Line 1: Strictly for Title */}
-          <h4 className="font-bold text-sm sm:text-base text-neutral truncate leading-snug">
+          <h4 className={`font-bold text-sm sm:text-base text-neutral leading-snug ${titleClass}`}>
             {title}
           </h4>
 

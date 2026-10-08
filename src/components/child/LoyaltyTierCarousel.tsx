@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { FaStar } from 'react-icons/fa';
 import { Sparkle, Check } from '@phosphor-icons/react';
-import { COSMIC_TIERS, getTierIndex, getTierProgress } from '../../utils/loyaltyTierUtils';
+import { COSMIC_TIERS, getTierIndex, getTierProgress, getTierRangeLabel } from '../../utils/loyaltyTierUtils';
 
 interface LoyaltyTierCarouselProps {
   childName: string;
@@ -153,10 +153,10 @@ const LoyaltyTierCarousel = ({ childName, lifetimeStars }: LoyaltyTierCarouselPr
                 {/* Subtitle text below progress bar */}
                 <div className="flex items-center justify-between gap-2 text-[11px] sm:text-xs text-white/90 font-medium drop-shadow-sm">
                   <p className="min-w-0 line-clamp-2 leading-tight">
-                    {tier.nextTier ? (
-                      isCompletedTier ? (
-                        <span>Level complete! Ready for the next level.</span>
-                      ) : isCurrentTier ? (
+                    {isCompletedTier ? (
+                      <span>Level complete! Ready for the next level.</span>
+                    ) : isCurrentTier ? (
+                      tier.nextTier ? (
                         starsNeeded > 0 ? (
                           <>
                             Collect <span className="font-bold text-white">{starsNeeded} more Stars</span> to advance to {tier.nextTier}
@@ -165,16 +165,12 @@ const LoyaltyTierCarousel = ({ childName, lifetimeStars }: LoyaltyTierCarouselPr
                           <span>Next level unlocked!</span>
                         )
                       ) : (
-                        <>
-                          Collect <span className="font-bold text-white">{starsNeeded} more Stars</span> to unlock {tier.name}
-                        </>
+                        <span>Highest Ranger level! Strongest Star Habit hero.</span>
                       )
-                    ) : isCurrentTier ? (
-                      <span>Highest Ranger level! Strongest Star Habit hero.</span>
                     ) : (
-                      <>
-                        Collect <span className="font-bold text-white">{starsNeeded} more Stars</span> to unlock {tier.name}
-                      </>
+                      <span>
+                        Locked <span className="font-bold text-white">• {getTierRangeLabel(tier)}</span>
+                      </span>
                     )}
                   </p>
                   <span className="font-black text-warning flex-shrink-0 text-xs sm:text-sm">{progressPercent}%</span>

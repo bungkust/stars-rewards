@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
-import { H1Header, ToggleButton } from '../../components/design-system';
+import { H1Header, ToggleButton, AdminEntityCard } from '../../components/design-system';
 import { FaStar, FaTrophy, FaGift } from 'react-icons/fa';
 import {
   CartesianGrid,
@@ -322,7 +322,7 @@ const ChildStats = () => {
       </div>
 
       {/* Claimed Rewards Section */}
-      <div className="card bg-base-100 shadow-md rounded-xl p-6">
+      <div>
         <div className="flex items-center gap-2 mb-4">
           <h3 className="text-lg font-bold text-neutral">Claimed Rewards</h3>
         </div>
@@ -335,24 +335,16 @@ const ChildStats = () => {
             .map(transaction => {
               const details = getTransactionDetails(transaction);
               return (
-                <button
+                <AdminEntityCard
                   key={transaction.id}
+                  variant="child"
+                  titleMaxLines={2}
+                  badge={<FaGift className="w-6 h-6 text-sky-600" />}
+                  title={details.name}
+                  stars={Math.abs(transaction.amount)}
+                  description={formatDate(transaction.created_at)}
                   onClick={() => handleHistoryItemClick({ type: 'transaction', data: transaction, id: transaction.id })}
-                  className="flex justify-between items-center border-b border-base-200 pb-3 last:border-none last:pb-0 hover:bg-base-50 transition-colors w-full text-left rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-warning/10 text-warning rounded-full">
-                      <FaGift className="w-4 h-4" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="font-bold text-neutral text-sm">{details.name}</span>
-                      <span className="text-xs text-neutral/40">{formatDate(transaction.created_at)}</span>
-                    </div>
-                  </div>
-                  <span className="font-bold text-error">
-                    {Math.abs(transaction.amount)} Stars
-                  </span>
-                </button>
+                />
               );
             })}
           {childTransactions.filter(t => t.type === 'REWARD_REDEEMED').length === 0 && (
@@ -372,7 +364,7 @@ const ChildStats = () => {
 
 
       {/* Recent History (Simple List) */}
-      <div className="card bg-base-100 shadow-md rounded-xl p-6">
+      <div>
         <div className="flex flex-col gap-3 mb-4">
           <h3 className="text-lg font-bold text-neutral">Recent History</h3>
         </div>

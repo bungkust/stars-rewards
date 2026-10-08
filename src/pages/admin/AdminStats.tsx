@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaChartLine, FaCheckCircle, FaLightbulb, FaTimes, FaArrowLeft } from 'react-icons/fa';
-import { AppCard, H1Header, IconWrapper, ToggleButton } from '../../components/design-system';
+import { AdminEntityCard, AppCard, H1Header, IconWrapper, ToggleButton } from '../../components/design-system';
 import HistoryList, { type HistoryItemType, type HistoryItemEntry } from '../../components/shared/HistoryList';
 import HistoryDetailModal from '../../components/modals/HistoryDetailModal';
 
@@ -423,7 +423,7 @@ const AdminStats = () => {
 
 
       {/* Category Performance */}
-      <AppCard>
+      <div>
         <div className="flex items-center gap-3 mb-4">
           <IconWrapper icon={FaChartLine} className="bg-info/10 text-info" />
           <h3 className="font-bold text-lg text-neutral">Category Performance</h3>
@@ -435,16 +435,15 @@ const AdminStats = () => {
               const percentage = cat.total > 0 ? Math.round((cat.completed / cat.total) * 100) : 0;
 
               return (
-                <div key={cat.id} className="flex flex-col gap-2">
-                  <div className="flex items-center gap-4">
-                    <div className="p-2 rounded-lg bg-base-200 text-neutral/60">
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="font-bold text-neutral text-sm truncate pr-2">{cat.name}</span>
-                        <span className="text-xs font-bold text-primary flex-shrink-0">{cat.earned} Stars</span>
-                      </div>
+                <AdminEntityCard
+                  key={cat.id}
+                  variant="parent"
+                  titleMaxLines={2}
+                  badge={<Icon className="w-5 h-5 text-neutral/60" />}
+                  title={cat.name}
+                  stars={cat.earned}
+                  tags={
+                    <div className="w-full">
                       <div className="w-full bg-base-200 rounded-full h-2 overflow-hidden">
                         <div
                           className="bg-primary h-full rounded-full"
@@ -455,28 +454,26 @@ const AdminStats = () => {
                         <span className="text-[10px] text-neutral/40">{cat.completed}/{cat.total} Completed</span>
                         <span className="text-[10px] text-neutral/40">{percentage}% Success</span>
                       </div>
+                      {selectedChildId === 'all' && Object.keys(cat.childStats || {}).length > 0 && (
+                        <div className="flex flex-col gap-1 mt-1">
+                          {Object.entries(cat.childStats).map(([childId, stats]) => {
+                            if (stats.earned === 0 && stats.completed === 0) return null;
+                            const childName = children.find(c => c.id === childId)?.name || 'Unknown';
+                            return (
+                              <div key={childId} className="flex justify-between items-center text-[10px] text-neutral/50">
+                                <span>{childName}</span>
+                                <div className="flex gap-2">
+                                  <span>{stats.completed} done</span>
+                                  <span className="font-bold text-primary/70">{stats.earned} stars</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
-                  </div>
-
-                  {/* Child Breakdown (Only when 'All Children' is selected) */}
-                  {selectedChildId === 'all' && Object.keys(cat.childStats || {}).length > 0 && (
-                    <div className="pl-14 pr-2 flex flex-col gap-1">
-                      {Object.entries(cat.childStats).map(([childId, stats]) => {
-                        if (stats.earned === 0 && stats.completed === 0) return null;
-                        const childName = children.find(c => c.id === childId)?.name || 'Unknown';
-                        return (
-                          <div key={childId} className="flex justify-between items-center text-[10px] text-neutral/50">
-                            <span>{childName}</span>
-                            <div className="flex gap-2">
-                              <span>{stats.completed} done</span>
-                              <span className="font-bold text-primary/70">{stats.earned} stars</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                  }
+                />
               );
             })
           ) : (
@@ -485,7 +482,7 @@ const AdminStats = () => {
             </div>
           )}
         </div>
-      </AppCard>
+      </div>
 
       {/* Transaction History */}
       <div className="flex flex-col gap-4">
@@ -499,8 +496,9 @@ const AdminStats = () => {
           </div>
         </div>
 
-        <div className="card bg-base-100 shadow-md rounded-xl p-6">
+        <div>
           <HistoryList
+            variant="parent"
             items={displayedHistory.map(item => {
               if (item.type === 'transaction') {
                 const tx = item.data;

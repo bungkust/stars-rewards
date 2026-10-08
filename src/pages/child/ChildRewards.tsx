@@ -208,6 +208,7 @@ const ChildRewards = () => {
                 <AdminEntityCard
                   key={reward.id}
                   variant="child"
+                  titleMaxLines={2}
                   className={isRedeemed ? 'opacity-60' : ''}
                   badge={
                     reward.image_url ? (

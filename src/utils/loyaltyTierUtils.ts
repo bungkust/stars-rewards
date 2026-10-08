@@ -164,11 +164,29 @@ export function getTierProgress(stars: number, tierIndex: number) {
       starsNeeded = tier.minStars - stars;
     }
   } else {
-    progressPercent = 100;
-    starsNeeded = 0;
+    // Final tier (e.g. Red Ranger): highest tier with no upper bound (10.000+).
+    // Only render 100% once the tier is actually reached; below that it stays
+    // locked at 0% so it never duplicates the previous tier's progress.
+    if (stars >= tier.minStars) {
+      progressPercent = 100;
+      starsNeeded = 0;
+    } else {
+      progressPercent = 0;
+      starsNeeded = tier.minStars - stars;
+    }
   }
 
   return { progressPercent, starsNeeded };
+}
+
+/**
+ * Format the star range label for a tier (e.g. "0–999", "1.000–2.499", "10.000+").
+ * Uses Indonesian thousand separators.
+ */
+export function getTierRangeLabel(tier: CosmicTier): string {
+  const min = tier.minStars.toLocaleString('id-ID');
+  if (tier.maxStars == null) return `${min}+`;
+  return `${min}–${tier.maxStars.toLocaleString('id-ID')}`;
 }
 
 /**
