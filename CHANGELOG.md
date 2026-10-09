@@ -2,19 +2,19 @@
 
 All notable changes to the Star Habit project will be documented in this file.
 
-## [1.3.7] - 2026-06-22
-
-### Added
-- **Google Play Store Review Prompt**: Introduced a new review flow prompting parents to rate the app after a minimum of 5 verified missions or after redeeming rewards. Added a "Rate Star Habit" option under Support in Settings.
-- **Fine-Grained Notification Settings**: Added granular controls in Settings to enable/disable notifications specifically for mission approvals, missed tasks, and daily reports.
-- **Profile Export in Backups**: Integrated parent profiles and customized notification settings into the backup & restore data schema.
+## [1.4.1] - 2026-10-08
 
 ### Fixed
-- **Timezone & Local Date Handling**: Fixed timezone offset bugs by replacing `.toISOString().split('T')[0]` with local-date helpers across all stats, history, onboarding, and tasks pages.
-- **Child Balance Integrity**: Fixed transaction amount updates on verification/redemption to properly add/deduct the correct values.
-- **Backup Format Fallbacks**: Added legacy flat field parsers to the backup schema restore logic to support compatibility with older backup formats.
+- **Milestone Tier Progress**: Red Ranger (top tier, 10.000+ stars) no longer shows 100% for children who haven't reached it — it renders as a locked tier with a "Locked • 10.000+" range label. Green and Blue Ranger no longer show identical milestone text (Green shows progress toward Blue Ranger, Blue shows its locked range).
 
-## [Unreleased] - Post 1.3.4
+### Changed
+- **Consistent Card Component & 2-Line Titles**: Reward cards and transaction history cards now use the shared `AdminEntityCard` component, and their titles can wrap to 2 lines instead of truncating. Applied to the Rewards Shop (child & admin), Category Performance, and all history lists (child/parent stats, claimed-rewards, history pages).
+
+### Technical
+- **Android Target Baseline**: Raised `minSdkVersion` from 23 to 24 to align with Google Play requirements.
+- **Debug Build Label**: Debug builds now show "[debug] Star Habit" under the app icon on Android to distinguish from release builds.
+
+## [1.4.0] - 2026-10-08
 
 ### Added
 - **Multi-Factor Authentication**: Parents can now choose between three admin unlock methods — **PIN**, **Pattern Lock** (gesture grid), and **Biometric** (fingerprint/face). Preferred method is persisted per device.
@@ -40,6 +40,18 @@ All notable changes to the Star Habit project will be documented in this file.
 - **Settings Page Restructured**: Now organized into dedicated sections: Family Information, Notifications, Security (new), Customization, Data Management, Legal & Policy, and Danger Zone.
 - **Admin Dashboard Unified**: The "Verification Center" now shows both pending task approvals and pending exemption requests in a single merged queue, each with contextual action buttons.
 - **Child Profile Delete**: Moved to the "Danger Zone" section within Settings with a confirmation modal.
+
+## [1.3.7] - 2026-06-22
+
+### Added
+- **Google Play Store Review Prompt**: Introduced a new review flow prompting parents to rate the app after a minimum of 5 verified missions or after redeeming rewards. Added a "Rate Star Habit" option under Support in Settings.
+- **Fine-Grained Notification Settings**: Added granular controls in Settings to enable/disable notifications specifically for mission approvals, missed tasks, and daily reports.
+- **Profile Export in Backups**: Integrated parent profiles and customized notification settings into the backup & restore data schema.
+
+### Fixed
+- **Timezone & Local Date Handling**: Fixed timezone offset bugs by replacing `.toISOString().split('T')[0]` with local-date helpers across all stats, history, onboarding, and tasks pages.
+- **Child Balance Integrity**: Fixed transaction amount updates on verification/redemption to properly add/deduct the correct values.
+- **Backup Format Fallbacks**: Added legacy flat field parsers to the backup schema restore logic to support compatibility with older backup formats.
 
 ## [1.3.6] - 2026-04-15
 

@@ -1,21 +1,19 @@
-# What's New - Star Habit v1.3.7
+# What's New - Star Habit v1.4.1
 
 Release notes for the Google Play Store update (Max 500 characters limit).
 
 ## English (en-US)
 ```text
-- Google Play Review: Rate us easily in Settings or after verifying missions!
-- Custom Notifications: Tailor alerts for daily reports, missed missions, and approvals.
-- Timezone Reliability: Improved consistency for streaks and task logs across timezones.
-- Backup Upgrades: Backups now save your profile settings and notification preferences.
-- Bug Fixes: Fixed child balance calculations on verification and redemption.
+- Milestone Progress: Fixed Red Ranger top-tier display and milestone range info.
+- Card Consistency: Standardized cards across Rewards, Stats, and History with 2-line title wrapping.
+- Android Compatibility: Upgraded minSdkVersion to 24 meeting latest Google Play standards.
+- Overall Improvements: Minor bug fixes, performance optimizations, and UI polish.
 ```
 
 ## Indonesian (id)
 ```text
-- Ulasan Google Play: Berikan rating dengan mudah di Pengaturan atau setelah verifikasi misi!
-- Notifikasi Kustom: Atur notifikasi laporan harian, misi terlewat, & persetujuan orang tua.
-- Zona Waktu Lebih Akurat: Pencatatan misi dan streak harian kini lebih konsisten antar zona waktu.
-- Ekspor Data Lebih Lengkap: Backup kini menyimpan profil kustom & preferensi notifikasi Anda.
-- Perbaikan Bug: Memperbaiki kalkulasi saldo bintang anak saat verifikasi & klaim.
+- Tampilan Progres Milestone: Perbaikan indikator tier Red Ranger & info rentang milestone reward.
+- Desain Kartu Lebih Rapi: Standarisasi kartu di Hadiah, Statistik, & Riwayat dengan judul hingga 2 baris.
+- Kompatibilitas Android: Peningkatan minSdkVersion ke 24 sesuai standar Google Play.
+- Peningkatan Kinerja: Perbaikan bug minor dan optimasi antarmuka pengguna.
 ```
